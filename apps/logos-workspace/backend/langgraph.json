@@ -1,0 +1,10 @@
+{
+  "$schema": "https://langgra.ph/schema.json",
+  "dependencies": ["."],
+  "graphs": {
+    "chief_engineer": "./logos_workspace/agents/chief.py:graph",
+    "modeling_agent": "./logos_workspace/agents/modeling.py:graph",
+    "validation_agent": "./logos_workspace/agents/validation.py:graph"
+  },
+  "env": "../.env"
+}

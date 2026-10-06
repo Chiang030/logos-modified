@@ -264,6 +264,19 @@ CLAUDE.md
 libs/cli/frontend/node_modules/
 libs/cli/frontend/dist/
 node_modules/
+apps/logos-workspace/backend/.logos/
+apps/logos-workspace/backend/.logos*/
+apps/logos-workspace/backend/.venv/
+apps/logos-workspace/web/dist/
+apps/logos-workspace/web/.artifacts/
+apps/logos-workspace/web/playwright-report/
+apps/logos-workspace/web/test-results/
+apps/logos-workspace/web/*.tsbuildinfo
+apps/logos-workspace/web/playwright.config.js
+apps/logos-workspace/web/playwright.config.d.ts
+apps/logos-workspace/web/vite.config.js
+apps/logos-workspace/web/vite.config.d.ts
+!apps/logos-workspace/.env.example
 
 # Generated at build time by libs/code/hatch_build.py (stamps the release commit)
 libs/code/deepagents_code/_build_info.py
