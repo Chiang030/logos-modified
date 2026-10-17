@@ -12,12 +12,19 @@ interface Props {
   message: ChatMessage;
 }
 
-export function MessageBubble({ message }: Props): ReactElement {
+export function MessageBubble({ message }: Props): ReactElement | null {
+  // System prompts are runtime plumbing, and an assistant message with no
+  // text is hidden after a tool-only turn is detected by the timeline logic.
+  // During normal streaming, the empty assistant bubble is intentional and
+  // carries the live cursor.
+  if (message.role === "system") return null;
+  if (message.role === "assistant" && message.text.trim().length === 0 && message.status !== "streaming") return null;
+
   return (
     <article className={`message message-${message.role} message-${message.status}`}>
       <div className="message-label">{labelForRole(message.role)}</div>
       <div className="message-content">
-        {message.text ? <div dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(marked.parse(message.text, { async: false }) as string) }} /> : (message.status === "streaming" ? <span className="typing">▋</span> : null)}
+        {message.text ? <div dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(marked.parse(message.text, { async: false }) as string) }} /> : (message.role === "assistant" && message.status === "streaming" ? <span className="typing">▋</span> : null)}
       </div>
     </article>
   );

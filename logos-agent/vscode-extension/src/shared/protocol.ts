@@ -1,5 +1,27 @@
 export type RuntimeStatus = "idle" | "starting" | "ready" | "running" | "stopping" | "error";
 
+export interface ModelOption {
+  provider: string;
+  id: string;
+  name?: string;
+  contextWindow?: number;
+  reasoning?: boolean;
+}
+
+export interface ContextUsage {
+  tokens: number | null;
+  contextWindow: number;
+  percent: number | null;
+}
+
+export interface RuntimeConfig {
+  models: ModelOption[];
+  activeModel?: ModelOption;
+  thinkingLevel?: string;
+  thinkingLevels: string[];
+  contextUsage?: ContextUsage;
+}
+
 export interface ToolCallView {
   id: string;
   name: string;
@@ -20,6 +42,7 @@ export interface SessionListEntry { sessionId: string; title: string; sessionFil
 
 export type ExtensionToWebviewMessage =
   | { type: "runtime/status"; status: RuntimeStatus; detail?: string }
+  | { type: "runtime/config"; config: RuntimeConfig }
   | { type: "runtime/error"; message: string }
   | { type: "message/user"; id: string; text: string }
   | { type: "message/started"; id: string }
@@ -37,9 +60,10 @@ export type WebviewToExtensionMessage =
   | { type: "webview/ready" }
   | { type: "chat/send"; text: string }
   | { type: "chat/abort" }
-  | { type: "chat/retry"; text: string }
   | { type: "session/new" }
   | { type: "session/select"; sessionId: string }
+  | { type: "model/select"; provider: string; modelId: string }
+  | { type: "thinking/select"; level: string }
   | { type: "runtime/restart" };
 
 export function isWebviewToExtensionMessage(value: unknown): value is WebviewToExtensionMessage {
@@ -50,10 +74,13 @@ export function isWebviewToExtensionMessage(value: unknown): value is WebviewToE
     case "session/new":
     case "runtime/restart":
       return true;
+    case "model/select":
+      return typeof value.provider === "string" && value.provider.length > 0 && typeof value.modelId === "string" && value.modelId.length > 0;
+    case "thinking/select":
+      return typeof value.level === "string" && value.level.length > 0;
     case "session/select":
       return typeof value.sessionId === "string" && value.sessionId.length > 0;
     case "chat/send":
-    case "chat/retry":
       return typeof value.text === "string" && value.text.trim().length > 0;
     default:
       return false;

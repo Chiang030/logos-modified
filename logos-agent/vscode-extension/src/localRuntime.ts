@@ -5,7 +5,7 @@ import { dirname, isAbsolute, join, resolve } from "node:path";
 import * as vscode from "vscode";
 import { RpcClient, type RpcExit, type RpcRecord } from "./rpcClient";
 import { SessionStore } from "./sessionStore";
-import type { RuntimeStatus } from "./shared/protocol";
+import { isRecord, type ContextUsage, type ModelOption, type RuntimeConfig, type RuntimeStatus } from "./shared/protocol";
 
 export interface RuntimeEvent {
   type: "status" | "record" | "stderr" | "protocol_error" | "exit";
@@ -130,6 +130,34 @@ export class LocalRuntime implements vscode.Disposable {
     const client = await this.ensureClient();
     const streaming = this.lastState?.isStreaming === true;
     await client.prompt(text, streaming ? "followUp" : undefined);
+  }
+
+  async getRuntimeConfig(): Promise<RuntimeConfig> {
+    const client = await this.ensureClient();
+    const [state, modelData, thinkingData, stats] = await Promise.all([
+      client.getState<Record<string, unknown>>(),
+      client.request<{ models?: unknown[] }>({ type: "get_available_models" }),
+      client.request<{ levels?: unknown[] }>({ type: "get_available_thinking_levels" }),
+      client.request<{ contextUsage?: unknown }>({ type: "get_session_stats" }),
+    ]);
+    this.lastState = state;
+    return {
+      models: (modelData.models ?? []).map(toModelOption).filter((model): model is ModelOption => model !== undefined),
+      activeModel: toModelOption(state.model),
+      thinkingLevel: typeof state.thinkingLevel === "string" ? state.thinkingLevel : undefined,
+      thinkingLevels: (thinkingData.levels ?? []).filter((level): level is string => typeof level === "string"),
+      contextUsage: toContextUsage(stats.contextUsage),
+    };
+  }
+
+  async setModel(provider: string, modelId: string): Promise<void> {
+    const client = await this.ensureClient();
+    await client.request({ type: "set_model", provider, modelId });
+  }
+
+  async setThinkingLevel(level: string): Promise<void> {
+    const client = await this.ensureClient();
+    await client.request({ type: "set_thinking_level", level });
   }
 
   async abort(): Promise<void> {
@@ -280,4 +308,24 @@ async function loadLocalEnvironment(workspaceRoot: string, scriptPath: string): 
 
 function isMissingFile(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
+}
+
+function toModelOption(value: unknown): ModelOption | undefined {
+  if (!isRecord(value) || typeof value.provider !== "string" || typeof value.id !== "string") return undefined;
+  return {
+    provider: value.provider,
+    id: value.id,
+    name: typeof value.name === "string" ? value.name : undefined,
+    contextWindow: typeof value.contextWindow === "number" ? value.contextWindow : undefined,
+    reasoning: typeof value.reasoning === "boolean" ? value.reasoning : undefined,
+  };
+}
+
+function toContextUsage(value: unknown): ContextUsage | undefined {
+  if (!isRecord(value) || typeof value.contextWindow !== "number") return undefined;
+  return {
+    tokens: typeof value.tokens === "number" ? value.tokens : null,
+    contextWindow: value.contextWindow,
+    percent: typeof value.percent === "number" ? value.percent : null,
+  };
 }

@@ -8,7 +8,7 @@ await build({
   outfile: "dist/webview.js",
   sourcemap: false,
   minify: false,
-  loader: { ".tsx": "tsx" },
+  loader: { ".tsx": "tsx", ".png": "dataurl", ".ttf": "dataurl" },
 });
 
 await build({
@@ -16,4 +16,5 @@ await build({
   bundle: true,
   outfile: "dist/webview.css",
   minify: false,
+  loader: { ".ttf": "dataurl" },
 });

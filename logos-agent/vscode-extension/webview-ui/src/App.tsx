@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactElement, type SetStateAction } from "react";
+import { useEffect, useRef, useState, type Dispatch, type ReactElement, type SetStateAction } from "react";
+import { History } from "lucide-react";
+import fullLogo from "../../resources/logos_full_restored_transparent.png";
 import { Composer } from "./components/Composer";
 import { MessageBubble, type ChatMessage } from "./components/MessageBubble";
 import { ToolCallCard } from "./components/ToolCallCard";
-import type { ExtensionToWebviewMessage, RestoredMessage, RestoredTool, RuntimeStatus, ToolCallView, SessionListEntry } from "./protocol";
+import type { ExtensionToWebviewMessage, RestoredMessage, RestoredTool, RuntimeConfig, RuntimeStatus, ToolCallView, SessionListEntry } from "./protocol";
 
 declare function acquireVsCodeApi(): { postMessage(message: unknown): void };
 
@@ -20,16 +22,21 @@ export function App(): ReactElement {
   const [sessions, setSessions] = useState<SessionListEntry[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>();
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [lastPrompt, setLastPrompt] = useState<string>();
+  const [runtimeConfig, setRuntimeConfig] = useState<RuntimeConfig>({ models: [], thinkingLevels: [] });
   const [error, setError] = useState<string>();
+  const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const busy = status === "starting" || status === "running" || status === "stopping";
+  const hasVisibleConversation = timeline.some((item) => (
+    item.kind === "tool" || isVisibleMessage(item.value)
+  ));
 
   useEffect(() => {
     const onMessage = (event: MessageEvent<ExtensionToWebviewMessage>): void => {
       handleExtensionMessage(event.data, {
         setStatus,
         setStatusDetail,
+        setRuntimeConfig,
         setMessages,
         setTools,
         setSessionName,
@@ -46,22 +53,16 @@ export function App(): ReactElement {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [timeline]);
 
-  const canRetry = useMemo(() => Boolean(lastPrompt && status !== "error"), [lastPrompt, status]);
-
   return (
-    <div className="app-shell">
+    <div className="logos-panel">
       <main className="main-panel">
         <header className="topbar">
           <div className="brand-lockup">
-            <div className="brand-mark">L</div>
-            <div className="brand-copy">
-              <div className="topbar-title">{sessionName || "LOGOS workspace"} <span className="version-badge">v0.1.2</span></div>
-              <div className="topbar-subtitle">Aerospace design &amp; simulation agent</div>
-            </div>
+            <img className="brand-full-logo" src={fullLogo} alt="LOGOS Aircraft Design and Simulation Agent" />
           </div>
           <div className="history-menu-wrap">
-            <div className={`connection-badge connection-${status}`}><span className="connection-dot" />{statusLabel(status).toUpperCase()}</div>
-            <button type="button" className="history-button" onClick={() => setHistoryOpen((open) => !open)} aria-expanded={historyOpen} title="Chat history" aria-label="Chat history">◷</button>
+            <div className="connection-badge connection-ready"><span className="connection-dot" />AGENT CONNECTED<span className="connection-separator">•</span><span className="connection-mode">MACH-SYS</span></div>
+            <button type="button" className="history-button" onClick={() => setHistoryOpen((open) => !open)} aria-expanded={historyOpen} title="Session History" aria-label="Session History"><History size={15} /></button>
             {historyOpen ? <div className="history-menu" role="menu">
               <button type="button" className="history-new" onClick={() => { setHistoryOpen(false); vscode.postMessage({ type: "session/new" }); }}>＋ New session</button>
               {sessions.map((session) => <button type="button" role="menuitem" className={`history-item ${session.sessionId === activeSessionId ? "active" : ""}`} key={session.sessionId} onClick={() => { setHistoryOpen(false); vscode.postMessage({ type: "session/select", sessionId: session.sessionId }); }}>{session.title}</button>)}
@@ -78,12 +79,12 @@ export function App(): ReactElement {
           </div>
         ) : null}
 
-        <div className="conversation" ref={scrollRef}>
-          {messages.length === 0 && tools.length === 0 ? (
+        <div className="conversation custom-scrollbar" ref={scrollRef}>
+          {!hasVisibleConversation ? (
             <div className="empty-state">
-              <div className="empty-logo">L</div>
-              <h1>What are we building today?</h1>
-              <p>Ask LOGOS to inspect the workspace, plan a change, or run a simulation workflow.</p>
+              <div className="empty-title-row"><h1>LOGOS Coding Agent</h1></div>
+              <p>Aircraft Design &amp; Simulation Copilot for VS Code</p>
+              <p className="empty-detail">Ready to inspect code, run CFD meshes, or optimize aero geometry.</p>
             </div>
           ) : null}
           {timeline.map((item) => item.kind === "message" ? <MessageBubble key={item.value.id} message={item.value} /> : <ToolCallCard key={item.value.id} tool={item.value} />)}
@@ -91,17 +92,21 @@ export function App(): ReactElement {
 
         <Composer
           busy={busy}
+          models={runtimeConfig.models}
+          activeModel={runtimeConfig.activeModel}
+          thinkingLevel={runtimeConfig.thinkingLevel}
+          thinkingLevels={runtimeConfig.thinkingLevels}
+          contextUsage={runtimeConfig.contextUsage}
+          onSelectModel={(model) => vscode.postMessage({ type: "model/select", provider: model.provider, modelId: model.id })}
+          onSelectThinking={(level) => vscode.postMessage({ type: "thinking/select", level })}
           onSend={(text) => {
-            setLastPrompt(text);
             if (!sessionName) setSessionName(text.slice(0, 42));
             setError(undefined);
             vscode.postMessage({ type: "chat/send", text });
           }}
           onAbort={() => vscode.postMessage({ type: "chat/abort" })}
-          onRetry={() => {
-            if (lastPrompt) vscode.postMessage({ type: "chat/retry", text: lastPrompt });
-          }}
-          canRetry={canRetry}
+          value={draft}
+          onValueChange={setDraft}
         />
       </main>
     </div>
@@ -111,6 +116,7 @@ export function App(): ReactElement {
 interface Handlers {
   setStatus: (status: RuntimeStatus) => void;
   setStatusDetail: (detail: string | undefined) => void;
+  setRuntimeConfig: (config: RuntimeConfig) => void;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   setTools: Dispatch<SetStateAction<ToolCallView[]>>;
   setSessionName: (name: string | undefined) => void;
@@ -125,6 +131,9 @@ function handleExtensionMessage(message: ExtensionToWebviewMessage, handlers: Ha
     case "runtime/status":
       handlers.setStatus(message.status);
       handlers.setStatusDetail(message.detail);
+      return;
+    case "runtime/config":
+      handlers.setRuntimeConfig(message.config);
       return;
     case "runtime/error":
       handlers.setStatus("error");
@@ -153,7 +162,7 @@ function handleExtensionMessage(message: ExtensionToWebviewMessage, handlers: Ha
       handlers.setTimeline((current) => updateTimelineMessage(current, message.id, (item) => ({ ...item, text: message.text, status: message.isError ? "error" : "complete" })));
       return;
     case "tool/started":
-      { const tool = { ...message.tool, order: ++eventSequence } as ToolCallView; handlers.setTools((current) => replaceTool(current, tool)); handlers.setTimeline((current) => current.some((entry) => entry.kind === "tool" && entry.value.id === tool.id) ? current.map((entry) => entry.kind === "tool" && entry.value.id === tool.id ? { kind: "tool", value: { ...tool, order: (entry.value as ToolCallView & { order?: number }).order } as ToolCallView } : entry) : [...current, { kind: "tool", value: tool }]); }
+      { const tool = { ...message.tool, order: ++eventSequence } as ToolCallView; handlers.setTools((current) => replaceTool(current, tool)); handlers.setMessages((current) => removeEmptyAssistantMessages(current)); handlers.setTimeline((current) => { const withoutPlaceholder = removeEmptyAssistantTimeline(current); return withoutPlaceholder.some((entry) => entry.kind === "tool" && entry.value.id === tool.id) ? withoutPlaceholder.map((entry) => entry.kind === "tool" && entry.value.id === tool.id ? { kind: "tool", value: { ...tool, order: (entry.value as ToolCallView & { order?: number }).order } as ToolCallView } : entry) : [...withoutPlaceholder, { kind: "tool", value: tool }]; }); }
       return;
     case "tool/updated":
       handlers.setTools((current) => replaceTool(current, message.tool));
@@ -190,6 +199,19 @@ function updateMessage(
     return [...messages, update({ id, role: "assistant", text: "", status: "streaming" })];
   }
   return messages.map((message) => (message.id === id ? update(message) : message));
+}
+
+function isVisibleMessage(message: ChatMessage): boolean {
+  if (message.role === "system") return false;
+  return message.text.trim().length > 0 || (message.role === "assistant" && message.status === "streaming");
+}
+
+function removeEmptyAssistantMessages(messages: ChatMessage[]): ChatMessage[] {
+  return messages.filter((message) => !(message.role === "assistant" && message.text.trim().length === 0));
+}
+
+function removeEmptyAssistantTimeline(items: TimelineItem[]): TimelineItem[] {
+  return items.filter((item) => !(item.kind === "message" && item.value.role === "assistant" && item.value.text.trim().length === 0));
 }
 
 function replaceTool(tools: ToolCallView[], next: ToolCallView): ToolCallView[] {
@@ -236,19 +258,3 @@ function restoreTimeline(messages: RestoredMessage[], tools: RestoredTool[]): Ti
     ));
 }
 
-function statusLabel(status: RuntimeStatus): string {
-  switch (status) {
-    case "starting":
-      return "Starting";
-    case "running":
-      return "Working";
-    case "stopping":
-      return "Stopping";
-    case "ready":
-      return "Ready";
-    case "error":
-      return "Error";
-    default:
-      return "Offline";
-  }
-}

@@ -9,6 +9,7 @@ import {
   type ExtensionToWebviewMessage,
   type RestoredMessage,
   type RestoredTool,
+  type RuntimeConfig,
   type ToolCallView,
 } from "./shared/protocol";
 import type { RpcRecord } from "./rpcClient";
@@ -63,12 +64,12 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
         case "webview/ready":
           this.post({ type: "runtime/status", status: this.runtime.currentStatus });
           this.post({ type: "session/list", sessions: (await this.sessions.list()).filter((item) => item.sessionId).map((item) => ({ sessionId: item.sessionId!, title: item.title, sessionFile: item.sessionFile })) });
-          if (vscode.workspace.getConfiguration("logos").get<boolean>("autoStart", true)) await this.runtime.start();
+          if (vscode.workspace.getConfiguration("logos").get<boolean>("autoStart", true)) {
+            await this.runtime.start();
+            await this.publishRuntimeConfig();
+          }
           break;
         case "chat/send":
-          await this.sendPrompt(value.text);
-          break;
-        case "chat/retry":
           await this.sendPrompt(value.text);
           break;
         case "chat/abort":
@@ -91,6 +92,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
               });
             }
           }
+          await this.publishRuntimeConfig();
           break;
         case "session/select": {
           const session = (await this.sessions.list()).find((item) => item.sessionId === value.sessionId);
@@ -98,10 +100,20 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
           this.currentAssistantId = undefined;
           this.post({ type: "session/reset" });
           await this.runtime.switchSession(session.sessionFile, session.sessionId);
+          await this.publishRuntimeConfig();
           break;
         }
+        case "model/select":
+          await this.runtime.setModel(value.provider, value.modelId);
+          await this.publishRuntimeConfig();
+          break;
+        case "thinking/select":
+          await this.runtime.setThinkingLevel(value.level);
+          await this.publishRuntimeConfig();
+          break;
         case "runtime/restart":
           await this.runtime.restart();
+          await this.publishRuntimeConfig();
           break;
       }
     } catch (error) {
@@ -113,6 +125,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     const trimmed = text.trim();
     if (!trimmed) return;
     await this.runtime.start();
+    await this.publishRuntimeConfig();
     if (!this.runtime.state) await this.runtime.refreshState();
     const id = `user-${++this.sequence}`;
     const state = this.runtime.state;
@@ -170,6 +183,9 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     if (type === "agent_settled") {
       this.post({ type: "run/settled", aborted: record.aborted === true });
       this.post({ type: "runtime/status", status: "ready" });
+      void this.publishRuntimeConfig().catch((error) => {
+        this.post({ type: "runtime/error", message: error instanceof Error ? error.message : String(error) });
+      });
       return;
     }
     if (type === "message_start") {
@@ -271,6 +287,11 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     void this.panel?.webview.postMessage(message);
   }
 
+  private async publishRuntimeConfig(): Promise<void> {
+    const config: RuntimeConfig = await this.runtime.getRuntimeConfig();
+    this.post({ type: "runtime/config", config });
+  }
+
   private configureWebview(webview: vscode.Webview): vscode.Disposable {
     webview.options = { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, "dist")] };
     webview.html = createWebviewHtml(webview, this.context.extensionUri);
@@ -292,7 +313,7 @@ function createWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri): s
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
   <link rel="stylesheet" href="${style}">
   <title>LOGOS</title>
 </head>
