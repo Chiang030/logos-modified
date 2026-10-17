@@ -117,7 +117,6 @@ export class RpcClient {
     const abort = () => {
       this.pending.delete(id);
       rejectRequest(new Error("RPC request aborted"));
-      void this.write({ type: "abort" }).catch(() => undefined);
     };
     signal?.addEventListener("abort", abort, { once: true });
     try {
@@ -156,11 +155,11 @@ export class RpcClient {
   }
 
   getState<T>(): Promise<T> {
-    return this.request<T>({ type: "get_state" });
+    return this.requestWithTimeout<T>({ type: "get_state" }, 10_000);
   }
 
   getMessages<T>(): Promise<T> {
-    return this.request<T>({ type: "get_messages" });
+    return this.requestWithTimeout<T>({ type: "get_messages" }, 10_000);
   }
 
   async dispose(): Promise<void> {

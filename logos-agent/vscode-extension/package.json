@@ -2,7 +2,7 @@
   "name": "logos-vscode",
   "displayName": "LOGOS",
   "description": "A local VS Code workbench for the LOGOS agent.",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "publisher": "logos",
   "license": "MIT",
   "repository": {

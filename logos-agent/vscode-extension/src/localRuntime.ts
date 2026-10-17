@@ -136,9 +136,9 @@ export class LocalRuntime implements vscode.Disposable {
     const client = await this.ensureClient();
     const [state, modelData, thinkingData, stats] = await Promise.all([
       client.getState<Record<string, unknown>>(),
-      client.request<{ models?: unknown[] }>({ type: "get_available_models" }),
-      client.request<{ levels?: unknown[] }>({ type: "get_available_thinking_levels" }),
-      client.request<{ contextUsage?: unknown }>({ type: "get_session_stats" }),
+      client.requestWithTimeout<{ models?: unknown[] }>({ type: "get_available_models" }, 10_000),
+      client.requestWithTimeout<{ levels?: unknown[] }>({ type: "get_available_thinking_levels" }, 10_000),
+      client.requestWithTimeout<{ contextUsage?: unknown }>({ type: "get_session_stats" }, 10_000),
     ]);
     this.lastState = state;
     return {

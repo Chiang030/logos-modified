@@ -49,9 +49,26 @@ describe("RpcClient", () => {
   });
 
   it("cancels timed out requests so the child stays usable", async () => {
-    const child = spawn(process.execPath, ["-e", "process.stdin.resume()"], { stdio: "pipe" });
+    const script = `
+      let buffer = "";
+      const commands = [];
+      process.stdin.on("data", chunk => {
+        buffer += chunk;
+        while (buffer.includes("\\n")) {
+          const index = buffer.indexOf("\\n");
+          const command = JSON.parse(buffer.slice(0, index));
+          buffer = buffer.slice(index + 1);
+          commands.push(command.type);
+          if (command.type === "inspect") {
+            process.stdout.write(JSON.stringify({ id: command.id, type: "response", success: true, data: commands }) + "\\n");
+          }
+        }
+      });
+    `;
+    const child = spawn(process.execPath, ["-e", script], { stdio: "pipe" });
     const client = new RpcClient(child);
     await expect(client.requestWithTimeout({ type: "new_session" }, 20)).rejects.toThrow("new_session timed out");
+    await expect(client.request<string[]>({ type: "inspect" })).resolves.toEqual(["new_session", "inspect"]);
     await client.dispose();
   });
 });

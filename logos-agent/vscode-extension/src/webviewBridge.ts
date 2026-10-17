@@ -66,7 +66,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
           this.post({ type: "session/list", sessions: (await this.sessions.list()).filter((item) => item.sessionId).map((item) => ({ sessionId: item.sessionId!, title: item.title, sessionFile: item.sessionFile })) });
           if (vscode.workspace.getConfiguration("logos").get<boolean>("autoStart", true)) {
             await this.runtime.start();
-            await this.publishRuntimeConfig();
+            this.publishRuntimeConfigInBackground();
           }
           break;
         case "chat/send":
@@ -125,7 +125,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     const trimmed = text.trim();
     if (!trimmed) return;
     await this.runtime.start();
-    await this.publishRuntimeConfig();
+    this.publishRuntimeConfigInBackground();
     if (!this.runtime.state) await this.runtime.refreshState();
     const id = `user-${++this.sequence}`;
     const state = this.runtime.state;
@@ -290,6 +290,10 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
   private async publishRuntimeConfig(): Promise<void> {
     const config: RuntimeConfig = await this.runtime.getRuntimeConfig();
     this.post({ type: "runtime/config", config });
+  }
+
+  private publishRuntimeConfigInBackground(): void {
+    void this.publishRuntimeConfig().catch(() => undefined);
   }
 
   private configureWebview(webview: vscode.Webview): vscode.Disposable {
