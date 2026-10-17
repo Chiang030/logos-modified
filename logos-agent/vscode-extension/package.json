@@ -1,0 +1,108 @@
+{
+  "name": "logos-vscode",
+  "displayName": "LOGOS",
+  "description": "A local VS Code workbench for the LOGOS agent.",
+  "version": "0.1.2",
+  "publisher": "logos",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Chiang030/logos-modified.git",
+    "directory": "logos-agent/vscode-extension"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "extensionKind": [
+    "workspace"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onCommand:logos.openChat",
+    "onCommand:logos.restartRuntime",
+    "onCommand:logos.newSession"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "logos.openChat",
+        "title": "LOGOS: Open Chat",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "logos.restartRuntime",
+        "title": "LOGOS: Restart Runtime"
+      },
+      {
+        "command": "logos.newSession",
+        "title": "LOGOS: New Session"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "logos.openChat",
+          "group": "navigation@9",
+          "when": "editorLangId != ''"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "LOGOS",
+      "properties": {
+        "logos.executablePath": {
+          "type": "string",
+          "description": "Optional path to the local LOGOS Node entry script.",
+          "scope": "machine-overridable"
+        },
+        "logos.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start LOGOS automatically when the chat view opens."
+        },
+        "logos.provider": {
+          "type": "string",
+          "description": "Optional model provider passed to LOGOS."
+        },
+        "logos.model": {
+          "type": "string",
+          "description": "Optional model ID passed to LOGOS."
+        }
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "resources",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "typecheck": "tsc --noEmit",
+    "build:extension": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.js",
+    "build:webview": "node scripts/build-webview.mjs",
+    "compile": "npm run clean && npm run typecheck && npm run build:extension && npm run build:webview",
+    "test": "vitest run",
+    "package": "npm run compile && vsce package"
+  },
+  "dependencies": {
+    "marked": "^18.1.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0"
+  }
+}
