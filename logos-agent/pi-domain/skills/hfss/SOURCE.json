@@ -1,0 +1,8 @@
+{
+  "name": "hfss",
+  "repo": "svd-ai-lab/sim-plugin-hfss",
+  "commit": "5b124849475f3e7cc87fc3a9998c2c0331d16a50",
+  "path": "src/sim_plugin_hfss/_skills/hfss",
+  "skillMdSha256": "b8f1a5f2467c39b9542721d5313c6ab434714f6e64292020590f717def8ef275",
+  "license": "Apache-2.0"
+}

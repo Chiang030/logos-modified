@@ -1,3 +1,4 @@
+import { SettingsPanel } from "./components/SettingsPanel";
 import { memo, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import {
   ArrowUp,
@@ -8,6 +9,7 @@ import {
   FileCode,
   Flame,
   History,
+  Settings,
   Search,
   Sparkles,
   Terminal,
@@ -46,6 +48,7 @@ export function App(): ReactElement {
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [sessions, setSessions] = useState<SessionListEntry[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
   const [thinkingOpen, setThinkingOpen] = useState(false);
@@ -112,6 +115,7 @@ export function App(): ReactElement {
         <div className="flex min-w-0 items-center"><img className="h-7 w-auto max-w-[180px] object-contain object-left" src={fullLogo} alt="LOGOS Aircraft Design and Simulation Agent" /></div>
         <div className="history-menu-wrap relative flex items-center gap-2">
           <div className="flex items-center gap-1.5 rounded-full border border-[#2b2b2b] bg-[#1c1c1c] px-2 py-0.5 font-mono text-[10px] text-[#9ca3af]" title={error || statusDetail}><span className={`h-1.5 w-1.5 rounded-full ${status === "error" ? "bg-red-400" : status === "ready" ? "bg-emerald-400" : "animate-pulse bg-sky-400"}`} /><span className="tracking-wide">{statusLabel(status)}</span><span className="text-[#525252]">•</span><span className="text-[#737373]">MACH-SYS</span></div>
+          <button type="button" className="flex h-7 w-7 items-center justify-center rounded text-[#9ca3af]" title="LOGOS 设置" aria-label="LOGOS 设置" onClick={() => setSettingsOpen((value) => !value)}><Settings className="h-3.5 w-3.5" /></button>
           <button type="button" className="flex h-7 w-7 items-center justify-center rounded text-[#9ca3af] transition-colors hover:bg-[#262626] hover:text-white" title="Session History" aria-label="Session History" aria-expanded={historyOpen} onClick={() => setHistoryOpen((open) => !open)}><History className="h-3.5 w-3.5" /></button>
           {historyOpen ? <div className="absolute right-0 top-full z-50 mt-1 w-60 rounded-lg border border-[#2e2e32] bg-[#1c1c1e] p-1 font-mono text-[11px] shadow-2xl" role="menu"><button type="button" className="flex w-full items-center gap-2 border-b border-[#2e2e32] px-2.5 py-1.5 text-left text-sky-400 hover:bg-[#2a2a2e]" onClick={() => { setHistoryOpen(false); vscode.postMessage({ type: "session/new" }); }}><span aria-hidden="true">＋</span> New session</button>{sessions.length === 0 ? <div className="px-2.5 py-2 text-[#737373]">No saved sessions</div> : sessions.map((session) => <button type="button" role="menuitem" key={session.sessionId} className={`flex w-full items-center truncate px-2.5 py-1.5 text-left hover:bg-[#2a2a2e] ${session.sessionId === activeSessionId ? "bg-[#222226] font-bold text-sky-400" : "text-[#a1a1aa]"}`} onClick={() => { setActiveSessionId(session.sessionId); setHistoryOpen(false); vscode.postMessage({ type: "session/select", sessionId: session.sessionId }); }}>{session.title}</button>)}</div> : null}
         </div>
@@ -119,9 +123,10 @@ export function App(): ReactElement {
 
       {error ? <div className="flex items-center justify-between gap-2 border-b border-red-900 bg-red-950/60 px-3 py-1.5 text-[11px] text-red-200" role="alert"><span className="truncate">{error}</span><button type="button" className="text-lg leading-none" onClick={() => setError(undefined)} aria-label="Dismiss error">×</button></div> : null}
 
-      <main className="custom-scrollbar flex-1 overflow-y-auto px-3 py-3" ref={scrollRef}>{!hasConversation ? <EmptyState onPrompt={setInputValue} /> : <div className="space-y-3 font-sans" aria-live="polite">{timeline.map((item) => item.kind === "message" ? <MessageItem key={`message-${item.value.id}`} message={item.value} /> : <ToolItem key={`tool-${item.value.id}`} tool={item.value} />)}</div>}</main>
+      <SettingsPanel open={settingsOpen} busy={busy} onOpen={() => setSettingsOpen(true)} onClose={() => setSettingsOpen(false)} post={(message) => vscode.postMessage(message)} />
+      <main hidden={settingsOpen} className="custom-scrollbar flex-1 overflow-y-auto px-3 py-3" ref={scrollRef}>{!hasConversation ? <EmptyState onPrompt={setInputValue} /> : <div className="space-y-3 font-sans" aria-live="polite">{timeline.map((item) => item.kind === "message" ? <MessageItem key={`message-${item.value.id}`} message={item.value} /> : <ToolItem key={`tool-${item.value.id}`} tool={item.value} />)}</div>}</main>
 
-      <footer className="control-footer shrink-0 space-y-2 border-t border-[#262626] bg-[#131313] px-0 py-2">
+      <footer hidden={settingsOpen} className="control-footer shrink-0 space-y-2 border-t border-[#262626] bg-[#131313] px-0 py-2">
         <div className="relative rounded-lg border border-[#2b2b2b] bg-[#1a1a1a] transition-all focus-within:border-sky-500/70 focus-within:ring-1 focus-within:ring-sky-500/30"><textarea value={inputValue} onChange={(event) => setInputValue(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }} placeholder="Type /simulate or design query..." rows={2} className="w-full resize-none bg-transparent px-2.5 py-2 font-sans text-xs text-white outline-none placeholder-[#555]" aria-label="Message LOGOS" /></div>
         <div className="control-dock flex items-center justify-between gap-2"><div className="control-meta flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           <div className="control-picker relative min-w-0 max-w-full"><PickerButton label={runtimeConfig.activeModel?.name || runtimeConfig.activeModel?.id || "Model unavailable"} icon={<Cpu className="h-3 w-3 shrink-0 text-sky-400" />} open={modelOpen} disabled={busy || runtimeConfig.models.length === 0} onClick={() => { setModelOpen((open) => !open); setThinkingOpen(false); }} />{modelOpen ? <div className="absolute bottom-8 left-0 z-50 w-52 max-w-[calc(100vw-16px)] rounded-lg border border-[#2e2e32] bg-[#1c1c1e] py-1 font-mono text-[11px] shadow-2xl">{runtimeConfig.models.map((model) => { const selected = model.provider === runtimeConfig.activeModel?.provider && model.id === runtimeConfig.activeModel?.id; return <button type="button" key={`${model.provider}/${model.id}`} className={`flex w-full items-center justify-between px-2.5 py-1.5 text-left hover:bg-[#2a2a2e] ${selected ? "bg-[#222226] font-bold text-sky-400" : "text-[#a1a1aa]"}`} onClick={() => { vscode.postMessage({ type: "model/select", provider: model.provider, modelId: model.id }); setModelOpen(false); }}>{model.name || model.id}{selected ? <CheckCircle2 className="h-3 w-3" /> : null}</button>; })}</div> : null}</div>

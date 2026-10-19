@@ -1,0 +1,4 @@
+interface:
+  display_name: "VibeFlow Fluent"
+  short_description: "Automate Ansys Fluent CFD workflows"
+  default_prompt: "Use $vibeflow-fluent to prepare, run, diagnose, and post-process this Ansys Fluent workflow."

@@ -1,0 +1,8 @@
+{
+  "name": "mechanical-sim",
+  "repo": "svd-ai-lab/sim-plugin-mechanical",
+  "commit": "0ebb41b564e5845b2d2e03515cb4d9c43b4e8748",
+  "path": "src/sim_plugin_mechanical/_skills/mechanical",
+  "skillMdSha256": "8d050555bb04a224ab14881fe021d95d10d268baf4909996794242229eb7a7db",
+  "license": "Apache-2.0"
+}

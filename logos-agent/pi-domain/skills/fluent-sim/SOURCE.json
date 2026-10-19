@@ -1,0 +1,8 @@
+{
+  "name": "fluent-sim",
+  "repo": "svd-ai-lab/sim-plugin-fluent",
+  "commit": "622289766a955958ead85560e2582aa7366c050f",
+  "path": "src/sim_plugin_fluent/_skills/fluent",
+  "skillMdSha256": "5801d1d2e7311df559b20a6bfe25aeccc66b0fe5ab2d23b399f6701f846a1aee",
+  "license": "Apache-2.0"
+}

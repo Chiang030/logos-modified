@@ -1,8 +1,8 @@
 {
   "name": "logos-vscode",
   "displayName": "LOGOS",
-  "description": "A local VS Code workbench for the LOGOS agent.",
-  "version": "0.1.6",
+  "description": "A local VS Code workbench with the LOGOS agent core included.",
+  "version": "0.1.7",
   "publisher": "logos",
   "license": "MIT",
   "repository": {
@@ -13,6 +13,12 @@
   "engines": {
     "vscode": "^1.90.0"
   },
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
   "categories": [
     "Other"
   ],
@@ -56,23 +62,10 @@
     "configuration": {
       "title": "LOGOS",
       "properties": {
-        "logos.executablePath": {
-          "type": "string",
-          "description": "Optional path to the local LOGOS Node entry script.",
-          "scope": "machine-overridable"
-        },
         "logos.autoStart": {
           "type": "boolean",
           "default": true,
           "description": "Start LOGOS automatically when the chat view opens."
-        },
-        "logos.provider": {
-          "type": "string",
-          "description": "Optional model provider passed to LOGOS."
-        },
-        "logos.model": {
-          "type": "string",
-          "description": "Optional model ID passed to LOGOS."
         }
       }
     }
@@ -80,6 +73,7 @@
   "files": [
     "dist",
     "resources",
+    "runtime",
     "package.json",
     "README.md",
     "LICENSE"
@@ -91,7 +85,11 @@
     "build:webview": "node scripts/build-webview.mjs",
     "compile": "npm run clean && npm run typecheck && npm run build:extension && npm run build:webview",
     "test": "vitest run",
-    "package": "npm run compile && vsce package"
+    "prepare:runtime": "node scripts/prepare-runtime.mjs",
+    "verify:runtime": "node scripts/verify-runtime.mjs",
+    "smoke:runtime": "node scripts/smoke-runtime.mjs",
+    "package": "npm run package:win32-x64",
+    "package:win32-x64": "npm run prepare:runtime && npm run compile && npm run verify:runtime && npm run smoke:runtime && vsce package --target win32-x64 --out logos-vscode-0.1.7-win32-x64.vsix"
   },
   "dependencies": {
     "lucide-react": "^1.58.0",

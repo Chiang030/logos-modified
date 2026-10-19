@@ -13,6 +13,7 @@ import {
   type ToolCallView,
 } from "./shared/protocol";
 import type { RpcRecord } from "./rpcClient";
+import { ConnectionSettingsStore } from "./connectionSettings";
 
 export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private view: vscode.WebviewView | undefined;
@@ -28,6 +29,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     private readonly context: vscode.ExtensionContext,
     private readonly runtime: LocalRuntime,
     private readonly sessions: SessionStore,
+    private readonly settings: ConnectionSettingsStore,
   ) {
     this.disposables.push(runtime.onDidEvent((event) => this.handleRuntimeEvent(event)));
   }
@@ -61,10 +63,28 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     if (!isWebviewToExtensionMessage(value)) return;
     try {
       switch (value.type) {
+        case "settings/load":
+          this.post({ type: "settings/loaded", settings: await this.settings.view() });
+          break;
+        case "settings/models":
+          this.post({ type: "settings/models", modelIds: await this.settings.models(value.baseUrl, value.api, value.apiKey) });
+          break;
+        case "settings/save":
+          if (["starting", "running", "stopping"].includes(this.runtime.currentStatus)) throw new Error("请等待当前任务结束或停止后再保存设置。");
+          await this.settings.save(value.settings, value.apiKey, value.deleteApiKey);
+          await this.runtime.stop();
+          this.post({ type: "settings/loaded", settings: await this.settings.view() });
+          this.post({ type: "settings/saved" });
+          if (value.settings.baseUrl && value.settings.modelId) {
+            await this.runtime.start();
+            await this.publishRuntimeConfig();
+          }
+          break;
         case "webview/ready":
+          this.post({ type: "settings/loaded", settings: await this.settings.view() });
           this.post({ type: "runtime/status", status: this.runtime.currentStatus });
           this.post({ type: "session/list", sessions: (await this.sessions.list()).filter((item) => item.sessionId).map((item) => ({ sessionId: item.sessionId!, title: item.title, sessionFile: item.sessionFile })) });
-          if (vscode.workspace.getConfiguration("logos").get<boolean>("autoStart", true)) {
+          if ((await this.settings.load()).baseUrl && vscode.workspace.getConfiguration("logos").get<boolean>("autoStart", true)) {
             await this.runtime.start();
             this.publishRuntimeConfigInBackground();
           }
@@ -117,7 +137,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
           break;
       }
     } catch (error) {
-      this.post({ type: "runtime/error", message: error instanceof Error ? error.message : String(error) });
+      this.post({ type: value.type.startsWith("settings/") ? "settings/error" : "runtime/error", message: error instanceof Error ? error.message : String(error) });
     }
   }
 

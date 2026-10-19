@@ -1,0 +1,32 @@
+[
+  {
+    "skill": "fluent-sim",
+    "source": "D:\\leadhk\\multi field sim agent invest\\reusable-assets\\harnesses\\ansys-agent-harness\\skills\\fluent-sim",
+    "files": 102
+  },
+  {
+    "skill": "hfss",
+    "source": "D:\\leadhk\\multi field sim agent invest\\reusable-assets\\harnesses\\ansys-agent-harness\\skills\\hfss",
+    "files": 4
+  },
+  {
+    "skill": "mechanical-sim",
+    "source": "D:\\leadhk\\multi field sim agent invest\\reusable-assets\\harnesses\\ansys-agent-harness\\skills\\mechanical-sim",
+    "files": 24
+  },
+  {
+    "skill": "spaceclaim",
+    "source": "D:\\leadhk\\multi field sim agent invest\\reusable-assets\\harnesses\\ansys-agent-harness\\skills\\spaceclaim",
+    "files": 7
+  },
+  {
+    "skill": "vibeflow-fluent",
+    "source": "D:\\leadhk\\multi field sim agent invest\\reusable-assets\\harnesses\\ansys-agent-harness\\skills\\vibeflow-fluent",
+    "files": 4
+  },
+  {
+    "skill": "workbench-sim",
+    "source": "D:\\leadhk\\multi field sim agent invest\\reusable-assets\\harnesses\\ansys-agent-harness\\skills\\workbench-sim",
+    "files": 30
+  }
+]

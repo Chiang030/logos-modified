@@ -1,0 +1,8 @@
+{
+  "name": "spaceclaim",
+  "repo": "svd-ai-lab/sim-plugin-spaceclaim",
+  "commit": "8ad9f1edd3ed74474c52ab3d73271c41db784fe0",
+  "path": "skills/spaceclaim",
+  "skillMdSha256": "c9ff700e5796da852da5bd7be4a9bb52f1596f65a0e7cd181b052a5fac889d4d",
+  "license": "Apache-2.0"
+}

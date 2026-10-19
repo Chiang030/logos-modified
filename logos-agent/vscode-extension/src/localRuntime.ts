@@ -1,14 +1,16 @@
 import { existsSync } from "node:fs";
-import { mkdir, readFile, readdir } from "node:fs/promises";
+import { mkdir, readdir } from "node:fs/promises";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { join } from "node:path";
+import { ConnectionSettingsStore, LOCAL_PROVIDER } from "./connectionSettings";
 import * as vscode from "vscode";
 import { RpcClient, type RpcExit, type RpcRecord } from "./rpcClient";
+import { NodeRuntimeError, resolveLaunchSpec, verifyNodeRuntime } from "./runtimeLaunch";
 import { SessionStore } from "./sessionStore";
 import { isRecord, type ContextUsage, type ModelOption, type RuntimeConfig, type RuntimeStatus } from "./shared/protocol";
 
 export interface RuntimeEvent {
-  type: "status" | "record" | "stderr" | "protocol_error" | "exit";
+  type: "status" | "record" | "stderr" | "protocol_error" | "exit" | "log" | "node_error";
   status?: RuntimeStatus;
   detail?: string;
   record?: RpcRecord;
@@ -18,15 +20,12 @@ export interface RuntimeEvent {
 }
 
 export interface LocalRuntimeOptions {
+  extensionRoot: string;
   workspaceRoot: string;
   sessionDirectory: string;
   sessionStore?: SessionStore;
-}
-
-export interface LaunchSpec {
-  command: string;
-  args: string[];
-  scriptPath: string;
+  settings: ConnectionSettingsStore;
+  profileDirectory: string;
 }
 
 export class LocalRuntime implements vscode.Disposable {
@@ -71,25 +70,29 @@ export class LocalRuntime implements vscode.Disposable {
     this.setStatus("starting");
 
     try {
-      const spec = resolveLaunchSpec(this.options.workspaceRoot);
+      const settings = await this.options.settings.load();
+      if (!settings.baseUrl || !settings.modelId) throw new Error("请在 LOGOS 设置中填写 API URL、选择模型并保存。");
+      const spec = resolveLaunchSpec({
+        extensionRoot: this.options.extensionRoot,
+        workspaceRoot: this.options.workspaceRoot,
+      });
+      const node = await verifyNodeRuntime(spec.command);
+      this.emit({ type: "log", text: `Node.js ${node.version} detected via ${node.command}` });
+      this.emit({ type: "log", text: `Starting ${spec.bundled ? "bundled" : "configured"} LOGOS core: ${spec.scriptPath}` });
       await mkdir(this.options.sessionDirectory, { recursive: true });
-      const config = vscode.workspace.getConfiguration("logos");
+      const prepared = await this.options.settings.prepareRuntime(this.options.profileDirectory, this.options.workspaceRoot);
       const args = [
         ...spec.args,
         "--mode",
         "rpc",
         "--session-dir",
         this.options.sessionDirectory,
+        ...prepared.args,
       ];
-      const provider = config.get<string>("provider")?.trim();
-      const model = config.get<string>("model")?.trim();
-      if (provider && !model) throw new Error("logos.provider requires logos.model");
-      if (provider) args.push("--provider", provider);
-      if (model) args.push("--model", model);
 
       const child = spawn(spec.command, args, {
         cwd: this.options.workspaceRoot,
-        env: await loadLocalEnvironment(this.options.workspaceRoot, spec.scriptPath),
+        env: prepared.env,
         stdio: "pipe",
         windowsHide: true,
       });
@@ -116,10 +119,12 @@ export class LocalRuntime implements vscode.Disposable {
         }
       }
       this.lastState = state;
+      await client.request({ type: "set_model", provider: "logos-endpoint", modelId: settings.modelId });
       this.setStatus(state.isStreaming === true ? "running" : "ready");
       const messages = await client.getMessages<Record<string, unknown>>();
       this.emit({ type: "record", record: { type: "logos/session_restore", ...messages, state } });
     } catch (error) {
+      if (error instanceof NodeRuntimeError) this.emit({ type: "node_error", error });
       this.setStatus("error", error instanceof Error ? error.message : String(error));
       await this.disposeClient();
       throw error;
@@ -142,7 +147,7 @@ export class LocalRuntime implements vscode.Disposable {
     ]);
     this.lastState = state;
     return {
-      models: (modelData.models ?? []).map(toModelOption).filter((model): model is ModelOption => model !== undefined),
+      models: (modelData.models ?? []).map(toModelOption).filter((model): model is ModelOption => model?.provider === LOCAL_PROVIDER),
       activeModel: toModelOption(state.model),
       thinkingLevel: typeof state.thinkingLevel === "string" ? state.thinkingLevel : undefined,
       thinkingLevels: (thinkingData.levels ?? []).filter((level): level is string => typeof level === "string"),
@@ -151,8 +156,11 @@ export class LocalRuntime implements vscode.Disposable {
   }
 
   async setModel(provider: string, modelId: string): Promise<void> {
+    if (provider !== LOCAL_PROVIDER) throw new Error("请通过 LOGOS 设置配置模型服务。");
     const client = await this.ensureClient();
     await client.request({ type: "set_model", provider, modelId });
+    const settings = await this.options.settings.load();
+    await this.options.settings.save({ ...settings, modelId });
   }
 
   async setThinkingLevel(level: string): Promise<void> {
@@ -254,60 +262,6 @@ export class LocalRuntime implements vscode.Disposable {
     }
     this.eventEmitter.fire(event);
   }
-}
-
-export function resolveLaunchSpec(workspaceRoot: string): LaunchSpec {
-  const configured = vscode.workspace.getConfiguration("logos").get<string>("executablePath")?.trim();
-  const candidates = configured
-    ? [configured]
-    : [
-        join(workspaceRoot, "bin", "logos.mjs"),
-        join(workspaceRoot, "logos-agent", "bin", "logos.mjs"),
-        join(workspaceRoot, "dist", "verify-deployment", "logos-server", "logos-agent", "bin", "logos.mjs"),
-        join(workspaceRoot, "logos-agent", "dist", "verify-deployment", "logos-server", "logos-agent", "bin", "logos.mjs"),
-      ];
-  const scriptPath = candidates.map((candidate) => resolve(workspaceRoot, candidate)).find((candidate) => existsSync(candidate));
-  if (!scriptPath) {
-    const msg = configured
-      ? `Configured LOGOS entry does not exist: ${configured}`
-      : "Could not find logos-agent/bin/logos.mjs in the current workspace. Set logos.executablePath to the local entry script.";
-    throw new Error(msg);
-  }
-  if (!isAbsolute(scriptPath)) throw new Error(`LOGOS entry must be an absolute path: ${scriptPath}`);
-  if (!scriptPath.endsWith(".mjs") && !scriptPath.endsWith(".js")) {
-    throw new Error(`LOGOS entry must be a Node.js .mjs or .js file: ${scriptPath}`);
-  }
-  return { command: process.execPath, args: [scriptPath], scriptPath };
-}
-
-async function loadLocalEnvironment(workspaceRoot: string, scriptPath: string): Promise<NodeJS.ProcessEnv> {
-  const env = { ...process.env };
-  const candidates = [
-    join(workspaceRoot, "logos-agent", ".env"),
-    resolve(dirname(scriptPath), "..", ".env"),
-  ];
-  for (const candidate of new Set(candidates)) {
-    try {
-      const contents = await readFile(candidate, "utf8");
-      for (const line of contents.split(/\r?\n/)) {
-        const match = line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
-        if (!match || env[match[1]]) continue;
-        let value = match[2];
-        if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-          value = value.slice(1, -1);
-        }
-        env[match[1]] = value;
-      }
-      break;
-    } catch (error) {
-      if (!isMissingFile(error)) throw error;
-    }
-  }
-  return env;
-}
-
-function isMissingFile(error: unknown): boolean {
-  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
 }
 
 function toModelOption(value: unknown): ModelOption | undefined {

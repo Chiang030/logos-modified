@@ -1,0 +1,8 @@
+{
+  "name": "workbench-sim",
+  "repo": "svd-ai-lab/sim-plugin-workbench",
+  "commit": "0b39e6248594a0448630db066f855f5788e48714",
+  "path": "src/sim_plugin_workbench/_skills/workbench",
+  "skillMdSha256": "59066eceb45733dd1aeeb544c22a17ec79a39c6f603214e6bce7cbc45c58691d",
+  "license": "Apache-2.0"
+}
