@@ -280,3 +280,9 @@ apps/logos-workspace/web/vite.config.d.ts
 
 # Generated at build time by libs/code/hatch_build.py (stamps the release commit)
 libs/code/deepagents_code/_build_info.py
+
+# Local LOGOS state and generated packaging payloads
+/.logos/
+/.playwright-mcp/
+/logos-agent.zip
+/logos-agent/vscode-extension/runtime/
