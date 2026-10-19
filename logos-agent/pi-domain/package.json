@@ -2,7 +2,28 @@
   "name": "logos-pi-extension",
   "version": "0.1.0",
   "private": true,
+  "engines": { "node": ">=22.19.0" },
+  "scripts": {
+    "test": "node --test --test-isolation=none tests/unit_tests/*.test.mjs tests/integration_tests/*.test.mjs src/simulation/runner.test.mjs src/ui/logo.test.mjs",
+    "test:live": "node --env-file=.env.local tests/integration_tests/live.mjs",
+    "test:usage-contract": "node --env-file=.env.local tests/integration_tests/usage-contract.mjs",
+    "bench:observability": "node tests/benchmark.mjs"
+  },
   "type": "module",
-  "keywords": ["pi-package"],
-  "pi": { "extensions": ["./extensions/index.mjs"] }
+  "keywords": [
+    "pi-package"
+  ],
+  "pi": {
+    "extensions": [
+      "./extensions/index.mjs"
+    ]
+  },
+  "dependencies": {
+    "@langfuse/otel": "6.0.1",
+    "@langfuse/tracing": "6.0.1",
+    "@opentelemetry/api": "1.9.0",
+    "@opentelemetry/exporter-trace-otlp-http": "0.223.0",
+    "@opentelemetry/sdk-trace-base": "2.0.1",
+    "@opentelemetry/sdk-trace-node": "2.0.1"
+  }
 }

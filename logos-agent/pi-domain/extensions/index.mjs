@@ -1,9 +1,11 @@
 import { createLogoComponent, logoOptions } from "../src/ui/logo.mjs";
 import { registerSimulationTool } from "./simulation.mjs";
+import { registerObservability } from "./observability.mjs";
 
 /** Replace only Pi's welcome header; print, JSON and RPC output stay untouched. */
-export default function logosExtension(pi) {
+export default async function logosExtension(pi) {
   registerSimulationTool(pi);
+  await registerObservability(pi);
   let header;
   const stop = () => { header?.dispose(); header = undefined; };
   const show = (ctx) => {
