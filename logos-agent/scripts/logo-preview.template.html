@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LOGOS · 字符动画</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; color: #c5d3df; background: #080e17; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 32px; }
+    main { width: min(1160px, 100%); }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
+    h1 { margin: 0; font-size: 18px; font-weight: 500; letter-spacing: .12em; }
+    .palette { display: flex; gap: 20px; font-size: 12px; color: #9aabba; }
+    .palette span { display: inline-flex; gap: 8px; align-items: center; }
+    i { width: 7px; height: 7px; display: inline-block; border-radius: 50%; }
+    .terminal { background: #0c1420; border: 1px solid #233042; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 80px #0004; }
+    .bar { padding: 16px 22px; color: #7d91a4; border-bottom: 1px solid #1d2b3d; font: 12px Consolas, monospace; }
+    .bar span { color: #dcb477; }
+    .viewport { overflow: auto; padding: 24px 22px 12px; }
+    pre { margin: 0; font-family: Consolas, 'DejaVu Sans Mono', 'Cascadia Mono', monospace; font-size: 15px; line-height: 1.1; font-weight: 400; font-variant-ligatures: none; white-space: pre; }
+    .cell { display: inline-block; width: 1ch; text-align: center; }
+    .prompt { margin: 0 22px 24px; padding-top: 18px; color: #61768c; font: 13px Consolas, monospace; border-top: 1px solid #1d2b3d; }
+    .prompt b { font-weight: 400; color: #7cccdf; }
+    footer { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 22px; font-size: 13px; }
+    button, select { padding: 8px 12px; border: 1px solid #2d4054; background: #101c2a; color: #bfcedd; border-radius: 6px; cursor: pointer; font: inherit; }
+    button:focus-visible, select:focus-visible { outline: 2px solid #7cccdf; outline-offset: 3px; }
+    footer label { display: flex; align-items: center; gap: 8px; }
+    .note { margin-left: auto; color: #8d9baa; font-size: 12px; }
+    .design-note { margin: 18px 0 0; color: #9eb2c4; font-size: 13px; }
+    .studies { margin-top: 38px; padding: 26px; background: #0c1420; border: 1px solid #233042; border-radius: 12px; }
+    .studies h2 { margin: 0 0 24px; font-size: 16px; font-weight: 500; letter-spacing: .06em; }
+    .study { display: grid; grid-template-columns: 240px 1fr; align-items: center; gap: 20px; padding: 24px 0; border-top: 1px solid #233042; }
+    .study h3 { font-size: 14px; font-weight: 500; margin: 0 0 10px; color: #d8bd88; }
+    .study p { color: #93a8bb; font-size: 12px; line-height: 1.8; margin: 0; }
+    .study pre { overflow: auto; padding: 8px 0; }
+    .references { margin: 22px 0 0; font-size: 12px; color: #93a8bb; line-height: 2; }
+    a { color: #b6cddf; text-underline-offset: 4px; }
+    @media(max-width:800px) { .study { grid-template-columns: 1fr; gap: 12px; } }
+    @media(max-width:720px) { body { padding: 16px; } header { flex-direction: column; align-items: flex-start; gap: 12px; } .viewport { padding: 16px 12px; } pre { font-size: 12px; } .note { width:100%; margin: 0; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>LOGOS / ORBIT</h1>
+    <div class="palette"><span><i style="background:#5abbeb"></i>冰蓝</span><span><i style="background:#dea85b"></i>香槟金</span><span><i style="background:#ffd885"></i>星光</span></div>
+  </header>
+  <section class="terminal" aria-label="LOGOS 终端字符动画预览">
+    <div class="bar"><span>logos</span> &nbsp; / &nbsp; terminal preview</div>
+    <div class="viewport"><pre id="logo" role="img" aria-label="左侧蓝金纸飞机、圆环和绕轨四角星，右侧 LOGOS 字符字标"></pre></div>
+    <div class="prompt"><b>›</b> &nbsp;准备好开始</div>
+  </section>
+  <footer>
+    <button id="play" type="button">暂停</button>
+    <button id="restart" type="button">回到起点</button>
+    <label>速度 <select id="speed"><option value="0.25">12 秒 / 圈</option><option value="0.375">8 秒 / 圈</option><option value="0.5">6 秒 / 圈</option><option value="1" selected>3 秒 / 圈</option></select></label>
+    <label>字标 <select id="wordmark"><option value="image" selected>图片直接转换</option><option value="split">手工斜切字标</option><option value="orbit">A · 轨道连笔</option><option value="wing">B · 机翼负形</option><option value="flow">C · 流场线条</option></select></label>
+    <label>终端 <select id="width"><option value="108">宽屏</option><option value="80">80 列</option><option value="75">紧凑</option></select></label>
+    <label><input type="checkbox" id="ascii">纯 ASCII</label>
+    <span class="note">缓入加速 · 轻盈滑行 · 柔和减速</span>
+  </footer>
+  <p class="design-note" id="design-note">由用户提供的 160 列图片光栅直接反相、裁切和重采样，没有重新设计字母轮廓。</p>
+  <section class="studies" aria-label="四种 LOGOS 字标结构比较">
+    <h2>LOGOS / 字符结构比较</h2>
+    <article class="study"><div><h3>设计稿 / 斜切字标 · 默认</h3><p>白蓝分面 · 连续上扬切线<br>G 中央金色导向笔画</p></div><pre id="study-split" role="img" aria-label="设计稿斜切字标方案"></pre></article>
+    <article class="study"><div><h3>A / 轨道连笔 · 推荐</h3><p>L–O 连笔 · 双 O 轨道切口<br>圆弧与金色导向笔画</p></div><pre id="study-orbit" role="img" aria-label="轨道连笔方案"></pre></article>
+    <article class="study"><div><h3>B / 机翼负形</h3><p>直立厚笔画 · 后掠翼留白<br>斜向切缝贯穿内部结构</p></div><pre id="study-wing" role="img" aria-label="机翼负形方案"></pre></article>
+    <article class="study"><div><h3>C / 流场线条</h3><p>双线轮廓 · 连续负空间<br>像流线绕过字母表面</p></div><pre id="study-flow" role="img" aria-label="流场线条方案"></pre></article>
+  </section>
+  <p class="references">设计研究：<a href="https://www.moma.org/collection/works/467589" target="_blank" rel="noreferrer">Danne &amp; Blackburn / NASA</a> · <a href="https://www.pentagram.com/work/vertical" target="_blank" rel="noreferrer">Pentagram / Vertical</a> · <a href="https://www.ibm.com/history/logo" target="_blank" rel="noreferrer">Paul Rand / IBM</a></p>
+</main>
+<script>
+/* LOGOS_RENDERER */
+const output = document.getElementById('logo');
+const play = document.getElementById('play');
+const speed = document.getElementById('speed');
+const size = document.getElementById('width');
+const ascii = document.getElementById('ascii');
+const wordmark = document.getElementById('wordmark');
+const designNotes = {
+  image: '由用户提供的 160 列图片光栅直接反相、裁切和重采样，没有重新设计字母轮廓。',
+  split: '按设计稿重绘：白蓝字面由同一条上扬飞行路径切开，G 保留金色导向笔画。',
+  orbit: 'L 与 O 共用底部连笔；两个 O 呼应轨道，G 的金色笔画指向飞行方向。',
+  wing: '把纸飞机的后掠翼变成字母内部留白，直立骨架上使用统一的斜向切缝。',
+  flow: '用成对轮廓线塑造字母，把仿真中的流线与连续负空间融入字标。',
+};
+let paused = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let elapsed = 0, previous = performance.now(), lastPaint = 0;
+function htmlFrame(lines) {
+  return lines.map(line => {
+    let color = '#c5d3df', result = '', cursor = 0;
+    const pattern = /\x1b\[(?:38;2;(\d+);(\d+);(\d+)|0)m/g;
+    const escape = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+    const cells = value => [...value].map(char => '<span class="cell" style="color:' + color + '">' + escape(char) + '</span>').join('');
+    for (const match of line.matchAll(pattern)) {
+      result += cells(line.slice(cursor, match.index));
+      color = match[1] ? 'rgb(' + match.slice(1).join(',') + ')' : '#c5d3df';
+      cursor = match.index + match[0].length;
+    }
+    return result + cells(line.slice(cursor));
+  }).join('\n');
+}
+function paint() { output.innerHTML = htmlFrame(renderLogo({ width: Number(size.value), elapsedMs: elapsed, ascii: ascii.checked, wordmark: wordmark.value })); }
+function paintStudies() {
+  for (const style of ['split', 'orbit', 'wing', 'flow']) document.getElementById('study-' + style).innerHTML = htmlFrame(renderWordmark({ wordmark: style, ascii: ascii.checked }));
+}
+function updateButton() { play.textContent = paused ? '播放' : '暂停'; play.setAttribute('aria-pressed', String(paused)); }
+play.onclick = () => { paused = !paused; updateButton(); };
+document.getElementById('restart').onclick = () => { elapsed = 0; paint(); };
+size.onchange = paint;
+ascii.onchange = () => { paint(); paintStudies(); };
+wordmark.onchange = () => { document.getElementById('design-note').textContent = designNotes[wordmark.value]; paint(); };
+function tick(now) {
+  if (!paused && !document.hidden) elapsed += (now - previous) * Number(speed.value);
+  previous = now;
+  if (!paused && now - lastPaint >= FRAME_MS) { paint(); lastPaint = now; }
+  requestAnimationFrame(tick);
+}
+updateButton(); paint(); paintStudies(); requestAnimationFrame(tick);
+</script>
+</body>
+</html>

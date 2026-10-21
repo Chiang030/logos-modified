@@ -1,0 +1,101 @@
+name: Publish to PyPI
+run-name: "${{ inputs.mode || 'legacy' }} ${{ github.sha }}"
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [legacy, build, publish-reviewed]
+        default: legacy
+      build_run_id:
+        type: string
+      manifest_sha256:
+        type: string
+
+jobs:
+  build:
+    if: inputs.mode != 'publish-reviewed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build sdist + wheel
+        run: uv build
+
+      - name: Sanity-check artifacts
+        run: |
+          uv tool run twine check dist/*
+          ls -lh dist/
+
+      - name: Record distribution hashes
+        run: python scripts/release_artifacts.py create
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reviewed-distributions
+          path: |
+            dist/*
+            release-manifest.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    if: inputs.mode != 'build' && inputs.mode != 'publish-reviewed'
+    name: Upload to PyPI (trusted publishing)
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/sim-cli-core
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  publish-reviewed:
+    if: inputs.mode == 'publish-reviewed'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate build identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN_ID: ${{ inputs.build_run_id }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID" > build-run.json
+          python -c "import json,os; r=json.load(open('build-run.json')); assert r['head_sha']==os.environ['GITHUB_SHA'] and r['conclusion']=='success' and r['path']=='.github/workflows/publish.yml'"
+      - uses: actions/download-artifact@v4
+        with:
+          name: reviewed-distributions
+          run-id: ${{ inputs.build_run_id }}
+          github-token: ${{ github.token }}
+      - name: Verify reviewed bytes
+        env:
+          MANIFEST_SHA256: ${{ inputs.manifest_sha256 }}
+        run: python scripts/release_artifacts.py verify --expected-sha256 "$MANIFEST_SHA256"
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.UV_PUBLISH_TOKEN }}

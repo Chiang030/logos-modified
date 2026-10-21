@@ -1,4 +1,4 @@
-import { Type } from "typebox";
+import { Type } from "@earendil-works/pi-ai";
 import { ACTIONS, runSimulation } from "../src/simulation/runner.mjs";
 
 export function registerSimulationTool(pi) {

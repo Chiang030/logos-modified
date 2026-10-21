@@ -88,16 +88,15 @@ Development mode is used for code-development tasks such as custom solvers, cust
 
 ### Stage 2: Parametric Geometry Modeling
 
-- Objective: generate repeatable, modifiable, exportable parametric geometry based on `caseDict`.
+- Objective: generate repeatable, modifiable, exportable parametric geometry based on `caseDict`, using SolidCraft as the CAD source of truth.
 - Input: `0-caseDict/caseDict`
 - Actions:
-  - Use CadQuery/OCP Python to generate `A-geo/geometry.py`, record named modeling stages with `ctx.stage(...)`, preview geometry in Studio, and export `STEP`/`STL` artifacts under `A-geo/exports`.
-  - Simple CadQuery scripts do not need to follow the full LOGOS scaffold just to be previewed. They may return `build_geometry(ctx)`, define `result` or `objects`, call `show_object(...)`, or leave CadQuery objects as top-level variables. Use `ctx.stage(...)`, `show_object(...)`, or a returned dictionary when the preview tree needs named components that can be hidden or shown independently.
-  - Implement clear `build_geometry(ctx)` and `export_geometry(ctx, objects)` entry points. Locate paths from `ctx.case_root`, `ctx.a_geo_dir`, `VIBEFLOW_GEOMETRY_SCRIPT`, or `VIBEFLOW_CASE_ROOT`; do not rely only on the current working directory.
+  - Use the `solidcraft` Skill and SolidCraft MCP to import, reconstruct, edit, inspect, save, and export geometry. Keep the `.solidcraft` design under `A-geo/` as the editable source and export `STEP`/`STL`/`3MF` artifacts under `A-geo/exports` for downstream stages.
+  - If a scripted helper is needed, it must produce or drive a reproducible SolidCraft command script; do not make CadQuery or FreeCAD the default geometry source. Locate paths from `ctx.case_root` and `ctx.a_geo_dir`; do not rely only on the current working directory.
   - Keep `0-caseDict/caseDict` as the source of truth. Parameter names in scripts must match `geometry.parameters`; geometry-entity naming must serve `geometry.entities`, `regions`, `interfaces`, and `boundariesLoadsInitials.boundarySets`.
-  - After writing or changing `A-geo/geometry.py`, trigger Studio Rebuild/Auto Preview or run the geometry runner directly, then inspect `A-geo/logs/cadquery_geometry_executor.log`. Geometry is complete only after the log has no traceback/error and `A-geo/preview/scene.json` contains preview objects or an OCP viewer payload.
-  - If modeling fails, dimensions conflict, or Boolean operations behave abnormally, consult the `CadQuery` reference entry first; if the issue comes from unclear requirements, return to Stage 1. Ask the user if anything is unclear.
-- Output: CadQuery geometry script, exported geometry files, preview scene data, validation notes, and a geometry manifest usable for meshing.
+  - After a SolidCraft operation, inspect timeline errors/warnings and run independent measurements plus a screenshot or model render. Geometry is complete only after the `.solidcraft` file can be reopened and required exports pass inspection.
+  - If modeling fails, dimensions conflict, or Boolean operations behave abnormally, consult SolidCraft modeling/checking references first; if the issue comes from unclear requirements, return to Stage 1. Ask the user if anything is unclear.
+- Output: SolidCraft source design, exported geometry files, reproducible command/script record, validation notes, and a geometry manifest usable for meshing.
 - Condition for entering the next stage: geometry can be rebuilt reliably, naming and parameter semantics are clear, the geometry satisfies user requirements, and the user agrees to enter the mesh stage.
 
 ### Stage 3: Meshing and Boundary Checks
@@ -105,10 +104,10 @@ Development mode is used for code-development tasks such as custom solvers, cust
 - Objective: generate a mesh that satisfies computational requirements based on the geometry and `caseDict`.
 - Input: geometry files under `A-geo/`, and `0-caseDict/caseDict`
 - Actions:
-  - Use the corresponding meshing capability, such as `blockMesh`, `snappyHexMesh`, `gmsh`, or `FreeCAD`, to complete geometry import, physical group or boundary naming, meshing, export, and conversion preparation.
+  - Consume the verified SolidCraft export. Use the corresponding meshing capability, such as `blockMesh`, `snappyHexMesh`, or `gmsh`, for mesh generation and boundary preparation; do not silently edit or replace the CAD source in this stage.
   - If using `gmsh`, store the meshing script, `.msh` file, and related intermediate artifacts under `B-mesh/`. If using OpenFOAM-native mesh tools such as `blockMesh` or `snappyHexMesh`, proceed directly to `C-run` operations.
   - Select the meshing strategy according to the physics problem and physical model: structured mesh, unstructured mesh, or hybrid mesh.
-  - If script errors, topology anomalies, mesh distortion, or boundary naming confusion occur, consult the backend software reference entry first. If the geometry itself is problematic, return to Stage 2.
+  - If script errors, topology anomalies, mesh distortion, or boundary naming confusion occur, consult the backend software reference entry first. If the geometry itself is problematic, return to Stage 2 and repair it in SolidCraft before re-exporting.
   - If anything is unclear or uncertain, ask the user and continue only after receiving explicit requirements.
 - Output: mesh files and scripts with clear boundary naming and conversion readiness for the backend software.
 - Condition for entering the next stage: the mesh can be generated successfully, region/interface/boundary-set and mesh names are consistent with `caseDict`, quality satisfies current computational requirements, and the user agrees to enter the solve stage.

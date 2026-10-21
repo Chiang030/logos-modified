@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ROOT="${ANSYS_ROOT:-/srv/shared/ansys_inc}"
+LIC_DIR="${ANSYS_LICENSE_DIR:-$ROOT/shared_files/licensing}"
+LMGRD="$LIC_DIR/linx64/lmgrd"
+ANSYSLMD="$LIC_DIR/linx64/ansyslmd"
+LICENSE_FILE="${ANSYS_LICENSE_FILE:-$LIC_DIR/license_files/ansyslmd.lic}"
+PIDFILE="${ANSYS_LICENSE_PIDFILE:-$LIC_DIR/lmgrd.pid}"
+LOGFILE="${ANSYS_LICENSE_LOGFILE:-$LIC_DIR/license.log}"
+
+fail(){ echo "[ansys-license] ERROR: $*" >&2; exit 1; }
+check_paths(){
+  [[ -x "$LMGRD" ]] || fail "lmgrd 不可执行或无权限: $LMGRD"
+  [[ -x "$ANSYSLMD" ]] || fail "ansyslmd 不可执行或无权限: $ANSYSLMD"
+  [[ -r "$LICENSE_FILE" ]] || fail "许可证文件不可读: $LICENSE_FILE"
+  [[ -w "$(dirname "$LOGFILE")" ]] || fail "许可证目录不可写: $(dirname "$LOGFILE")"
+}
+status(){
+  if [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE" 2>/dev/null)" 2>/dev/null; then
+    echo "running pid=$(cat "$PIDFILE") license=$LICENSE_FILE"; return 0
+  fi
+  if pgrep -af "$LMGRD" >/dev/null 2>&1; then echo "running (pidfile missing) license=$LICENSE_FILE"; return 0; fi
+  echo "stopped license=$LICENSE_FILE"; return 3
+}
+start(){
+  check_paths
+  if status >/dev/null 2>&1; then echo "[ansys-license] already running"; return 0; fi
+  mkdir -p "$(dirname "$PIDFILE")"
+  nohup "$LMGRD" -c "$LICENSE_FILE" -l "$LOGFILE" >/dev/null 2>&1 &
+  echo $! > "$PIDFILE"
+  sleep 1
+  status
+}
+stop(){
+  if [[ -f "$PIDFILE" ]]; then kill "$(cat "$PIDFILE")" 2>/dev/null || true; rm -f "$PIDFILE"; fi
+  pkill -f "$LMGRD.*$LICENSE_FILE" 2>/dev/null || true
+  echo "stopped"
+}
+case "${1:-status}" in
+  start) start;; stop) stop;; restart) stop; start;; status) status;; check) check_paths; echo "ok license=$LICENSE_FILE";; *) echo "usage: $0 {start|stop|restart|status|check}" >&2; exit 2;;
+esac

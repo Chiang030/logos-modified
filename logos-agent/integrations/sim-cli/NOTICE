@@ -1,0 +1,35 @@
+sim-cli
+Copyright 2026 Weiqi Ji
+
+This product is licensed under the Apache License, Version 2.0 (the "License");
+see the accompanying LICENSE file for the full text.
+
+================================================================================
+Plugin and runtime dependency notice
+================================================================================
+
+sim-cli is a solver-agnostic runtime. Solver and tool integrations are provided
+by separately installed plugins. Plugins may depend on third-party software,
+services, SDKs, or local executables that are not bundled with this repository.
+Users are responsible for complying with the license, copyright, and end-user
+terms that apply to any third-party software they install or use with a plugin.
+
+Commercial plugin availability depends on third-party license conditions.
+Contact <contact@svd-ai-lab.com> to discuss commercial plugin access.
+
+================================================================================
+Direct runtime dependencies (see pyproject.toml)
+================================================================================
+
+  click, httpx, fastapi, uvicorn, pyyaml, Pillow, lxml
+    - each distributed under its own open-source license (BSD / MIT /
+      Apache-2.0 family); consult the respective package for terms.
+
+================================================================================
+Trademarks
+================================================================================
+
+Product, solver, tool, and company names may be trademarks or registered
+trademarks of their respective owners. sim-cli is an independent open-source
+project and is not affiliated with, endorsed by, or sponsored by any third-party
+vendor unless explicitly stated.

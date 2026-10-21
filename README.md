@@ -1,36 +1,77 @@
-# LOGOS
+# LOGOS server deployment
 
-LOGOS 是面向工程仿真工作的 Windows x64 VS Code 插件，使用 Pi 作为 Agent 内核。
-安装包包含 Node.js、Pi 内核、LOGOS 提示词和领域技能；工程求解器及其许可证需要另行安装。
+This bundle includes LOGOS and its Pi source foundation. It is an installable
+source distribution, not an offline binary. No Git/submodule checkout is
+required. Node.js >=22.19 is required; Python 3.10+ (3.11 recommended) and venv
+support are required for the simulation tools. Initial setup needs internet.
 
-## 项目结构
+## Linux installation
 
-- `logos-agent/vscode-extension/`：插件代码、聊天界面、测试与打包脚本。
-- `logos-agent/pi-domain/`：领域扩展、提示词、技能及工具链参考。
-- `logos-agent/integrations/`：工程工具集成包。
-- `vendor/pi/`：固定版本的 Pi Git 子模块。
+No system/global installation is required. If dependencies are already present,
+launch directly from any project folder:
 
-## 开发与验证
-
-需要 Windows x64、Git 和 Node.js/npm。
-
-```powershell
-git submodule update --init --recursive
-cd logos-agent/vscode-extension
-npm ci
-npm run compile
-npm test
+```bash
+bash /path/to/logos-server/start.sh
 ```
 
-## 打包与使用
+For a fresh server, prepare dependencies once:
 
-```powershell
-npm run package:win32-x64
+```bash
+npm --prefix /path/to/logos-server/logos-agent run pi:setup
+python3 /path/to/logos-server/logos-agent/integrations/setup.py # optional simulation tools
+cp /path/to/logos-server/logos-agent/.env.example /path/to/logos-server/logos-agent/.env
 ```
 
-打包会构建 Pi、生成运行时、验证文件完整性，并运行本地模拟 API 的冒烟测试。
-安装生成的 VSIX 后，在 VS Code 中执行 **LOGOS: Open Chat**，通过设置面板配置 API 地址、密钥和模型。
+Fill the `.env` file locally. `start.sh` never installs dependencies and preserves
+your current project directory. `install.sh` below is an optional convenience
+script for the same preparation plus a shortcut, not a required system install.
 
-详细安装、配置和运行时隔离说明见 [插件说明](logos-agent/vscode-extension/README.md)。
+```bash
+tar -xzf logos-server-20261009.tar.gz
+cd logos-server
+bash install.sh --with-sim --shortcut
+nano logos-agent/.env
+```
 
-旧 Deep Agents 工程、Web 工作区、展示网页与设计预览已移除，历史版本可通过 Git 历史查看。
+`--with-sim` installs the local sim core, Mechanical/Workbench plugins and their
+SDK dependencies. Omit it for chat/file tools only. `--shortcut` creates a
+symlink in `~/.local/bin`, preserving any existing entry. Add that directory to
+PATH if needed; no shell startup file is edited automatically.
+
+Start in the workspace you want LOGOS to use:
+
+```bash
+cd /path/to/your/project
+~/.local/bin/logos
+# Or, when ~/.local/bin is on PATH:
+logos
+# Direct entry if no shortcut was installed:
+/path/to/logos-server/bin/logos
+```
+
+The entry preserves your working directory and discovers its AGENTS.md. Product
+prompts, Skills and `.env` are located relative to the installed LOGOS package.
+There is no development-workspace AGENTS.md at the deployment root.
+
+## Windows
+
+After unzipping, run `npm --prefix logos-agent run pi:setup`, optionally
+`python logos-agent/integrations/setup.py`, and copy `.env.example` to `.env`.
+Run the package's absolute `logos.cmd` path from the desired project folder.
+Windows virtual environments and node_modules are never copied to Linux.
+
+## Included and excluded
+
+Included: current CLI, character logo, prompts, eight product Skills, simulation
+tools and patched sim sources, complete Pi source, package locks and upstream
+licenses. Excluded: real `.env`, API keys, installed dependencies, virtual
+environments, Git history, operation logs and host-specific caches. Configure
+credentials on the server. Dependency versions may vary by OS; installation is
+not a claim of licensed solver availability or 2026 R1 compatibility.
+
+The capability matrix starts without verified combinations. Probe the server's
+own installations. Linux discovery is covered by path fixtures; actual Linux
+Ansys, licensing, GUI attachment and physical acceptance require server tests.
+For GUI control, start sim serve from an interactive desktop; SSH alone does
+not provide a desktop session. Redeploy/restart remote sim servers to load the
+patched source. No solver or user project is launched by installation checks.

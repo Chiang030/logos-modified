@@ -64,3 +64,11 @@ Please confirm whether to continue: [requires explicit "yes", "confirm", or "con
 The case-table response requirements apply to simulation tasks. If `update_plan` is unavailable, maintain the same Todo states in the response; do not claim to have called an unavailable tool.
 
 The historical toolchain list in `../references/toolchain.md` is a reference snapshot, not a declaration of installed LOGOS capabilities. Verify tools and integrations before using them.
+
+## CAD handoff discipline
+
+- Use SolidCraft for CAD import, reconstruction, editing, component changes, geometry checks, and export.
+- Before editing an existing CAD component, inspect its metadata, names, timeline, parameters, and remarks. If key context is missing, write a concise remark with the SolidCraft metadata or parameter-comment commands before changing geometry; preserve existing remarks and mark uncertainty as `待确认`.
+- Treat `.solidcraft` as the editable source file. Keep original inputs unchanged and write derived exports beside the source in the case's geometry/output directory.
+- After a SolidCraft edit, check timeline health, dimensions, bounding boxes, volumes, topology, and interference where applicable; then save and export the file required by the next stage.
+- The mesh, solver, and post-processing stages consume the verified export. They must return geometry defects to SolidCraft instead of silently repairing or replacing the CAD model.

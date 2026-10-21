@@ -1,0 +1,22 @@
+{
+  "name": "logos-cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "LOGOS terminal entry point powered by Pi",
+  "bin": {
+    "logos": "./bin/logos.mjs"
+  },
+  "scripts": {
+    "start": "node bin/logos.mjs",
+    "sim:setup": "python integrations/setup.py",
+    "package:server": "python scripts/package-server.py",
+    "pi:setup": "npm --prefix ../vendor/pi ci --ignore-scripts --no-fund && npm --prefix ../vendor/pi run hydrate:model-data",
+    "logo": "node bin/logos.mjs --logo",
+    "ascii:import": "node scripts/import-ascii-logo.mjs",
+    "preview:build": "node scripts/build-logo-preview.mjs"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}
