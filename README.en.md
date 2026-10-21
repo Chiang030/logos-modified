@@ -2,18 +2,6 @@
 
 [中文（主版本）](README.md) · **English**
 
-```
-
-            ⣠⢤        ⣤⣤⡇     ⣤⣤⣤⣤⣤⣤    ⢠⣤⣿⣿⣿⣿⣿⠛  ⣤⣼⣿⣿⣤⣤   ⢠⣼⣿⣿⣿⣿⡟
-     ⠔⠂⠉ ⣠⣽⡿⣳⡿      ⢰⣶⣿⣿⠇   ⢀⣶⣿⣿⣿⣿⣿⣿⣶⡀⢀⣰⣾⣿⣿⣿⠿⠿⠉ ⢀⣶⣿⣿⡿⢿⣿⣿⣶⡀⢀⣾⣿⣿⠿⠿⠏⠁
-   ⠔  ⣠⣴⣿⣿⢟⣽⣿⡇⠢     ⣸⣿⣿⣿    ⣾⣿⡿⠏⠉⠉⠹⣿⡿⠇⠸⣿⣏⡉⢉⣉⣀⣀⣀⢀⣾⣿⡿⠉⠁⠈⠉⠿⠿⢇⠈⣉⣉⣹⣶⣀⣀⣀
-  ⠘⣠⣴⣿⣿⣿⣿⣫⣿⣿⣿⠃ ⠃    ⣿⣿⣿⡟    ⣿⣿⠃    ⣿⣧⡄⣤⣿⣿⠃⣼⣿⣿⣿⣿⢸⣿⣿⠃    ⣤⣤⣼ ⢻⣿⣿⣿⣿⣿⣿
- ⠐⠻⣿⣿⣿⣿⣿⣷⣿⣿⣿⣿  ⠘    ⠛⠛⠛⠃⢠⣤⣤⣤⢠⣿⣧⣤⣤⣤⣿⣿⣿⡇⣿⣿⣿⣧  ⣤⣤⣤ ⣤⣼⣧⣤⢠⣤⣼⣿⣿⠃     ⣼⣿⣿
-  ⠘⡄⠙⠻⢿⣿⣿⣿⣿⣿⡇ ⢠⠃    ⣀⣀⣶⣶⣾⣿⡿⠿⠸⣿⣿⣿⣿⣿⣿⡿⠿⠁⠿⣿⣿⣿⣶⣶⣿⣿⠿⠆⠿⣿⣿⣿⣾⣿⣿⡿⠿⣀⣰⣶⣶⣶⣶⣿⣿⡿
-   ⠐⠗⢀ ⠉⠻⢿⣿⣿⡇⠔⠁    ⠰⠿⠏⠉⠉⠉⠉⠁  ⠉⠉⠿⠿⠏⠉⠁   ⠉⠉⠿⠿⠿⠏⠉   ⠉⠹⠿⠿⠿⠉⠁⠰⠿⠿⠿⠿⠿⠿⠿⠉⠁
-      ⠉ ⠒⠒⠉⠛             AIRCRAFT DESIGN & SIMULATION AGENT
-```
-
 > Current server version: **v0.2.0** · VS Code extension: **v0.1.7** (not yet tracking v0.2.0)
 
 LOGOS is an agent platform deployed on a Linux server: built on the [Pi runtime](https://github.com/earendil-works/pi) (a Deep-Agents-style coding-agent kernel, vendored at `vendor/pi/`), it targets **aircraft design / simulation / CAD / ECAD / 3D visualization** work. You talk to it inside a project directory; it routes tasks through Skills, drives MCP servers, simulation CLIs and system tools, and produces verifiable engineering results.
