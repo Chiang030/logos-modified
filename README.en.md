@@ -4,9 +4,11 @@
 
 > Current server version: **v0.2.0** · VS Code extension: **v0.1.7** (not yet tracking v0.2.0)
 
-LOGOS is an agent platform deployed on a Linux server: built on the [Pi runtime](https://github.com/earendil-works/pi) (a Deep-Agents-style coding-agent kernel, vendored at `vendor/pi/`), it targets **aircraft design / simulation / CAD / ECAD / 3D visualization** work. You talk to it inside a project directory; it routes tasks through Skills, drives MCP servers, simulation CLIs and system tools, and produces verifiable engineering results.
+LOGOS turns a large language model into **an engineer that can actually do the work**: you give tasks in natural language inside a project directory, and it autonomously handles parametric CAD modeling with independent verification, finite-element meshing, aerodynamic CFD and structural FEA solving, high-frequency EM simulation, ECAD (PCB) analysis, and 3D rendering — delivering results backed by verifiable evidence (test output, exported files, screenshots).
 
-This repository (`logos-modified`) is the code that actually runs on the server: the product layer above the Pi sources (`logos-agent/`), self-maintained tool integrations (`integrations/`), built-in skills (`pi-domain/skills/`) and deployment scripts.
+**Technical approach**: an open-source coding-agent kernel at the base; external engineering software attached through the **MCP protocol**; per-domain operating knowledge carried by **skills** (each skill owns task routing, locally verified environment facts, and acceptance criteria); solver invocations follow a controlled discover → select → execute-session chain; the geometry stage enforces **separation of producer and checker** (independent second-kernel review); and the multi-stage simulation flow (geometry → mesh → solve → post-process → report) has explicit stage handoffs and acceptance discipline.
+
+> **Repository note**: this repository (`logos-modified`) is the code actually running on the server — the product layer (`logos-agent/`, built on the vendored [Pi runtime](https://github.com/earendil-works/pi) at `vendor/pi/`), self-maintained tool integrations (`integrations/`), built-in skills (`pi-domain/skills/`) and deployment scripts; see [Repository layout](#repository-layout) for details.
 
 ---
 

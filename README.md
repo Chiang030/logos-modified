@@ -4,9 +4,11 @@
 
 > 当前服务端版本:**v0.2.0** · VS Code 插件:**v0.1.7**(暂未跟进 v0.2.0)
 
-LOGOS 是部署在 Linux 服务器上的智能体平台:以 [Pi runtime](https://github.com/earendil-works/pi)(Deep Agents 风格的 coding-agent 内核, vendored 在 `vendor/pi/`)为底座,面向**飞行器设计 / 仿真 / CAD / ECAD / 3D 可视化**的工程任务。用户在项目目录里与它对话,它按 Skill 路由调用 MCP 服务、仿真 CLI 和系统工具,产出可验收的工程结果。
+LOGOS 是把大语言模型变成**能动手的工程师**的智能体平台:你在项目目录里用自然语言下达任务,它自主完成 CAD 参数化建模与独立校核、有限元网格划分、气动 CFD 与结构 FEA 求解、高频电磁仿真、电路板(ECAD)分析、3D 渲染制作等工程任务,并以可验证的证据(测试结果、导出文件、截图)交付。
 
-本仓库(`logos-modified`)是该平台在服务器上实际运行的那份代码:Pi 源码之上的产品层(`logos-agent/`)、自维护的工具集成(`integrations/`)、内置技能(`pi-domain/skills/`)和部署脚本。
+**技术路线**:以开源 coding-agent 内核为底座,外部工程软件经 **MCP 协议**接入,各领域操作知识以**技能**承载(技能同时负责任务路由、本机环境事实与验收标准);求解器调用走"探测安装 → 选型 → 会话执行"的受控链路;几何阶段强制**生产与校核分离**(第二内核独立复核);多阶段仿真流程(几何 → 网格 → 求解 → 后处理 → 报告)有明确的阶段交接与验收纪律。
+
+> **仓库备注**:本仓库(`logos-modified`)是平台在服务器上实际运行的那份代码——产品层(`logos-agent/`,构建于 vendored 的 [Pi runtime](https://github.com/earendil-works/pi) `vendor/pi/` 之上)、自维护的工具集成(`integrations/`)、内置技能(`pi-domain/skills/`)与部署脚本,目录细节见[仓库结构](#仓库结构)。
 
 ---
 
