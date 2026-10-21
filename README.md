@@ -17,6 +17,7 @@ LOGOS 是把大语言模型变成**能动手的工程师**的智能体平台:你
 - [使用方式](#使用方式)
 - [仓库结构](#仓库结构)
 - [已接入的软件](#已接入的软件)
+- [工具面总览](#工具面总览)
 - [MCP 服务](#mcp-服务)
 - [内置 Skills](#内置-skills)
 - [已实现的功能](#已实现的功能)
@@ -99,6 +100,39 @@ logos-server/
 
 底座运行时:Node.js ≥ 22.19(Pi 源码)、Python 3.11(集成 .venv)、DeepSeek API(`logos-agent/.env` 配 Key)。
 
+## 工具面总览
+
+智能体可调用的工具按来源分四类;MCP 工具均为 `exposure: deferred`,由内核的 `tool_search` 按需发现,不整批预载。🆕 = 2026-10-21 新增。
+
+**一、内核内置(通用)**
+
+| 工具 | 用途 |
+|---|---|
+| `bash` | 命令执行:shell、脚本、各类 CLI(技能脚本也经它调用) |
+| `read` / `write` / `edit` | 文件读取、写入、精确编辑 |
+
+**二、LOGOS 内置扩展**(`pi-domain/extensions/`)
+
+| 工具 | 用途 |
+|---|---|
+| `simulation_discover` | 探测目标主机的 Mechanical / Workbench 安装,返回证据与可选安装 ID |
+| `simulation` | 对选定安装 ID 执行 `launch` / `probe` / `attach`,驱动求解会话 |
+
+**三、MCP 服务**(命名空间 `mcp__<服务>__<工具>`)
+
+| 服务 | 工具数 | 能力 |
+|---|---|---|
+| `solidcraft` | 9 | `inspect_design`、`list_commands`、`execute`、`batch`、`measure`、`screenshot`、`open`、`save`、`export` |
+| `kicad` 🆕 | 47 | 原理图读取与编辑(组件/网络/符号检索、放置元件)、PCB 分析(统计、覆铜、电源/信号完整性)、布局与走线追踪、网表生成与连通性、元件库检索、引脚功能分析、设备树与固件测试代码生成、层级网络分析、ERC/DRC 校验与报告、Gerber/SVG/STEP 导出 |
+| `blender` 🆕 | 9 | `execute_blender_code`(Blender 内执行 Python)、`get_scene_info`、`look`(截图查看)、`get_addon_status`、`search_assets` / `import_asset`(Poly Haven / Sketchfab 素材库)、`generate_3d`(文本/图片生成模型)等 |
+
+**四、技能脚本**(经 `bash` 调用,不占工具调用面)
+
+| 技能 | 脚本 | 用途 |
+|---|---|---|
+| `freecad` 🆕 | `inspect_cad.py` / `compare_step.py` / `heal_convert.py` | CAD 体检、对称差独立复核、修复与格式转换(headless `freecadcmd`) |
+| `solidcraft` | `step_preflight.py` | STEP 导入预检 |
+
 ## MCP 服务
 
 MCP 服务统一注册在 `~/.pi/agent/mcp.json`(不在仓库内,由各集成的 `register-mcp.py` 写入;merge 不替换、先备份)。当前注册的三个服务均为 `exposure: deferred` + 中文 description(兼作技能路由提示):
@@ -114,13 +148,6 @@ MCP 服务统一注册在 `~/.pi/agent/mcp.json`(不在仓库内,由各集成的
 - **kicad MCP 是 LOGOS 自维护 fork**(基于 Seeed Studio 0.1.0,补丁见 `integrations/kicad-mcp-server/NOTICE`)。不要把 agent 指向 pip 另装的副本——两个 editable install 会互相遮蔽,历史上的 "ERC always passes" bug 就是这么漏掉的。启动器按 `$LOGOS_KICAD_PYTHON` → `integrations/.venv` → `~/.local/opt/kicad-mcp-venv` → `PATH` 顺序探测解释器。
 - **blender MCP 依赖常驻 GUI 实例**:插件不能在 `--background` 下跑,由 systemd --user 单元 `blender-mcp.service` 用 `xvfb-run` 承载,linger 已开。启动器固定 uvx 路径 + 清华 PyPI 镜像(astral.sh 被代理挡)。
 - 移动本仓库目录后,在各集成目录重跑 `python3 register-mcp.py` 并重启 LOGOS 会话即可。
-
-除 MCP 外,启动器还注册了两个内置工具(`pi-domain/extensions/simulation.mjs`):
-
-- `simulation_discover` — 探测目标主机上的 Mechanical/Workbench 安装;
-- `simulation` — 对选定的安装 ID 执行 `launch` / `probe` / `attach`,驱动求解会话。
-
-加上 Pi 自带的 `bash` / `edit` 等通用工具,构成完整工具面。
 
 ## 内置 Skills
 

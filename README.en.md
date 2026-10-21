@@ -17,6 +17,7 @@ The platform drives conversation and task execution on an open-source coding-age
 - [Usage](#usage)
 - [Repository layout](#repository-layout)
 - [Integrated software](#integrated-software)
+- [Tool surface](#tool-surface)
 - [MCP services](#mcp-services)
 - [Built-in skills](#built-in-skills)
 - [Implemented features](#implemented-features)
@@ -99,6 +100,39 @@ All verified live on the server (dates under [Verification status](#verification
 
 Base runtime: Node.js ≥ 22.19 (Pi sources), Python 3.11 (integration .venv), DeepSeek API (key in `logos-agent/.env`).
 
+## Tool surface
+
+Tools available to the agent fall into four groups; MCP tools all use `exposure: deferred` and are discovered on demand via the kernel's `tool_search`, never preloaded in bulk. 🆕 = added 2026-10-21.
+
+**1. Kernel built-ins (general)**
+
+| Tool | Purpose |
+|---|---|
+| `bash` | Command execution: shell, scripts, any CLI (skill scripts run through it too) |
+| `read` / `write` / `edit` | File read, write, precise edits |
+
+**2. LOGOS built-in extensions** (`pi-domain/extensions/`)
+
+| Tool | Purpose |
+|---|---|
+| `simulation_discover` | Discover Mechanical / Workbench installations on the target host, returning evidence and selectable install IDs |
+| `simulation` | `launch` / `probe` / `attach` on a chosen install ID, driving solver sessions |
+
+**3. MCP services** (namespace `mcp__<server>__<tool>`)
+
+| Service | Tools | Capabilities |
+|---|---|---|
+| `solidcraft` | 9 | `inspect_design`, `list_commands`, `execute`, `batch`, `measure`, `screenshot`, `open`, `save`, `export` |
+| `kicad` 🆕 | 47 | Schematic reading and editing (components/nets/symbol search, part placement), PCB analysis (statistics, pours, power/signal integrity), layout and track tracing, netlist generation and connectivity, parts-registry search, pin-function analysis, device-tree and firmware test-code generation, hierarchical net analysis, ERC/DRC validation and reports, Gerber/SVG/STEP export |
+| `blender` 🆕 | 9 | `execute_blender_code` (run Python inside Blender), `get_scene_info`, `look` (screenshot review), `get_addon_status`, `search_assets` / `import_asset` (Poly Haven / Sketchfab libraries), `generate_3d` (text/image to model), and more |
+
+**4. Skill scripts** (invoked via `bash`, not part of the tool-call surface)
+
+| Skill | Scripts | Purpose |
+|---|---|---|
+| `freecad` 🆕 | `inspect_cad.py` / `compare_step.py` / `heal_convert.py` | CAD inspection, independent symmetric-diff verification, healing and format conversion (headless `freecadcmd`) |
+| `solidcraft` | `step_preflight.py` | STEP import preflight |
+
 ## MCP services
 
 MCP servers are registered in `~/.pi/agent/mcp.json` (outside the repo; written by each integration's `register-mcp.py`, merged never replaced, backed up first). The three registered services all use `exposure: deferred` + a Chinese description (doubles as skill-routing hints):
@@ -114,13 +148,6 @@ Key points:
 - **The kicad MCP is a LOGOS-maintained fork** (based on Seeed Studio 0.1.0, patches in `integrations/kicad-mcp-server/NOTICE`). Do not point the agent at a separately pip-installed copy — two editable installs of the same package shadow each other; that is how the "ERC always passes" bug survived. The launcher probes interpreters in the order `$LOGOS_KICAD_PYTHON` → `integrations/.venv` → `~/.local/opt/kicad-mcp-venv` → `PATH`.
 - **The blender MCP needs a resident GUI instance**: the addon cannot run `--background`, so the systemd --user unit `blender-mcp.service` hosts it under `xvfb-run` with linger enabled. The launcher pins the uvx path + Tsinghua PyPI mirror (astral.sh is proxy-blocked).
 - After moving this tree, re-run `python3 register-mcp.py` in each integration directory and restart the LOGOS session.
-
-Besides MCP, the launcher registers two built-in tools (`pi-domain/extensions/simulation.mjs`):
-
-- `simulation_discover` — discover Mechanical/Workbench installations on the target host;
-- `simulation` — `launch` / `probe` / `attach` on a chosen installation ID, driving solver sessions.
-
-Together with Pi's general `bash` / `edit` tools, that is the full tool surface.
 
 ## Built-in skills
 
