@@ -56,6 +56,7 @@ logos-server/
 | 高频电磁 | Ansys HFSS | PyAEDT / AEDT(不含 3D Layout、Maxwell 等) |
 | 几何前处理 | Ansys SpaceClaim / Discovery | 脚本 + GUI 附件化操作 |
 | CAD 参数化建模 | SolidCraft | `solidcraft` MCP(参数化重建、装配、测量、截图) |
+| CAD 交叉验证 | FreeCAD 1.1.4 | `~/.local/bin/freecadcmd` headless;对 SolidCraft 几何做独立复核的 oracle,**非默认几何源**(工作流明文规定) |
 | 网格生成 | Gmsh | CLI / Python API(STEP/BREP 导入、物理组、边界层、MSH/INP 导出) |
 | ECAD | KiCad 10.0.7(系统)+ 9.0.9(用户态备选) | `kicad` MCP fork + kicad-cli |
 | 3D 制作渲染 | Blender 5.2.2 LTS | `blender` MCP(xvfb 常驻 GUI 实例,插件监听 127.0.0.1:9876) |
@@ -114,7 +115,7 @@ Ansys 系 Skill 完整复制自用户指定的 `reusable-assets/harnesses/ansys-
 - **仿真集成**(`integrations/`):sim-cli 核心 + Mechanical/Workbench 两个 LOGOS 维护插件,隔离在 `.venv`;`simulation_discover` / `simulation` 内置工具打通"探测 → 选 ID → probe → 会话执行"链路;远端机器需部署同源修改版。
 - **KiCad 集成**:MCP fork(47 工具,29 项离线回归 + 14 项 stdio 冒烟测试),技能内维护双版本工具链事实表。
 - **Blender/3D 集成**:MCP + 常驻 GUI 实例,覆盖 3D logo 全流程(含 `references/demo_logo.py` 演示脚本)。
-- **SolidCraft CAD 集成**:外部 CLI 的 MCP 包装,`--allow-path` 限定可访问项目目录。
+- **SolidCraft CAD 集成**:外部 CLI 的 MCP 包装,`--allow-path` 限定可访问项目目录。工作流规定几何默认走 SolidCraft,不以 CadQuery/FreeCAD 为默认几何源;FreeCAD(`freecadcmd`)装在本机,用作独立 CAD 内核的交叉验证 oracle 与辅助查看。
 - **API 配置**:启动器自动读取 `logos-agent/.env`(不依赖 cwd),`DEEPSEEK_API_KEY` + `LOGOS_PROVIDER` / `LOGOS_MODEL`,命令行参数优先。
 
 ## 基本工作流程
