@@ -2,7 +2,7 @@
 
 [中文（主版本）](README.md) · **English**
 
-> Current server version: **v0.2.0** · VS Code extension: **v0.1.7** (not yet tracking v0.2.0)
+> Current server version: **[v0.2.0](https://github.com/Chiang030/logos-modified/releases/tag/v0.2.0)** · VS Code extension: **v0.1.7** (not yet tracking v0.2.0)
 
 LOGOS turns a large language model into **an engineer that can actually do the work**: you give tasks in natural language inside a project directory, and it autonomously handles parametric CAD modeling with independent verification, finite-element meshing, aerodynamic CFD and structural FEA solving, high-frequency EM simulation, ECAD (PCB) analysis, and 3D rendering — delivering results backed by verifiable evidence (test output, exported files, screenshots).
 
