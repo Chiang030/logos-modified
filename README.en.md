@@ -53,7 +53,14 @@ The LOGOS VS Code extension provides a graphical panel: server connection status
 
 ![Extension usage: VS Code LOGOS panel](docs/images/usage-vscode-plugin.png)
 
-> **Note**: the extension is currently at **v0.1.7** and lags the server's v0.2.0 (recent skills and integrations are not included); prefer Option 1. The full extension manual is the "LOGOS 仿真助手智能体插件手册" PPT (link pending import).
+Quick start (from the [plugin manual PPT](docs/manual/LOGOS仿真助手智能体插件手册.pptx), in Chinese):
+
+1. **Install**: "Install from VSIX" in VS Code and pick the extension package; installation takes a few minutes, after which the LOGOS icon appears in the sidebar — click it to enter the agent;
+2. **First-time API setup**: open the gear settings panel, enter the URL and API key → "fetch upstream models" → pick a model → save and apply, then return to chat;
+3. **New session**: click "new session" in the history panel on the right;
+4. **Ansys invocation guidance**: for visual interactive work use the **"gRPC server"** mode (the agent drives the GUI directly; multiple instances may conflict); for batch solving use the **"MAPDL"** mode (headless APDL script batches; no GUI, weaker observability). Just tell the agent which one to use.
+
+> **Note**: the extension is currently at **v0.1.7** and lags the server's v0.2.0 (recent skills and integrations are not included); prefer Option 1. The extension has only been lightly tested; most known issues are permission-related — please report bugs.
 
 ---
 
