@@ -1,0 +1,33 @@
+#!/bin/sh
+# LOGOS launcher for the blender MCP server (uvx mcp-for-blender).
+#
+# Runs the published `mcp-for-blender` package via uvx. uvx resolves and
+# caches the package, so the first start needs the PyPI index; later starts
+# run from the uv cache. The wrapper pins the Tsinghua index because the
+# host's proxy breaks astral.sh and intermittently pypi.org; uvx itself is
+# pip-installed at ~/.local/bin (not on PATH for non-login contexts).
+#
+# The server is only the transport: it forwards tool calls to the Blender
+# addon listening on 127.0.0.1:9876 (systemd --user unit blender-mcp.service
+# under xvfb). See the `blender` skill for the full picture.
+#
+#   bin/blender-mcp-server              # start the MCP server on stdio
+#   bin/blender-mcp-server --logos-info # print which uvx runs
+set -eu
+
+UVX="${LOGOS_BLENDER_UVX:-$HOME/.local/bin/uvx}"
+[ -x "$UVX" ] || UVX="$(command -v uvx || true)"
+if [ -z "$UVX" ]; then
+    echo "blender-mcp-server: uvx not found (pip install --user uv, or set LOGOS_BLENDER_UVX)." >&2
+    exit 127
+fi
+
+export UV_DEFAULT_INDEX="${UV_DEFAULT_INDEX:-https://pypi.tuna.tsinghua.edu.cn/simple}"
+
+if [ "${1:-}" = "--logos-info" ]; then
+    echo "uvx: $UVX"
+    "$UVX" --version
+    exit 0
+fi
+
+exec "$UVX" mcp-for-blender "$@"
