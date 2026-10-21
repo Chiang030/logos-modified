@@ -1,7 +1,15 @@
 # Verified kicad-cli reference
 
-All commands below were checked against KiCad 9.0.9 on the LOGOS server. Use the
-wrapper `~/.local/bin/kicad-cli`, not the raw binary.
+All commands below were checked on 2026-10-21 against **KiCad 10.0.7** at
+`/usr/bin/kicad-cli` (the system package — this is the binary the MCP server and
+the agent actually invoke). The user-space KiCad 9.0.9 wrapper is
+`~/.local/bin/kicad9-cli`; the unversioned `~/.local/bin/kicad-cli` from earlier
+notes does not exist.
+
+KiCad 10 writes ERC/DRC reports (`--format report`) as text, and
+`--format json` as JSON. **The ERC JSON nests violations under
+`sheets[].violations`** (DRC keeps them top-level) — parse it, do not `grep`
+for `[violation_type]` lines unless you asked for the text format.
 
 ## Schematic
 

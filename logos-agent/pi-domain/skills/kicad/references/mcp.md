@@ -2,40 +2,56 @@
 
 ## Server
 
-The LOGOS server runs the Seeed Studio `kicad-mcp-server` over stdio:
+LOGOS owns the server: the patched source fork lives in this repository at
+`logos-agent/integrations/kicad-mcp-server/`, and the Pi runtime launches its
+wrapper:
 
 ```text
-/home/jiangjincheng/.local/bin/kicad-mcp-server
+logos-agent/integrations/kicad-mcp-server/bin/kicad-mcp-server
 ```
 
-The wrapper exports the user-space KiCad 9 environment before starting the
-server:
+The launcher is deliberately dumb — it makes the fork's own `src/` win on
+`PYTHONPATH` (PYTHONPATH precedes `site-packages` `.pth` entries, so another
+editable install cannot shadow it), adds the user-space KiCad 9 prefix when it
+exists, and then runs `python -m kicad_mcp_server` with the first interpreter
+that has the MCP dependencies:
 
-```sh
-LD_LIBRARY_PATH=$HOME/.local/opt/kicad-9.0.9/usr/lib/x86_64-linux-gnu:$HOME/.local/opt/kicad-9.0.9/usr/lib
-PYTHONPATH=$HOME/.local/opt/kicad-9.0.9/usr/lib/python3/dist-packages
-KICAD_STOCK_DATA_HOME=$HOME/.local/opt/kicad-9.0.9/usr/share/kicad
-PATH=$HOME/.local/bin:$PATH
-```
+| Probe order | Value |
+|---|---|
+| 1 | `$LOGOS_KICAD_PYTHON` |
+| 2 | `integrations/.venv/bin/python` (created by `integrations/setup.py`) |
+| 3 | `~/.local/opt/kicad-mcp-venv/bin/python` (host dependency venv) |
+| 4 | `python3` on `PATH` |
 
-It launches the MCP package from
-`$HOME/.local/opt/kicad-mcp-venv` and sets `KICAD_PYTHON` to
-`$HOME/.local/bin/kicad-python` so project creation and `pcbnew` analysis use
-the KiCad 9 Python bindings.
+`pcbnew` is optional. Without it, project creation and PCB analysis fall back to
+`kicad-cli` / system `python3`, which the upstream code already supports.
+
+Historical note: before 2026-10-21 the runtime launched
+`~/.local/bin/kicad-mcp-server`, an editable install of upstream 0.1.0 under
+`~/.local/opt/kicad-mcp-server`. That copy is kept only as a comparison point;
+changing it no longer affects the agent.
 
 ## Pi configuration
 
-Add the server to `~/.pi/agent/mcp.json`. Merge it with any existing servers
-such as `solidcraft`; do not replace the file wholesale.
+The entry is generated, not hand-written — `register-mcp.py` merges it into
+`~/.pi/agent/mcp.json` (backup + JSON validation, other servers preserved):
+
+```bash
+python3 logos-agent/integrations/kicad-mcp-server/register-mcp.py --dry-run
+python3 logos-agent/integrations/kicad-mcp-server/register-mcp.py
+python3 logos-agent/integrations/kicad-mcp-server/register-mcp.py --remove
+```
+
+Resulting entry:
 
 ```json
 {
   "mcpServers": {
     "kicad": {
-      "command": "/home/jiangjincheng/.local/bin/kicad-mcp-server",
+      "command": "<repo>/logos-agent/integrations/kicad-mcp-server/bin/kicad-mcp-server",
       "timeout": 300,
       "exposure": "deferred",
-      "description": "KiCad 9 原理图/PCB 分析、ERC/DRC、网表追踪、Gerber/SVG/STEP 导出与元件库检索；KiCad 任务使用 kicad 技能。"
+      "description": "KiCad 原理图/PCB 分析、ERC/DRC、网表追踪、Gerber/SVG/STEP 导出与元件库检索；KiCad 任务使用 kicad 技能。"
     }
   }
 }
@@ -136,35 +152,69 @@ Installed on 2026-10-20 without system-wide packages:
 2. Missing runtime libraries (wxWidgets 3.2, OCCT 7.6, nng, git2, ngspice,
    unixODBC `libodbc2`, GLEW, FreeImage, OpenEXR, TBB, mbedTLS, and related
    packages) extracted into the same prefix.
-3. Wrapper scripts in `~/.local/bin` for `kicad-cli`, `kicad`, `pcbnew`, and
-   `kicad-python`.
+3. Wrapper scripts in `~/.local/bin` named **`kicad9-cli`, `kicad9`, `pcbnew9`,
+   `kicad9-python`** (the unversioned `kicad-cli` / `kicad-python` names do not
+   exist; `kicad-cli` resolves to the system 10.0.7 package).
 4. Python package `kicad-mcp-server` from the Seeed Studio repository installed
    into a dedicated venv at `~/.local/opt/kicad-mcp-venv`.
 
-Verified:
+Re-verified on 2026-10-21 — the running mix is **CLI 10.0.7 + pcbnew 9.0.9
+inside the MCP process**:
 
 ```text
-kicad-cli version                 -> 9.0.9
-kicad-python -c "import pcbnew"   -> 9.0.9
-create_kicad_project              -> .kicad_pro, .kicad_sch, .kicad_pcb
-get_pcb_statistics                -> design rules and layer data
-run_drc                           -> violation report
-export_gerber                     -> 26 fabrication files
-run_erc                           -> no violations
-export_schematic_svg              -> smoke.svg
-kicad-cli sch export svg          -> smoke.svg
-kicad-cli pcb export step         -> board.step
+/usr/bin/kicad-cli version                                 -> 10.0.7
+/usr/bin/python3 -c "import pcbnew; print(pcbnew.Version())" -> 10.0.7
+kicad9-cli version (user-space fallback)                   -> 9.0.9
 ```
+
+## Fork patches applied 2026-10-21
+
+The patches live in the vendored fork (`integrations/kicad-mcp-server/`), inside
+this repository and in the release manifest. Provenance and licensing: its
+`NOTICE`. The same patches were first prototyped against the legacy host install
+under `~/.local/opt/kicad-mcp-server/src`, which is now only a comparison point.
+
+| File | Change |
+|---|---|
+| `tools/validation.py` | `_collect_violations()` reads both ERC layouts (top-level and KiCad 10 `sheets[]`) and drops excluded entries; `_generate_erc_report` / `_generate_drc_report` delete the stale report first and return `None` + message on failure; `get_*_violations` no longer guesses from `❌`/`⚠️` strings; `export_*_report` treat warnings as findings (not failures) and create parent dirs |
+| `tools/schematic_editor.py` | `add_wire` splits multi-point input into 2-point segments (a 3-point `(wire (pts ...))` made the schematic unloadable); `_flatten_symbol_extends()` resolves library `extends` chains so derived symbols keep their geometry and pins |
+| `tools/netlist.py` | `trace_netlist_connection` formatter handles the per-net pin list returned for multi-pin components |
+| `parsers/schematic_parser.py` | instance `(at ...)` parsed independently of file layout, so positions are no longer always (0, 0) |
+| `tools/project.py`, `utils/kicad_version.py` | `create_kicad_project` writes project-local `sym-lib-table` / `fp-lib-table` (absolute paths) when the newest global KiCad table is empty, removing 6 library warnings per project; added `get_kicad_footprint_dir()` |
+
+Regression evidence: `integrations/kicad-mcp-server/tests/test_fork_regressions.py` (29 offline checks) and
+`integrations/kicad-mcp-server/tests/mcp_stdio_smoke.py` (14 checks over real MCP stdio, incl. fork-resolution and nested report export
+and nested-dir report export). Re-run them after any further edit. The server
+is spawned per LOGOS session — restart the session to pick up changes.
+
+## Verified behavior after patching
+
+```text
+run_erc (KiCad 10 JSON, 15 violations)   -> 15 total, 3 errors  (was: "clean")
+get_erc_violations severity=error        -> 3, incl. label:TESTNET (was: 0 / N/A)
+export_erc_report (nested output dir)    -> created dirs + 15 counted
+export_drc_report (board with warnings)  -> exported             (was: refused)
+trace_netlist_connection U1              -> VIN/VOUT/GND, no crash
+add_wire 4 points                        -> 3 legal segments, kicad-cli loads
+add_component_from_library LP2985-3.3    -> 5 pins in KiCad netlist (was: 0)
+create_kicad_project                     -> + sym-lib-table, fp-lib-table
+run_erc on a new project with one part   -> 0 library warnings    (was: 6)
+```
+
+All of the above was re-verified on 2026-10-21 through the MCP tools of a
+restarted session (not only by the offline scripts).
 
 ## Troubleshooting
 
 **`libwx_gtk3u_core-3.2.so.0: cannot open shared object file`**  
-The raw binary was called without the wrapper. Use
-`~/.local/bin/kicad-cli` or export `LD_LIBRARY_PATH` first.
+The raw user-space binary was called without its wrapper. Use
+`~/.local/bin/kicad9-cli`, or export `LD_LIBRARY_PATH` first. (The plain
+`kicad-cli` on PATH is the system 10.0.7 package and needs no wrapper.)
 
 **`ModuleNotFoundError: No module named 'pcbnew'`**  
-Use `~/.local/bin/kicad-python`, which sets `PYTHONPATH` to the KiCad Python
-directory. A plain `python3` cannot import `pcbnew`.
+Use `~/.local/bin/kicad9-python` (user-space 9.0.9) or `/usr/bin/python3`
+(system 10.0.7), both of which import `pcbnew`. The plain `kicad-python` name
+does not exist here.
 
 **`schema file '/usr/share/kicad/schemas/api.v1.schema.json' not found`**  
 Set `KICAD_STOCK_DATA_HOME` to the extracted `share/kicad` directory. The

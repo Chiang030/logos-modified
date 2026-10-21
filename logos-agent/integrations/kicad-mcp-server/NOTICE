@@ -1,0 +1,50 @@
+# NOTICE — third-party component vendored into LOGOS
+
+## Upstream
+
+| Field | Value |
+|---|---|
+| Project | `kicad-mcp-server` |
+| Upstream | <https://github.com/Seeed-Studio/kicad-mcp-server> |
+| Author | Seeed Studio (`pyproject.toml`, `authors`) |
+| Version vendored | 0.1.0 (Development Status :: 3 - Alpha) |
+| License | MIT (`pyproject.toml`, `license = { text = "MIT" }`); see `LICENSE` |
+| Vendored on | 2026-10-21 |
+| Vendored snapshot | The `0.1.0` source tree as installed on the LOGOS server host, plus the LOGOS patches listed below |
+
+The upstream repository does not publish a standalone `LICENSE` file; the MIT
+terms are declared in `pyproject.toml`. `LICENSE` here reproduces the standard
+MIT text under the copyright holder named in that file. If upstream later
+publishes its own `LICENSE`, replace this file with it verbatim.
+
+## Why this copy exists
+
+LOGOS must ship a working KiCad MCP server. The upstream 0.1.0 release targets
+KiCad 9 and, on KiCad 10, reports every ERC run as clean (violations moved into
+`sheets[]`), refuses to export DRC reports for any board that has warnings, and
+writes schematic files that KiCad cannot reopen in two cases. Patching the
+host's editable install would disappear on reinstall and would not reach other
+LOGOS deployments, so the patched tree is vendored here, under version control
+and inside the release manifest.
+
+## LOGOS patches on top of upstream 0.1.0
+
+| File | Change |
+|---|---|
+| `src/kicad_mcp_server/tools/validation.py` | `_collect_violations()` reads both ERC layouts (KiCad 9 top-level, KiCad 10 `sheets[]`) and drops excluded entries; `_generate_erc_report` / `_generate_drc_report` delete the stale report first and return `None` + message on failure; `get_*_violations` no longer infer success from `❌`/`⚠️` strings; `export_*_report` treat warnings as findings and create parent directories; a dangling label surfaces its name |
+| `src/kicad_mcp_server/tools/schematic_editor.py` | `add_wire` splits multi-point input into two-point segments (a three-point `(wire (pts ...))` made the whole `.kicad_sch` unloadable); `_flatten_symbol_extends()` resolves library `extends` chains so derived symbols keep geometry and pins |
+| `src/kicad_mcp_server/tools/netlist.py` | `trace_netlist_connection` formatter handles the per-net pin list returned for multi-pin components |
+| `src/kicad_mcp_server/parsers/schematic_parser.py` | instance `(at ...)` parsed independently of file layout (positions were always `(0, 0)`) |
+| `src/kicad_mcp_server/tools/project.py`, `src/kicad_mcp_server/utils/kicad_version.py` | `create_kicad_project` writes project-local `sym-lib-table` / `fp-lib-table` when the newest global KiCad table is empty; added `get_kicad_footprint_dir()` |
+
+Nothing else was changed; `docs/` and `upstream-tests/` are upstream content.
+
+## Maintaining this fork
+
+`patch-20261021.diff` in the LOGOS case archive documents the exact diff against
+the pre-patch install. Verify a vendored copy with:
+
+```bash
+python3 integrations/kicad-mcp-server/tests/test_fork_regressions.py   # 29 checks
+python3 integrations/kicad-mcp-server/tests/mcp_stdio_smoke.py         # 14 checks
+```

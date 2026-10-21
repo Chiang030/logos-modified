@@ -1,0 +1,54 @@
+#!/bin/sh
+# LOGOS launcher for the vendored kicad-mcp-server fork.
+#
+# Runs `python -m kicad_mcp_server` with the fork's own source first on
+# PYTHONPATH, so the code LOGOS ships is the code that runs — an editable
+# install elsewhere on the host cannot shadow it.
+#
+#   bin/kicad-mcp-server              # start the MCP server on stdio
+#   bin/kicad-mcp-server --logos-info # print which module and interpreter run
+set -eu
+
+self_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+fork_dir=$(CDPATH= cd -- "$self_dir/.." && pwd)
+
+# 1. Fork source first: PYTHONPATH entries precede site-packages .pth entries.
+export PYTHONPATH="$fork_dir/src${PYTHONPATH:+:$PYTHONPATH}"
+
+# 2. Optional user-space KiCad prefix: gives in-process pcbnew its libraries.
+kicad_prefix="${KICAD_PREFIX:-$HOME/.local/opt/kicad-9.0.9}"
+if [ -d "$kicad_prefix/usr/lib" ]; then
+    export LD_LIBRARY_PATH="$kicad_prefix/usr/lib/x86_64-linux-gnu:$kicad_prefix/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    export PYTHONPATH="$PYTHONPATH:$kicad_prefix/usr/lib/python3/dist-packages"
+    export KICAD9_SYMBOL_DIR="$kicad_prefix/usr/share/kicad/symbols"
+    export KICAD9_FOOTPRINT_DIR="$kicad_prefix/usr/share/kicad/footprints"
+    export KICAD9_TEMPLATE_DIR="$kicad_prefix/usr/share/kicad/template"
+fi
+
+# 3. First interpreter that has the MCP dependencies.
+interpreter=""
+for candidate in \
+    "${LOGOS_KICAD_PYTHON:-}" \
+    "$fork_dir/../../.venv/bin/python" \
+    "$HOME/.local/opt/kicad-mcp-venv/bin/python" \
+    "$(command -v python3 2>/dev/null || true)"
+do
+    [ -n "$candidate" ] && [ -x "$candidate" ] || continue
+    if "$candidate" -c "import mcp, fastmcp" >/dev/null 2>&1; then
+        interpreter="$candidate"
+        break
+    fi
+done
+
+if [ -z "$interpreter" ]; then
+    echo "kicad-mcp-server: no interpreter with the MCP dependencies found." >&2
+    echo "Install them (python3 integrations/setup.py) or set LOGOS_KICAD_PYTHON." >&2
+    exit 127
+fi
+
+if [ "${1:-}" = "--logos-info" ]; then
+    exec "$interpreter" -c \
+        'import kicad_mcp_server, sys; print("module:", kicad_mcp_server.__file__); print("python:", sys.executable)'
+fi
+
+exec "$interpreter" -m kicad_mcp_server "$@"
