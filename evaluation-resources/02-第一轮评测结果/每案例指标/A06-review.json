@@ -1,0 +1,19 @@
+{
+  "case_id": "A06",
+  "independent_accuracy_status": "NATIVE_CASE_REOPENED_RESULTS_REPRODUCED_WITH_LIMITATIONS",
+  "review_findings": [
+    {
+      "finding": "4 of 8 selected checkpoints reopened before the audit Fluent session/socket failed; final report quantities were reproduced for the readable checkpoints.",
+      "v2": "Bound audit cleanup and record per-file read status; do not treat partial reopen as full audit."
+    },
+    {
+      "finding": "Flow and structure internal convergence evidence is present, with final node displacement about 4.206e-8 m and volume stress maximum about 4.314e5 Pa.",
+      "v2": "Keep flow/structure convergence gates separate and record actual iterations after equation switching."
+    },
+    {
+      "finding": "Native support reactions were unavailable; stress-integral balance is approximate. Native output is Fluent cas.h5/dat.h5 rather than MAPDL DB/RST.",
+      "v2": "Allow native Fluent artifacts, require null reaction plus approximation/limitation, and never interpret zero arrays as zero reactions."
+    }
+  ],
+  "review_scope": "Independent local review of collected native evidence; no frozen accuracy reference for CFD."
+}

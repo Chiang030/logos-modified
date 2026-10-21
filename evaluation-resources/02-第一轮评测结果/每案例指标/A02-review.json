@@ -1,0 +1,125 @@
+{
+  "review_status": "NATIVE_AND_MONITORS_VERIFIED_UNCONVERGED_CONTROLLER_TIMEOUT",
+  "simulation_complete": false,
+  "accuracy_pass": false,
+  "manual_interventions_during_run": 0,
+  "native_reports": {
+    "case_file": "final/model.cas.h5",
+    "has_paired_data": true,
+    "read_ok": true,
+    "recomputed_reports": [
+      {
+        "cd": [
+          0.1412248578415949,
+          ""
+        ]
+      },
+      {
+        "drag_n": [
+          8.721715486636453,
+          "N"
+        ]
+      },
+      {
+        "mass_in": [
+          43.48767150000006,
+          "kg/s"
+        ]
+      },
+      {
+        "mass_net": [
+          2.441097635141887e-07,
+          "kg/s"
+        ]
+      },
+      {
+        "mass_out": [
+          -43.4876712558903,
+          "kg/s"
+        ]
+      }
+    ],
+    "state_file": "model-03-state.json",
+    "seconds": 11.034179092035629
+  },
+  "monitor_review": {
+    "rows": 500,
+    "residual_rows": 500,
+    "last_iteration": 500.0,
+    "window_count": 100,
+    "sampling": "last 100 delivered engineering rows; peak-to-peak divided by absolute mean",
+    "all_finite": true,
+    "engineering_iterations_unique": true,
+    "residual_iterations_unique": true,
+    "final": {
+      "iteration": 500.0,
+      "Cd": 0.1412248578415949,
+      "drag_N": 8.721715486636453,
+      "mass_in_kg_s": 43.48767150000005,
+      "mass_out_kg_s": -43.48767125589028,
+      "mass_net_kg_s": 2.44109770619616e-07
+    },
+    "final_residuals": {
+      "iteration": 500.0,
+      "continuity": 0.037606,
+      "x_velocity": 1.805e-06,
+      "y_velocity": 1.393e-06,
+      "z_velocity": 4.8734e-06,
+      "k": 0.0011749,
+      "epsilon": 0.0014892
+    },
+    "Cd_last100_relative_range": 0.009485913266849524,
+    "drag_N_last100_relative_range": 0.009485913266849635,
+    "mass_imbalance_fraction": 5.613309754228063e-09,
+    "Cd_from_force": 0.14122485784159491,
+    "Cd_force_difference": 2.7755575615628914e-17,
+    "all_residuals_le_1e_4": false,
+    "mass_balance_pass": true,
+    "drag_stability_pass": true,
+    "converged_under_reviewed_rules": false,
+    "limitations": "Verifies delivered time series only. Native saved reports and configuration are checked separately. No independent aerodynamic accuracy reference."
+  },
+  "review_findings": [
+    {
+      "category": "benchmark_prompt",
+      "finding": "V1 incorrectly inferred flow +Z from the official force report vector +Z. Asset inlet is at z=+2.088m and outlet at -2.088m; Logos rigidly rotated the mesh to satisfy V1.",
+      "v2": "Preserve native coordinates, explicitly prescribe flow -Z, and distinguish signed Fz/Cd_z from positive along-flow drag. Record this as a V2 specification correction."
+    },
+    {
+      "category": "environment",
+      "finding": "CAD import stalled again and recovered with isolated MainWin/temp directories.",
+      "v2": "Provide MW_TMPDIR, MWUSER_DIRECTORY and TMPDIR per case before the first import, with a bounded stage timeout."
+    },
+    {
+      "category": "api",
+      "finding": "Obsolete mesh.size, coordinate export before initialization and rotation-unit interpretation caused retries.",
+      "v2": "Use supported mesh checks and vertex data for pre-solve geometry verification. Assert transformed boundary bounds before initialization; avoid unnecessary rotations."
+    },
+    {
+      "category": "numerical",
+      "finding": "500-iteration final solution passes force stability and mass balance but continuity=0.037606, k=0.0011749 and epsilon=0.0014892 fail 1e-4. Native drag=8.7217154866 N and Cd=0.14122485784 match delivered monitors.",
+      "v2": "Retain separate convergence gates. Budget enough for the specified run and convergence diagnosis; do not relax tolerances just to pass."
+    },
+    {
+      "category": "budget",
+      "finding": "Agent continued editing reports/scripts at 1793.7s; controller stopped at 1800s without a final settled event, although solver and numerical outputs had been saved.",
+      "v2": "Stop optional presentation/replay work earlier; finalize required JSON/report before the reserved deadline. Keep solver completion and end-to-end completion distinct."
+    },
+    {
+      "category": "numerical",
+      "finding": "Standard wall functions were used while about 99.55% of rear area had y+<30; wall-model adequacy is not established.",
+      "v2": "Freeze the wall treatment and y+ assessment, report incompatible zones, and perform a separately specified mesh/wall-treatment study before using this as accuracy truth."
+    },
+    {
+      "category": "cleanup",
+      "finding": "Diagnostic session shutdown raced with process-group termination and logged signal 11; supervisor ultimately terminated 13 remaining owned processes.",
+      "v2": "Wait for normal session closure, then verify descendants and clean only confirmed leftovers. Do not terminate an already-closing session twice."
+    }
+  ],
+  "limitations": [
+    "No independent converged aerodynamic reference.",
+    "Native coordinate rotation is physically rigid but V2 will use original coordinates and a different signed reporting convention.",
+    "Timeout prevented final session statistics; event costs/tokens only cover observed completed messages.",
+    "Controller manifest preceded final cleanup; one diagnostic log changed. Post-cleanup collection manifest matches all 146 delivered files."
+  ]
+}

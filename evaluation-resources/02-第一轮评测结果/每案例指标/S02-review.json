@@ -1,0 +1,41 @@
+{
+  "review_status": "RAW_STRESS_VERIFIED_EMPIRICAL_COMPARISON",
+  "checks": [
+    {
+      "variant": "base",
+      "hole_corner_count": 64,
+      "peak_sx_pa": 33791764.0,
+      "claimed_peak_sx_pa": 33791764.0,
+      "claim_absolute_difference": 0.0,
+      "Kt_net": 2.3654234800000005,
+      "Kt_gross": 3.3791764,
+      "empirical_fit_Kt_net": 2.3468009999999997,
+      "empirical_relative_difference": 0.007935261660447893
+    },
+    {
+      "variant": "refined",
+      "hole_corner_count": 128,
+      "peak_sx_pa": 33751480.0,
+      "claimed_peak_sx_pa": 33751480.0,
+      "claim_absolute_difference": 0.0,
+      "Kt_net": 2.3626036000000004,
+      "Kt_gross": 3.375148,
+      "empirical_fit_Kt_net": 2.3468009999999997,
+      "empirical_relative_difference": 0.006733677035249545
+    }
+  ],
+  "empirical_fit_limit": "Official tutorial Peterson fit is approximate, not an independent mesh-converged FE reference; no preregistered accuracy gate",
+  "manual_interventions_during_run": 0,
+  "review_findings": [
+    {
+      "category": "api",
+      "finding": "Midside-node stress queries repeated the S03 failure; final result recovered by corner-node extraction",
+      "v2": "Enforce native supported result locations and classify warning messages before accepting CSV values."
+    },
+    {
+      "category": "environment",
+      "finding": "rg and matplotlib absent; numerical artifacts completed without package installation",
+      "v2": "Publish exact capability snapshot. Use python3 for log search; make plotting optional unless a verified headless renderer is provided."
+    }
+  ]
+}

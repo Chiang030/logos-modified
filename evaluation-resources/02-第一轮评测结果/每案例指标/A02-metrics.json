@@ -1,0 +1,618 @@
+{
+  "case_id": "A02",
+  "execution": {
+    "settled": false,
+    "aborted": null,
+    "timed_out": true,
+    "controller_error": null,
+    "interactive_request_count": 0,
+    "needs_input_artifact": false
+  },
+  "agent_reported_status": "INCOMPLETE",
+  "independent_accuracy_status": "NATIVE_AND_MONITORS_VERIFIED_UNCONVERGED_CONTROLLER_TIMEOUT",
+  "agent_wall_seconds": null,
+  "total_wall_seconds": 1800.4684250519495,
+  "sampled_peak_tree_rss_mib": 269.765625,
+  "child_user_cpu_seconds": 22.594128,
+  "child_system_cpu_seconds": 1.148127,
+  "assistant_turns": 99,
+  "tools": {
+    "read": 8,
+    "bash": 80,
+    "write": 13,
+    "edit": 3
+  },
+  "tool_calls": 104,
+  "tool_error_count": 3,
+  "tool_seconds_sum": 104.44690616760636,
+  "tokens": {
+    "input": 186243,
+    "output": 36722,
+    "cacheRead": 6921728,
+    "cacheWrite": 0,
+    "reasoning": 10009,
+    "totalTokens": 7144693
+  },
+  "runtime_estimated_cost_usd": null,
+  "actual_billed_cost_usd": null,
+  "model_id": "gpt-6.1-sol",
+  "thinking_level": "medium",
+  "artifact_count": 146,
+  "artifact_bytes": 551457442,
+  "transfer_verified": true,
+  "agent_reported_issues": {
+    "issues": [
+      {
+        "stage": "geometry_import",
+        "category": "environment",
+        "symptom": "首次PMDB导入停在Initializing ANSYS component system，210秒子进程超时退出124；CAD reader处于futex等待",
+        "evidence": "attempts/01/run.log末尾；attempts/01/time.txt；attempts/01/owned_cleanup.json",
+        "attempt": 1,
+        "action": "仅对本任务Fluent进程组执行清理，第二次运行使用workspace内部MW_TMPDIR、MWUSER_DIRECTORY、TMPDIR，PMDB成功导入",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "并行评测中为每个CAD reader指定独立MainWin及普通临时目录，导入阶段设置独立超时"
+      },
+      {
+        "stage": "mesh_check",
+        "category": "api",
+        "symptom": "已保存网格且check通过后，旧TUI调用mesh.size引发AttributeError",
+        "evidence": "attempts/02/run.log末尾；attempts/02/failure.json",
+        "attempt": 2,
+        "action": "从final/mesh.cas.h5继续，用settings.mesh.check及实际网格日志核验，不调用不存在的size接口",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "先以本版生成API确认TUI命令名称，网格计数可直接读取case写出日志"
+      },
+      {
+        "stage": "environment_diagnostic",
+        "category": "environment",
+        "symptom": "对本任务CAD reader进行strace附加被系统ptrace权限拒绝",
+        "evidence": "attempts/01/diagnostics.txt",
+        "attempt": 1,
+        "action": "未提权，改用本任务进程状态与局部临时区隔离测试",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "评测环境可优先使用/proc状态及独立临时目录，不依赖ptrace权限"
+      },
+      {
+        "stage": "direction_check",
+        "category": "parameter",
+        "symptom": "原资产inlet在Z=+2.088m，法向入流为-Z，与题目+Z方向不符；初始诊断Cd为负",
+        "evidence": "attempts/04/surface_bounds.json；attempts/03/engineering.out",
+        "attempt": 3,
+        "action": "归档-Z诊断解，从原网格绕Y轴刚性转180°，不改变几何尺寸与边界类型",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "明确PMDB原坐标入口方向；允许整体刚性坐标变换以满足指定+Z流向"
+      },
+      {
+        "stage": "geometry_export",
+        "category": "api",
+        "symptom": "在未初始化网格上通过file.export.ascii导出坐标失败",
+        "evidence": "attempts/04/run.log末尾",
+        "attempt": 4,
+        "action": "使用field_data.get_surface_data读取顶点，已成功取得各命名边界包围盒；结果阶段使用field_data导出数值",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "几何核验直接调用SurfaceDataType.Vertices，不在无解网格上调用结果ASCII导出"
+      },
+      {
+        "stage": "mesh_orientation",
+        "category": "api",
+        "symptom": "settings.mesh.rotate文档称角度单位degree，但实际angle=180按弧度旋转，包围盒不满足预期",
+        "evidence": "attempts/05/oriented_surface_bounds.json；attempts/05/run.log；attempts/06/oriented_surface_bounds.json入口出口断言通过",
+        "attempt": 5,
+        "action": "停止并归档该段，angle改为pi，增加入口出口z位置断言，重新初始化求解",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "对261版本mesh.rotate使用弧度，并旋转后检查入口/出口平面法向和包围盒"
+      },
+      {
+        "stage": "live_diagnostic",
+        "category": "api",
+        "symptom": "尝试连接自有会话时，launcher生成的serverinfo文件已被移除，连接失败",
+        "evidence": "attempts/03/direction.log",
+        "attempt": 3,
+        "action": "未搜索其他会话信息；关闭该自有求解后单独启动几何核验，保留检查点",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "在同一驱动脚本内先完成几何流向检查，避免依赖会被launcher清理的临时连接文件"
+      },
+      {
+        "stage": "resource_diagnostic",
+        "category": "api",
+        "symptom": "初版/proc辅助诊断对带空格进程名解析失败；初始资源采样仅统计进程组，遗漏独立MPI节点组",
+        "evidence": "attempts/01/diagnostics.txt；attempts/06/resources_group_only.csv；attempts/06/resources.csv",
+        "attempt": 1,
+        "action": "改为按最后右括号分割stat，并按自有cortex后代进程树采样CPU与RSS；原始采样保留",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "资源采样按进程树而非仅PGID，/proc/stat正确解析含空格的comm字段"
+      },
+      {
+        "stage": "diagnostic_session_shutdown",
+        "category": "interaction",
+        "symptom": "中断-Z诊断并请求关闭期间，又清理其自有进程组，cortex关闭日志出现signal11堆栈",
+        "evidence": "attempts/03/run.log末尾；attempts/03/owned_cleanup.json",
+        "attempt": 3,
+        "action": "配对100次检查点和原始日志已保留；后续正常完成会话仅调用session.exit，不重复终止进程组",
+        "resolved": false,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "中断驱动后等待其finally关闭完成，仅对确认残留的自有PID清理，避免关闭竞争"
+      },
+      {
+        "stage": "steady_convergence",
+        "category": "numerical",
+        "symptom": "500次迭代后连续性残差0.037606、k残差0.0011749、epsilon残差0.0014892，均高于1e-4；虽阻力稳定与质量平衡通过，整体未收敛",
+        "evidence": "final/residual_monitor.csv第501行；final/engineering_monitor.csv；attempts/06/run.log",
+        "attempt": 6,
+        "action": "如实标记INCOMPLETE，保存500次配对case/data、全监控、Cp、尾流与y+；没有更改载荷、湍流模型或放宽残差",
+        "resolved": false,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "为指定网格的1500次迭代预留充分求解时间；稳态残差持续波动时独立分析数值设置，不能仅凭Cd稳定判收敛"
+      },
+      {
+        "stage": "iteration_budget",
+        "category": "budget",
+        "symptom": "导入和接口诊断消耗预算后，有界主求解在500次检查点结束，未达到最多1500次上限",
+        "evidence": "attempts/06/run.log中STAGE budget_checkpoint、STAGE complete；attempts/06/time.txt",
+        "attempt": 6,
+        "action": "提前预留后处理和归档时间，正常关闭自有会话；保留可继续迭代的配对解",
+        "resolved": false,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "首次导入即隔离MainWin临时目录，先核验原资产方向及mesh.rotate弧度单位，减少重复启动"
+      },
+      {
+        "stage": "wall_treatment_assessment",
+        "category": "numerical",
+        "symptom": "实际标准壁面函数下，rear约99.55%面积y+<30，主车身与前部约27.3%面积y+<30，近壁适用性存在限制",
+        "evidence": "final/yplus_stats.json；final/viscous.json",
+        "attempt": 6,
+        "action": "保留指定网格和实际壁面处理，如实报告统计，不声称近壁精度通过",
+        "resolved": false,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "明确预期壁面处理及y+目标；评测允许时另立网格/壁面模型敏感性研究"
+      }
+    ],
+    "first_attempt_success": false,
+    "repair_count": 5
+  },
+  "needs_input": null,
+  "tool_errors": [
+    {
+      "elapsed_s": 146.721640335978,
+      "tool": "bash",
+      "tool_call_id": "call_cd4e4ee1d486486aac35dcd4fbe19d6b|fc_0d2b1abc5a2bd4d7016ad5dd4831408196935d79ebffa49223",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Traceback (most recent call last):\n  File \"<stdin>\", line 6, in <module>\nValueError: invalid literal for int() with base 10: 'queue)'\n\n\nCommand exited with code 1"
+          }
+        ],
+        "structuredContent": {
+          "output": "Traceback (most recent call last):\n  File \"<stdin>\", line 6, in <module>\nValueError: invalid literal for int() with base 10: 'queue)'\n",
+          "truncated": false,
+          "exit_code": 1,
+          "wall_time_seconds": 0.1
+        },
+        "isError": true
+      }
+    },
+    {
+      "elapsed_s": 597.0752589399926,
+      "tool": "bash",
+      "tool_call_id": "call_b0b95e73a7da432189660945a9715fa5|fc_0d2b1abc5a2bd4d7016ad5df0ad68c81968931203149461e81",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "h5py None\nnumpy None\n   105  4.7267e-02  2.2861e-06  1.8148e-06  6.3088e-06  1.8757e-03  1.7761e-03  0:01:52   95\n   105  4.7267e-02  2.2861e-06  1.8148e-06  6.3088e-06  1.8757e-03  1.7761e-03  0:01:52   95\n   106  4.8583e-02  2.3897e-06  1.9230e-06  6.5240e-06  1.8737e-03  1.8036e-03  0:01:52   94\n   106  4.8583e-02  2.3897e-06  1.9230e-06  6.5240e-06  1.8737e-03  1.8036e-03  0:01:52   94\n   107  4.9972e-02  2.4750e-06  2.0135e-06  6.7173e-06  1.8705e-03  1.7926e-03  0:01:52   93\n   107  4.9972e-02  2.4750e-06  2.0135e-06  6.7173e-06  1.8705e-03  1.7926e-03  0:01:52   93\n\n\nCommand exited with code 2"
+          }
+        ],
+        "structuredContent": {
+          "output": "h5py None\nnumpy None\n   105  4.7267e-02  2.2861e-06  1.8148e-06  6.3088e-06  1.8757e-03  1.7761e-03  0:01:52   95\n   105  4.7267e-02  2.2861e-06  1.8148e-06  6.3088e-06  1.8757e-03  1.7761e-03  0:01:52   95\n   106  4.8583e-02  2.3897e-06  1.9230e-06  6.5240e-06  1.8737e-03  1.8036e-03  0:01:52   94\n   106  4.8583e-02  2.3897e-06  1.9230e-06  6.5240e-06  1.8737e-03  1.8036e-03  0:01:52   94\n   107  4.9972e-02  2.4750e-06  2.0135e-06  6.7173e-06  1.8705e-03  1.7926e-03  0:01:52   93\n   107  4.9972e-02  2.4750e-06  2.0135e-06  6.7173e-06  1.8705e-03  1.7926e-03  0:01:52   93\n",
+          "truncated": false,
+          "exit_code": 2,
+          "wall_time_seconds": 0
+        },
+        "isError": true
+      }
+    },
+    {
+      "elapsed_s": 1502.004878926964,
+      "tool": "bash",
+      "tool_call_id": "call_3ca11dfe37ca41b7bdffe6cb02b8a50e|fc_0d2b1abc5a2bd4d7016ad5e2924408819699990c6453abcd39",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Traceback (most recent call last):\n  File \"<stdin>\", line 3, in <module>\nValueError: substring not found\n\n\nCommand exited with code 1"
+          }
+        ],
+        "structuredContent": {
+          "output": "Traceback (most recent call last):\n  File \"<stdin>\", line 3, in <module>\nValueError: substring not found\n",
+          "truncated": false,
+          "exit_code": 1,
+          "wall_time_seconds": 0.1
+        },
+        "isError": true
+      }
+    }
+  ],
+  "controller_followups": 0,
+  "human_interventions": 0,
+  "cleanup": {
+    "terminated_run_owned_pids": [
+      1352107,
+      1352272,
+      1352275,
+      1352462,
+      1352566,
+      1352873,
+      1352902,
+      1352940,
+      1353966,
+      1353969,
+      1353970,
+      1353971,
+      1353972
+    ],
+    "remaining": []
+  },
+  "event_estimated_cost_usd": 1.4318788000000005,
+  "controller_artifact_manifest_mismatches": [
+    "attempts/05/run.log"
+  ],
+  "collection_manifest_source": "post_cleanup_collection_manifest",
+  "controller_wall_seconds": 1800.4684250519495,
+  "agent_reported_physics_metrics": {
+    "Cd": {
+      "value": 0.1412248578415949,
+      "unit": "1",
+      "evidence": "final/engineering_monitor.csv"
+    },
+    "drag": {
+      "value": 8.721715486636453,
+      "unit": "N",
+      "evidence": "final/engineering_monitor.csv"
+    },
+    "Cd_last100_mean": {
+      "value": 0.14112792833838633,
+      "unit": "1",
+      "evidence": "final/engineering_monitor.csv"
+    },
+    "drag_last100_peak_to_peak_over_mean": {
+      "value": 0.009485913266849519,
+      "unit": "1",
+      "evidence": "final/engineering_monitor.csv"
+    },
+    "mass_in": {
+      "value": 43.48767150000005,
+      "unit": "kg/s",
+      "evidence": "final/engineering_monitor.csv"
+    },
+    "mass_out": {
+      "value": -43.48767125589028,
+      "unit": "kg/s",
+      "evidence": "final/engineering_monitor.csv"
+    },
+    "mass_net": {
+      "value": 2.44109770619616e-07,
+      "unit": "kg/s",
+      "evidence": "final/engineering_monitor.csv"
+    },
+    "mass_imbalance_ratio": {
+      "value": 5.613309754228062e-09,
+      "unit": "1",
+      "evidence": "final/engineering_monitor.csv"
+    },
+    "mesh_cell_count": {
+      "value": 445980.0,
+      "unit": "cell",
+      "evidence": "attempts/02/run.log"
+    },
+    "mesh_face_count": {
+      "value": 1864992.0,
+      "unit": "face",
+      "evidence": "attempts/02/run.log"
+    },
+    "mesh_node_count": {
+      "value": 1029222.0,
+      "unit": "node",
+      "evidence": "attempts/02/run.log"
+    },
+    "slant_angle_verified": {
+      "value": 20.0,
+      "unit": "degree",
+      "evidence": "attempts/06/slant_verification.json"
+    },
+    "residual_continuity": {
+      "value": 0.037606,
+      "unit": "1",
+      "evidence": "final/residual_monitor.csv"
+    },
+    "residual_x_velocity": {
+      "value": 1.805e-06,
+      "unit": "1",
+      "evidence": "final/residual_monitor.csv"
+    },
+    "residual_y_velocity": {
+      "value": 1.393e-06,
+      "unit": "1",
+      "evidence": "final/residual_monitor.csv"
+    },
+    "residual_z_velocity": {
+      "value": 4.8734e-06,
+      "unit": "1",
+      "evidence": "final/residual_monitor.csv"
+    },
+    "residual_k": {
+      "value": 0.0011749,
+      "unit": "1",
+      "evidence": "final/residual_monitor.csv"
+    },
+    "residual_epsilon": {
+      "value": 0.0014892,
+      "unit": "1",
+      "evidence": "final/residual_monitor.csv"
+    },
+    "wall_ahmed_body_main_yplus_min": {
+      "value": 1.6374247074127197,
+      "unit": "1",
+      "evidence": "attempts/06/yplus_stats.json"
+    },
+    "wall_ahmed_body_main_yplus_max": {
+      "value": 50.55744171142578,
+      "unit": "1",
+      "evidence": "attempts/06/yplus_stats.json"
+    },
+    "wall_ahmed_body_main_yplus_area_weighted_mean": {
+      "value": 36.1206169128418,
+      "unit": "1",
+      "evidence": "attempts/06/yplus_stats.json"
+    },
+    "wall_ahmed_body_main_yplus_fraction_area_yplus_lt30": {
+      "value": 0.2731646001338959,
+      "unit": "1",
+      "evidence": "attempts/06/yplus_stats.json"
+    },
+    "wall_ahmed_body_main_yplus_fraction_area_yplus_gt300": {
+      "value": 0.0,
+      "unit": "1",
+      "evidence": "attempts/06/yplus_stats.json"
+    },
+    "wall_ahmed_body_front_yplus_min": {
+      "value": 2.9413952827453613,
+      "unit": "1",
+      "evidence": "attempts/06/yplus_stats.json"
+    },
+    "wall_ahmed_body_front_yplus_max": {
+      "value": 55.86882400512695,
+      "unit": "1",
+      "evidence": "attempts/06/yplus_stats.json"
+    },
+    "wall_ahmed_body_front_yplus_area_weighted_mean": {
+      "value": 36.723331451416016,
+      "unit": "1",
+      "evidence": "attempts/06/yplus_stats.json"
+    },
+    "wall_ahmed_body_front_yplus_fraction_area_yplus_lt30": {
+      "value": 0.27288904786109924,
+      "unit": "1",
+      "evidence": "attempts/06/yplus_stats.json"
+    },
+    "wall_ahmed_body_front_yplus_fraction_area_yplus_gt300": {
+      "value": 0.0,
+      "unit": "1",
+      "evidence": "attempts/06/yplus_stats.json"
+    },
+    "wall_ahmed_body_rear_yplus_min": {
+      "value": 0.9621235132217407,
+      "unit": "1",
+      "evidence": "attempts/06/yplus_stats.json"
+    },
+    "wall_ahmed_body_rear_yplus_max": {
+      "value": 32.23557662963867,
+      "unit": "1",
+      "evidence": "attempts/06/yplus_stats.json"
+    },
+    "wall_ahmed_body_rear_yplus_area_weighted_mean": {
+      "value": 11.521523475646973,
+      "unit": "1",
+      "evidence": "attempts/06/yplus_stats.json"
+    },
+    "wall_ahmed_body_rear_yplus_fraction_area_yplus_lt30": {
+      "value": 0.9954890608787537,
+      "unit": "1",
+      "evidence": "attempts/06/yplus_stats.json"
+    },
+    "wall_ahmed_body_rear_yplus_fraction_area_yplus_gt300": {
+      "value": 0.0,
+      "unit": "1",
+      "evidence": "attempts/06/yplus_stats.json"
+    },
+    "mesh_minimum_orthogonal_quality": {
+      "value": 0.156737,
+      "unit": "1",
+      "evidence": "final/solver.log"
+    },
+    "mesh_maximum_aspect_ratio": {
+      "value": 48.2633,
+      "unit": "1",
+      "evidence": "final/solver.log"
+    },
+    "solve_driver_wall_time": {
+      "value": 702.97,
+      "unit": "s",
+      "evidence": "attempts/06/time.txt"
+    },
+    "sampled_solver_tree_cpu_time": {
+      "value": 2643.83,
+      "unit": "s",
+      "evidence": "final/resources.csv"
+    },
+    "sampled_solver_tree_sum_RSS_max": {
+      "value": 4683591680.0,
+      "unit": "byte",
+      "evidence": "final/resources.csv"
+    }
+  },
+  "agent_reported_convergence": {
+    "converged": false,
+    "iterations": 500,
+    "maximum_requested_iterations": 1500,
+    "criteria": {
+      "all_residuals_max": 0.0001,
+      "mass_imbalance_ratio_max": 0.001,
+      "last100_drag_range_over_mean_max": 0.01
+    },
+    "checks": {
+      "residuals_pass": false,
+      "mass_balance_pass": true,
+      "drag_stability_pass": true
+    },
+    "solver_and_post_finished": true,
+    "wall_treatment": "standard-wall-fn",
+    "budget_limited": true,
+    "physical_accuracy_validated": null
+  },
+  "agent_reported_limitations": [
+    "未提供独立实验或高精度真值；仅报告计算结果与内部核验，不声称物理精度通过。",
+    "仅有一个指定网格，没有进行网格独立性研究。",
+    "标准壁面函数的适用性需结合实际y+分布评估。",
+    "早期-Z和错误旋转试算已归档，均未并入本题+Z结果。",
+    "time -v记录的是驱动进程及timeout；Fluent独立进程的CPU/RSS另见attempts/06/resources.csv（采样统计）。",
+    "当前未同时满足残差、最后100次阻力稳定与质量守恒全部验收要求；数值不能标为收敛解。",
+    "rear约99.55%面积y+低于30；标准壁面函数在这些区域的近壁适用性不足，当前计算不能提供近壁精度保证。"
+  ],
+  "delivery_presence_checks": {
+    "results.json": true,
+    "issues.json": true,
+    "report.md": true
+  },
+  "delivered_final_native_files": [
+    "final/diagnostic_asset_normal/model.cas.h5",
+    "final/diagnostic_asset_normal/model.dat.h5",
+    "final/diagnostic_wrong_rotation/model.cas.h5",
+    "final/diagnostic_wrong_rotation/model.dat.h5",
+    "final/mesh.cas.h5",
+    "final/model.cas.h5",
+    "final/model.dat.h5",
+    "final/oriented_mesh.cas.h5"
+  ],
+  "native_presence_caveat": "File presence alone does not establish reopenability, convergence or physical accuracy; see review.json and independent audits.",
+  "usage_coverage": "observed_completed_messages_only; interrupted_request_usage_may_be_missing",
+  "frozen_local_inputs_unchanged": {
+    "prompt.md": true,
+    "run-config.json": true
+  },
+  "provided_assets_unchanged": {
+    "ahmed_body_20_0degree_boi_half.scdoc": true,
+    "ahmed_body_20_0degree_boi_half.scdoc.pmdb": true
+  },
+  "event_counts": {
+    "response": 2,
+    "agent_start": 1,
+    "turn_start": 100,
+    "message_start": 205,
+    "message_end": 205,
+    "message_update": 28195,
+    "tool_execution_start": 104,
+    "tool_execution_end": 104,
+    "turn_end": 99,
+    "tool_execution_update": 218
+  },
+  "model_error_count": 0,
+  "session_statistics": null,
+  "first_visible_text_seconds": 4.550277075963095,
+  "final_assistant_text": "",
+  "saved_backend_timing_records": [
+    {
+      "identical_record_paths": [
+        "attempts/01/time.txt"
+      ],
+      "wall_seconds": 210.0,
+      "user_cpu_seconds": 2.44,
+      "system_cpu_seconds": 0.06,
+      "max_rss_kib": 122792.0,
+      "exit_status": 124.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/02/time.txt"
+      ],
+      "wall_seconds": 72.86,
+      "user_cpu_seconds": 2.61,
+      "system_cpu_seconds": 0.07,
+      "max_rss_kib": 169828.0,
+      "exit_status": 1.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/03/direction_time.txt"
+      ],
+      "wall_seconds": 0.23,
+      "user_cpu_seconds": 1.81,
+      "system_cpu_seconds": 0.01,
+      "max_rss_kib": 61976.0,
+      "exit_status": 1.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/03/time.txt"
+      ],
+      "wall_seconds": 230.26,
+      "user_cpu_seconds": 3.22,
+      "system_cpu_seconds": 0.13,
+      "max_rss_kib": 161720.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/04/time.txt"
+      ],
+      "wall_seconds": 52.53,
+      "user_cpu_seconds": 1.98,
+      "system_cpu_seconds": 0.04,
+      "max_rss_kib": 102052.0,
+      "exit_status": 1.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/05/time.txt"
+      ],
+      "wall_seconds": 122.06,
+      "user_cpu_seconds": 2.55,
+      "system_cpu_seconds": 0.18,
+      "max_rss_kib": 161816.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/06/time.txt",
+        "final/time_v.txt"
+      ],
+      "wall_seconds": 702.97,
+      "user_cpu_seconds": 5.15,
+      "system_cpu_seconds": 0.43,
+      "max_rss_kib": 167144.0,
+      "exit_status": 0.0
+    }
+  ],
+  "stage_timing_limit": "Backend process timings and RPC tool durations are measured; a process/tool can span multiple stages. Identical timing files are grouped, not asserted to be distinct invocations. No complete independent per-stage wall-clock instrumentation.",
+  "resource_coverage_limit": "Controller samples the observed Logos descendant process tree. Detached/reparented Fluent/MPI processes can escape that tree; GNU-time around a Python launcher need not cover native solver descendants. RSS sums can double-count shared pages. These values are partial sampled measurements, not complete solver resource accounting."
+}

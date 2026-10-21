@@ -1,0 +1,553 @@
+{
+  "case_id": "S08",
+  "execution": {
+    "settled": true,
+    "aborted": false,
+    "timed_out": false,
+    "controller_error": null,
+    "interactive_request_count": 0,
+    "needs_input_artifact": false
+  },
+  "agent_reported_status": "COMPLETED_WITH_WARNINGS",
+  "independent_accuracy_status": "RAW_FREQUENCIES_VERIFIED_NUMERICAL_WARNING_UNRESOLVED",
+  "agent_wall_seconds": 806.3547121419688,
+  "total_wall_seconds": 806.8273852409911,
+  "sampled_peak_tree_rss_mib": 2580.8984375,
+  "child_user_cpu_seconds": 107.158468,
+  "child_system_cpu_seconds": 4.884008,
+  "assistant_turns": 47,
+  "tools": {
+    "read": 6,
+    "bash": 32,
+    "write": 11,
+    "edit": 2
+  },
+  "tool_calls": 51,
+  "tool_error_count": 3,
+  "tool_seconds_sum": 112.52153345668921,
+  "tokens": {
+    "input": 71744,
+    "output": 22765,
+    "cacheRead": 1762304,
+    "cacheWrite": 0,
+    "reasoning": 4342,
+    "totalTokens": 1856813
+  },
+  "runtime_estimated_cost_usd": 0.5473684,
+  "actual_billed_cost_usd": null,
+  "model_id": "gpt-6.1-sol",
+  "thinking_level": "medium",
+  "artifact_count": 302,
+  "artifact_bytes": 2246244617,
+  "transfer_verified": true,
+  "agent_reported_issues": {
+    "issues": [
+      {
+        "stage": "mesh",
+        "category": "numerical",
+        "symptom": "首轮扫掠周期面节点不匹配，最大位置误差4.55e-4 m。",
+        "evidence": "attempts/01/check.out:276",
+        "attempt": 1,
+        "action": "第02次将CYCLIC提前；第03次求解仍报告映射周期约束；第04次改为显式匹配SOLID186扫掠网格，117对边界节点一一对应。",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "在求解前必须计算周期节点旋转匹配误差；仅提前CYCLIC不能保证VSWEEP匹配。"
+      },
+      {
+        "stage": "solve",
+        "category": "numerical",
+        "symptom": "第03次试算仍使用非匹配周期面映射约束，不能作为交付主结果。",
+        "evidence": "attempts/03/solve.out:200",
+        "attempt": 3,
+        "action": "保留试算并弃用其频率作为主结果；第04次改用共节点二次楔体/六面体匹配网格。",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "要求显式检查求解日志中周期面映射警告。"
+      },
+      {
+        "stage": "solve",
+        "category": "numerical",
+        "symptom": "自由结构、1 Hz起始移频的LANB出现病态性警告；主模型测试线性求解相对残差1.253758e-3，细网格最高2.605175e-3。",
+        "evidence": "attempts/04/solve.out:49406",
+        "attempt": 4,
+        "action": "维持题定自由边界和1 Hz起始频率；保留警告，并完成网格变化、周期连续性、惯性力矩平衡及独立积分能量检查。局部特征向量残差未测。",
+        "resolved": false,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "为自由循环模态明确病态性警告的验收准则；不得为消除警告而增加固支或改起始频率。"
+      },
+      {
+        "stage": "postprocess",
+        "category": "api",
+        "symptom": "原生APDL拒绝将UX/UY/UZ用作数组参数名，首次振型导出退出1。",
+        "evidence": "attempts/05/export.out:234",
+        "attempt": 5,
+        "action": "第06次改为disp_x、disp_y、disp_z，40个结果集振型全部成功导出。",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "APDL数组名避免自由度保留字。"
+      }
+    ],
+    "first_attempt_success": false,
+    "repair_count": 3
+  },
+  "needs_input": null,
+  "tool_errors": [
+    {
+      "elapsed_s": 173.5511201809859,
+      "tool": "bash",
+      "tool_call_id": "call_15ad6a44ba3640e380a680aa2ffabd97|fc_0d4d62bbe58b81f9016ad5cfd40a9881979cb2d93656e0ce91",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "ModuleNotFoundError No module named 'ansys.dpf'\nnumpy ModuleSpec(name='numpy', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7915b2239e20>, origin='/home/jiangjincheng/logos-server-20261009/logos-server/logos-agent/integrations/.venv/lib/python3.12/site-packages/numpy/__init__.py', submodule_search_locations=['/home/jiangjincheng/logos-server-20261009/logos-server/logos-agent/integrations/.venv/lib/python3.12/site-packages/numpy'])\nmatplotlib None\nscipy None\n ****** COMPUTED QUANTITIES ***************************\n ******************************************************\n *  SECTOR ANGLE =                  51.429            *\n *  EDGE COMPONENTS CONTAIN NODES                     *\n *  LOW  EDGE COMPONENT = CYCLIC_M01L       MATCHED   *\n *  HIGH EDGE COMPONENT = CYCLIC_M01H                 *\n ******************************************************\n\n LIST ALL DEFINED COMPONENTS\n\n *** MAPDL - ENGINEERING ANALYSIS SYSTEM  RELEASE 2026 R1          26.1     ***\n Ansys Mechanical Enterprise                       \n 20120530  VERSION=LINUX x64     16:07:27  OCT 19, 2026 Elapsed Time=      1.377\n\n                                                                               \n\n\n\n    NAME                            SELE TYPE      SUBCOMPONENTS\n\n  CYCLIC_M01H                       YES  NODE\n  CYCLIC_M01L                       YES  NODE\n\n ALL CURRENT MAPDL DATA WRITTEN TO FILE NAME= mesh.db\n  FOR POSSIBLE RESUME FROM THIS POINT\n\n\n ***** ROUTINE COMPLETED *****  ELAPSED TIME =         1.387\n\n\n\n *****  MAPDL SOLUTION ROUTINE  *****\n\nls: cannot access '/srv/shared/ansys_inc/v261/dpf/bin/linux64': No such file or directory\n\n\nCommand exited with code 2"
+          }
+        ],
+        "structuredContent": {
+          "output": "ModuleNotFoundError No module named 'ansys.dpf'\nnumpy ModuleSpec(name='numpy', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7915b2239e20>, origin='/home/jiangjincheng/logos-server-20261009/logos-server/logos-agent/integrations/.venv/lib/python3.12/site-packages/numpy/__init__.py', submodule_search_locations=['/home/jiangjincheng/logos-server-20261009/logos-server/logos-agent/integrations/.venv/lib/python3.12/site-packages/numpy'])\nmatplotlib None\nscipy None\n ****** COMPUTED QUANTITIES ***************************\n ******************************************************\n *  SECTOR ANGLE =                  51.429            *\n *  EDGE COMPONENTS CONTAIN NODES                     *\n *  LOW  EDGE COMPONENT = CYCLIC_M01L       MATCHED   *\n *  HIGH EDGE COMPONENT = CYCLIC_M01H                 *\n ******************************************************\n\n LIST ALL DEFINED COMPONENTS\n\n *** MAPDL - ENGINEERING ANALYSIS SYSTEM  RELEASE 2026 R1          26.1     ***\n Ansys Mechanical Enterprise                       \n 20120530  VERSION=LINUX x64     16:07:27  OCT 19, 2026 Elapsed Time=      1.377\n\n                                                                               \n\n\n\n    NAME                            SELE TYPE      SUBCOMPONENTS\n\n  CYCLIC_M01H                       YES  NODE\n  CYCLIC_M01L                       YES  NODE\n\n ALL CURRENT MAPDL DATA WRITTEN TO FILE NAME= mesh.db\n  FOR POSSIBLE RESUME FROM THIS POINT\n\n\n ***** ROUTINE COMPLETED *****  ELAPSED TIME =         1.387\n\n\n\n *****  MAPDL SOLUTION ROUTINE  *****\n\nls: cannot access '/srv/shared/ansys_inc/v261/dpf/bin/linux64': No such file or directory\n",
+          "truncated": false,
+          "exit_code": 2,
+          "wall_time_seconds": 0
+        },
+        "isError": true
+      }
+    },
+    {
+      "elapsed_s": 184.28288293699734,
+      "tool": "bash",
+      "tool_call_id": "call_cba1c227159845638c9fd0597f2e7486|fc_0d4d62bbe58b81f9016ad5cfdffa208197b95948d8a7cb16e3",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "ansys_deps\nbin\nDPFBuildDate.txt\nExamples\ninclude\nplugins\npython\ntestfiles\nthirdparty_deps\nutilities\nworkflows\nbin\ninclude\nlib\nLICENSE.pytz.txt\nLICENSE.SIX.txt\nres\nrunpython\nscons.1\nsconsign.1\nscons-time.1\nshare\nsed: can't read /srv/shared/ansys_inc/v261/ansys/apdl/HBM_CYCEXPAND.MAC: No such file or directory\n\n\nCommand exited with code 2"
+          }
+        ],
+        "structuredContent": {
+          "output": "ansys_deps\nbin\nDPFBuildDate.txt\nExamples\ninclude\nplugins\npython\ntestfiles\nthirdparty_deps\nutilities\nworkflows\nbin\ninclude\nlib\nLICENSE.pytz.txt\nLICENSE.SIX.txt\nres\nrunpython\nscons.1\nsconsign.1\nscons-time.1\nshare\nsed: can't read /srv/shared/ansys_inc/v261/ansys/apdl/HBM_CYCEXPAND.MAC: No such file or directory\n",
+          "truncated": false,
+          "exit_code": 2,
+          "wall_time_seconds": 0
+        },
+        "isError": true
+      }
+    },
+    {
+      "elapsed_s": 211.19514324999182,
+      "tool": "bash",
+      "tool_call_id": "call_feb38a51a2b94cd49293047b636d7c4a|fc_0d4d62bbe58b81f9016ad5cff7d5908197a1f99d43cd592f5c",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "(no output)\n\nCommand exited with code 1"
+          }
+        ],
+        "structuredContent": {
+          "output": "",
+          "truncated": false,
+          "exit_code": 1,
+          "wall_time_seconds": 2.5
+        },
+        "isError": true
+      }
+    }
+  ],
+  "controller_followups": 0,
+  "human_interventions": 0,
+  "cleanup": {
+    "terminated_run_owned_pids": [],
+    "remaining": []
+  },
+  "event_estimated_cost_usd": 0.5473684,
+  "controller_artifact_manifest_mismatches": [],
+  "collection_manifest_source": "controller_manifest",
+  "controller_wall_seconds": 806.8273852409911,
+  "agent_reported_physics_metrics": {
+    "h0_result_count": {
+      "value": 10,
+      "unit": "count",
+      "evidence": "final/frequencies.csv"
+    },
+    "h0_lowest_requested_frequency": {
+      "value": 1744.836886801344,
+      "unit": "Hz",
+      "evidence": "final/frequencies.csv"
+    },
+    "h1_result_count": {
+      "value": 10,
+      "unit": "count",
+      "evidence": "final/frequencies.csv"
+    },
+    "h1_lowest_requested_frequency": {
+      "value": 4002.313808950782,
+      "unit": "Hz",
+      "evidence": "final/frequencies.csv"
+    },
+    "h2_result_count": {
+      "value": 10,
+      "unit": "count",
+      "evidence": "final/frequencies.csv"
+    },
+    "h2_lowest_requested_frequency": {
+      "value": 1046.577056861706,
+      "unit": "Hz",
+      "evidence": "final/frequencies.csv"
+    },
+    "h3_result_count": {
+      "value": 10,
+      "unit": "count",
+      "evidence": "final/frequencies.csv"
+    },
+    "h3_lowest_requested_frequency": {
+      "value": 1181.639825432193,
+      "unit": "Hz",
+      "evidence": "final/frequencies.csv"
+    },
+    "result_sets": {
+      "value": 40,
+      "unit": "count",
+      "evidence": "final/frequencies.csv"
+    },
+    "base_nodes": {
+      "value": 8206,
+      "unit": "count",
+      "evidence": "final/mesh_metadata.json"
+    },
+    "base_elements": {
+      "value": 1620,
+      "unit": "count",
+      "evidence": "final/mesh_metadata.json"
+    },
+    "refined_nodes": {
+      "value": 20015,
+      "unit": "count",
+      "evidence": "final/mesh_check/mesh_metadata.json"
+    },
+    "refined_elements": {
+      "value": 4256,
+      "unit": "count",
+      "evidence": "final/mesh_check/mesh_metadata.json"
+    },
+    "full_disk_mass": {
+      "value": 0.06824117353460162,
+      "unit": "kg",
+      "evidence": "final/internal_checks.json"
+    },
+    "max_frequency_mesh_change": {
+      "value": 0.0013816663812715201,
+      "unit": "1",
+      "evidence": "final/frequencies.csv"
+    },
+    "max_cyclic_continuity_error": {
+      "value": 7.648143561270029e-08,
+      "unit": "1",
+      "evidence": "final/internal_checks.json"
+    },
+    "max_modal_inertia_force_imbalance": {
+      "value": 9.889659710105628e-08,
+      "unit": "1",
+      "evidence": "final/internal_checks.json"
+    },
+    "max_modal_inertia_moment_imbalance": {
+      "value": 1.93821260675373e-07,
+      "unit": "1",
+      "evidence": "final/internal_checks.json"
+    },
+    "max_full_quadrature_rayleigh_frequency_difference": {
+      "value": 0.0009085281771885215,
+      "unit": "1",
+      "evidence": "final/energy_checks.json"
+    },
+    "main_wall_time": {
+      "value": 9.63,
+      "unit": "s",
+      "evidence": "attempts/04/time.txt"
+    },
+    "main_user_cpu": {
+      "value": 8.05,
+      "unit": "s",
+      "evidence": "attempts/04/time.txt"
+    },
+    "main_system_cpu": {
+      "value": 0.31,
+      "unit": "s",
+      "evidence": "attempts/04/time.txt"
+    },
+    "main_max_rss": {
+      "value": 1140680,
+      "unit": "KiB",
+      "evidence": "attempts/04/time.txt"
+    },
+    "main_exit_code": {
+      "value": 0,
+      "unit": "1",
+      "evidence": "attempts/04/time.txt"
+    },
+    "refined_wall_time": {
+      "value": 25.54,
+      "unit": "s",
+      "evidence": "attempts/07/time.txt"
+    },
+    "refined_max_rss": {
+      "value": 2409308,
+      "unit": "KiB",
+      "evidence": "attempts/07/time.txt"
+    },
+    "local_eigenvector_residual": {
+      "value": null,
+      "unit": "1",
+      "evidence": null
+    },
+    "independent_truth_error": {
+      "value": null,
+      "unit": "1",
+      "evidence": null
+    },
+    "rigid_body_frequencies": {
+      "value": null,
+      "unit": "Hz",
+      "evidence": null
+    },
+    "nonlinear_iteration_count": {
+      "value": null,
+      "unit": "count",
+      "evidence": null
+    },
+    "rerun_frequency_max_relative_difference": {
+      "value": 0.0,
+      "unit": "1",
+      "evidence": "final/rerun_verification.json"
+    }
+  },
+  "agent_reported_convergence": {
+    "process_success": true,
+    "all_requested_result_sets_present": true,
+    "harmonic_indices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "modes_per_harmonic_requested": 10,
+    "matching_periodic_mesh": true,
+    "solver_conditioning_warning": true,
+    "local_eigen_residual": null,
+    "nonlinear_convergence": null,
+    "mesh_sensitivity_max_relative_change": 0.0013816663812715201,
+    "physical_accuracy_validated": false
+  },
+  "agent_reported_limitations": [
+    "LANB在指定1 Hz起始频率下保留病态性警告；未声称无条件数值精度通过。",
+    "仅求7扇区循环模型；附加细网格为相同7扇区定义的网格敏感性检查，未做20扇区。",
+    "1 Hz以下刚体模态未请求，刚体频率字段为null；未增加固支。",
+    "非零谐波10阶中含5对简并模态，不等于10个不同频率；未对旋转简并振型逐个直接计算MAC。",
+    "未计算局部特征向量残差；整体惯性平衡和独立积分能量检查不能替代矩阵残差。",
+    "独立能量检查使用完整积分及二次形函数，SOLID186原生默认积分设置可能不同，因此能量频率偏差不是求解器残差。",
+    "模态向量质量归一化，幅值任意，不能解释为实际位移；复部相位为所导出简并基底的约定。",
+    "没有独立实验或真值，结果仅为计算结果及内部核验。",
+    "全盘VTK保留各扇区独立周期节点，界面坐标重合，导出为二次楔体和二次六面体。",
+    "本任务为线性自由模态，非线性收敛及静力反力不适用；采用模态惯性合力/合矩检查整体平衡。"
+  ],
+  "delivery_presence_checks": {
+    "results.json": true,
+    "issues.json": true,
+    "report.md": true
+  },
+  "delivered_final_native_files": [
+    "final/mesh_check/model.db",
+    "final/mesh_check/model.rst",
+    "final/model.db",
+    "final/model.rst",
+    "reruns/20261019T081553/final/mesh_check/model.db",
+    "reruns/20261019T081553/final/mesh_check/model.rst",
+    "reruns/20261019T081553/final/model.db",
+    "reruns/20261019T081553/final/model.rst"
+  ],
+  "native_presence_caveat": "File presence alone does not establish reopenability, convergence or physical accuracy; see review.json and independent audits.",
+  "usage_coverage": "session_statistics_and_observed_events",
+  "frozen_local_inputs_unchanged": {
+    "prompt.md": true,
+    "run-config.json": true
+  },
+  "provided_assets_unchanged": {},
+  "event_counts": {
+    "response": 5,
+    "agent_start": 1,
+    "turn_start": 47,
+    "message_start": 100,
+    "message_end": 100,
+    "message_update": 18057,
+    "tool_execution_start": 51,
+    "tool_execution_end": 51,
+    "turn_end": 47,
+    "tool_execution_update": 75,
+    "agent_end": 1,
+    "agent_settled": 1
+  },
+  "model_error_count": 0,
+  "session_statistics": {
+    "sessionFile": "/home/jiangjincheng/logos-benchmark-runs/20261019-allcases-discovery-v1/S08/sessions/2026-10-19T08-04-57-306Z_01a15331-395a-75c3-b753-897b266e96c2.jsonl",
+    "sessionId": "01a15331-395a-75c3-b753-897b266e96c2",
+    "userMessages": 1,
+    "assistantMessages": 47,
+    "toolCalls": 51,
+    "toolResults": 51,
+    "totalMessages": 100,
+    "tokens": {
+      "input": 71744,
+      "output": 22765,
+      "cacheRead": 1762304,
+      "cacheWrite": 0,
+      "total": 1856813
+    },
+    "cost": 0.5473684,
+    "contextUsage": {
+      "tokens": 65875,
+      "contextWindow": 272000,
+      "percent": 24.21875
+    }
+  },
+  "first_visible_text_seconds": 3.021713914000429,
+  "final_assistant_text": "### 1. 状态更新\n\nS08 已实际完成，状态为 **COMPLETED_WITH_WARNINGS（完成但有警告）**。已执行 MAPDL 求解及一次独立脚本重跑，重跑的全部 40 个结果集频率与首次交付结果逐值一致。\n\n| 项目 | 设置或实际结果 |\n|---|---|\n| 模型 | 7 扇区循环对称，轴 Z；所有题定边均为直线 |\n| 材料、厚度 | E=210 GPa，ν=0.3，ρ=7800 kg/m³；厚度 0.003 m |\n| 边界 | 自由，无外加固支、转速或预应力 |\n| 主网格 | SOLID186，8206 节点、1620 单元，匹配周期网格 |\n| 求解 | LANB，起始 1 Hz，真实谐波索引 0、1、2、3 各 10 个结果集 |\n| 各谐波最低请求频率 | h0：1744.836887 Hz；h1：4002.3138 Hz；h2：1046.5771 Hz；h3：1181.6398 Hz |\n| 全部频率最大细网格变化 | 0.1382% |\n| 周期连续性最大相对误差 | 7.65×10⁻⁸ |\n| 模态惯性合力／合矩最大相对不平衡 | 9.89×10⁻⁸／1.94×10⁻⁷ |\n\n**保留的限制：**LANB 在题定自由结构、1 Hz 起始移频下报告病态性警告。未修改物理定义消除警告；局部特征向量残差未测，也没有独立真值，因此未宣称物理精度通过。非零谐波的成对频率已标识为简并模态，未逐个直接计算 MAC。\n\n已新增并保存：\n\n- [report.md](report.md)、[results.json](results.json)、[issues.json](issues.json)：完整中文报告、机器可读结果和问题记录；首次端到端尝试未成功，执行了 3 次修复。\n- [final/model.db](final/model.db)、[final/model.rst](final/model.rst)、[final/model.inp](final/model.inp)：实际主模型原生成果；相同 7 扇区的细网格成果保存在 `final/mesh_check/`。\n- [完整频率表](final/frequencies.csv)、[全部数值振型](final/all_numeric_modes.zip)：覆盖全部 40 个结果集。\n- `final/full_disk_set_01/11/21/31.vtk`：四个谐波的全盘代表振型，含实部、虚部、幅值和相位；另有 [振型概览](final/modes_overview.svg)。\n- [rerun.sh](rerun.sh)、建模及后处理脚本、`attempts/01..08/` 原始日志和 [重跑验证记录](final/rerun_verification.json)。\n\n已将 `0-caseDict/caseDict` 更新至完成状态；删除文件为零。\n\n### 2. Todo\n\n- **completed**：最小语法、几何及网格检查，保留首次日志。\n- **completed**：修复周期节点匹配与导出参数名错误。\n- **completed**：完成 h=0..3 各 10 阶求解及完整数值导出。\n- **completed**：复部／相位核验及全盘可视化数据。\n- **completed**：细网格、惯性力矩平衡和独立能量检查。\n- **completed**：报告、成果清单及实际重跑验证。\n\n当前无进行中的任务。\n\n### 3. 下一步\n\n本次执行已结束。成果可直接审阅；全盘 VTK 可在 ParaView 中读取。再次计算可运行 `bash rerun.sh`，脚本会写入新的时间戳目录，保留现有尝试与日志。",
+  "saved_backend_timing_records": [
+    {
+      "identical_record_paths": [
+        "rerun_verification_time.txt"
+      ],
+      "wall_seconds": 47.0,
+      "user_cpu_seconds": 43.38,
+      "system_cpu_seconds": 1.67,
+      "max_rss_kib": 2409832.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/01/time.txt"
+      ],
+      "wall_seconds": 1.82,
+      "user_cpu_seconds": 0.4,
+      "system_cpu_seconds": 0.11,
+      "max_rss_kib": 489248.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/02/time.txt"
+      ],
+      "wall_seconds": 1.83,
+      "user_cpu_seconds": 0.42,
+      "system_cpu_seconds": 0.11,
+      "max_rss_kib": 488140.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/03/time.txt"
+      ],
+      "wall_seconds": 8.47,
+      "user_cpu_seconds": 6.95,
+      "system_cpu_seconds": 0.26,
+      "max_rss_kib": 1102912.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/04/time.txt",
+        "final/logs/main_time.txt"
+      ],
+      "wall_seconds": 9.63,
+      "user_cpu_seconds": 8.05,
+      "system_cpu_seconds": 0.31,
+      "max_rss_kib": 1140680.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/05/time.txt"
+      ],
+      "wall_seconds": 2.47,
+      "user_cpu_seconds": 1.06,
+      "system_cpu_seconds": 0.15,
+      "max_rss_kib": 510340.0,
+      "exit_status": 1.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/06/time.txt"
+      ],
+      "wall_seconds": 3.84,
+      "user_cpu_seconds": 2.43,
+      "system_cpu_seconds": 0.14,
+      "max_rss_kib": 526116.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/07/time.txt",
+        "final/logs/refined_time.txt"
+      ],
+      "wall_seconds": 25.54,
+      "user_cpu_seconds": 23.0,
+      "system_cpu_seconds": 0.9,
+      "max_rss_kib": 2409308.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/08/time.txt"
+      ],
+      "wall_seconds": 4.1,
+      "user_cpu_seconds": 2.61,
+      "system_cpu_seconds": 0.18,
+      "max_rss_kib": 550484.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "reruns/20261019T081553/attempts/04/time.txt"
+      ],
+      "wall_seconds": 9.57,
+      "user_cpu_seconds": 8.02,
+      "system_cpu_seconds": 0.26,
+      "max_rss_kib": 1139896.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "reruns/20261019T081553/attempts/06/time.txt"
+      ],
+      "wall_seconds": 3.85,
+      "user_cpu_seconds": 2.4,
+      "system_cpu_seconds": 0.13,
+      "max_rss_kib": 526312.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "reruns/20261019T081553/attempts/07/time.txt"
+      ],
+      "wall_seconds": 25.56,
+      "user_cpu_seconds": 22.96,
+      "system_cpu_seconds": 0.81,
+      "max_rss_kib": 2409832.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "reruns/20261019T081553/attempts/08/time.txt"
+      ],
+      "wall_seconds": 3.69,
+      "user_cpu_seconds": 2.29,
+      "system_cpu_seconds": 0.15,
+      "max_rss_kib": 551740.0,
+      "exit_status": 0.0
+    }
+  ],
+  "stage_timing_limit": "Backend process timings and RPC tool durations are measured; a process/tool can span multiple stages. Identical timing files are grouped, not asserted to be distinct invocations. No complete independent per-stage wall-clock instrumentation.",
+  "resource_coverage_limit": "Controller samples the observed Logos descendant process tree. Detached/reparented Fluent/MPI processes can escape that tree; GNU-time around a Python launcher need not cover native solver descendants. RSS sums can double-count shared pages. These values are partial sampled measurements, not complete solver resource accounting."
+}

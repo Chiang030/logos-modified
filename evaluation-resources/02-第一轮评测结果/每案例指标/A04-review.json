@@ -1,0 +1,19 @@
+{
+  "case_id": "A04",
+  "independent_accuracy_status": "RAW_RESULTS_AND_NATIVE_REOPEN_VERIFIED_UNCONVERGED",
+  "review_findings": [
+    {
+      "finding": "45/45 final Fluent case/data pairs reopened and report definitions recomputed successfully.",
+      "v2": "Keep native pair reopen as artifact gate; report each checkpoint separately."
+    },
+    {
+      "finding": "All five backpressure points reached 2500 iterations but strict residual/engineering stability acceptance was 0/5; 150 and 200 Pa also exceeded mass/stability limits.",
+      "v2": "Separate execution completion from physical convergence; preserve checkpoint and explicit INCOMPLETE/UNCONVERGED state."
+    },
+    {
+      "finding": "Original run had h5py/API/surface naming and residual seed-row repairs; direct solver resource timing was added only during rerun.",
+      "v2": "Declare missing optional readers, validate zone versus surface names, de-duplicate continuation seeds, and time native solver processes."
+    }
+  ],
+  "review_scope": "Independent local review of collected native evidence; no frozen accuracy reference for CFD."
+}

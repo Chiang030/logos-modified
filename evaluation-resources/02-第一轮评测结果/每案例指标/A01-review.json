@@ -1,0 +1,59 @@
+{
+  "review_status": "NATIVE_CASE_REOPENED_NOT_SOLVED_MISSING_THERMAL_BC",
+  "checks": {
+    "native_case_reopened": true,
+    "paired_data_present": false,
+    "energy_enabled": true,
+    "sst": "sst",
+    "operating_pressure_Pa": 80600,
+    "farfield_Mach": 0.8395,
+    "farfield_T_K": 255.56,
+    "walls_saved_heat_flux": {
+      "wing_bottom": 0,
+      "wing_edge": 0,
+      "wing_top": 0
+    },
+    "density": {
+      "option": "ideal-gas"
+    },
+    "viscosity": {
+      "option": "sutherland",
+      "sutherland": {
+        "option": "three-coefficient-method",
+        "reference_viscosity": 1.716e-05,
+        "reference_temperature": 273.11,
+        "effective_temperature": 110.56
+      }
+    }
+  },
+  "manual_interventions_during_run": 0,
+  "simulation_complete": false,
+  "accuracy_pass": false,
+  "review_findings": [
+    {
+      "category": "prompt_gap",
+      "finding": "Energy equation was specified but wing thermal condition was omitted; Logos stopped before initialization after generating 1,010,687 cells.",
+      "v2": "Explicitly set wing_top/wing_bottom/wing_edge to stationary no-slip adiabatic, zero heat flux as a new benchmark convention. Check required physical inputs before expensive meshing."
+    },
+    {
+      "category": "environment",
+      "finding": "Initial CADReader import hung. A retry with isolated MWUSER_DIRECTORY and TMPDIR succeeded; exact cause not proven.",
+      "v2": "Use case-local native application and temporary directories with bounded import watchdog; preserve failed attempts."
+    },
+    {
+      "category": "parameter",
+      "finding": "Reference area/chord remained undefined; this is nonblocking for dimensional lift/drag under the original task.",
+      "v2": "Keep coefficients null unless reference definitions are established; do not block force outputs on optional coefficient metadata."
+    },
+    {
+      "category": "artifact",
+      "finding": "Initial script swallowed a CAD import exception and exited zero.",
+      "v2": "Reraise top-level exceptions; distinguish process success, stage completion and physical acceptance."
+    }
+  ],
+  "limitations": [
+    "Saved case contains default zero wall heat flux, but V1 did not explicitly authorize that thermal condition.",
+    "No data file, iteration, force, Cp, shock or convergence result; no physical accuracy claim.",
+    "V2 thermal condition is a new explicit convention, not a correction to frozen V1 evidence."
+  ]
+}

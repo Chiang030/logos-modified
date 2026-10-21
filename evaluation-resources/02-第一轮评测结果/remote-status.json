@@ -1,0 +1,218 @@
+{
+  "suite_id": "20261019-allcases-discovery-v1",
+  "started_unix": 1792394440.6314845,
+  "cases": [
+    {
+      "case_id": "S07",
+      "controller_exit": 0,
+      "supervisor_timeout": false,
+      "wall_seconds": 424.02914595603943,
+      "settled": true,
+      "timed_out": false,
+      "needs_input": false,
+      "controller_error": null,
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      }
+    },
+    {
+      "case_id": "S01",
+      "controller_exit": 0,
+      "supervisor_timeout": false,
+      "wall_seconds": 436.0284492969513,
+      "settled": true,
+      "timed_out": false,
+      "needs_input": false,
+      "controller_error": null,
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      }
+    },
+    {
+      "case_id": "S03",
+      "controller_exit": 0,
+      "supervisor_timeout": false,
+      "wall_seconds": 458.02886939048767,
+      "settled": true,
+      "timed_out": false,
+      "needs_input": false,
+      "controller_error": null,
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      }
+    },
+    {
+      "case_id": "S02",
+      "controller_exit": 0,
+      "supervisor_timeout": false,
+      "wall_seconds": 388.02681064605713,
+      "settled": true,
+      "timed_out": false,
+      "needs_input": false,
+      "controller_error": null,
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      }
+    },
+    {
+      "case_id": "S04",
+      "controller_exit": 0,
+      "supervisor_timeout": false,
+      "wall_seconds": 356.0263178348541,
+      "settled": true,
+      "timed_out": false,
+      "needs_input": false,
+      "controller_error": null,
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      }
+    },
+    {
+      "case_id": "S06",
+      "controller_exit": 0,
+      "supervisor_timeout": false,
+      "wall_seconds": 594.0347809791565,
+      "settled": true,
+      "timed_out": false,
+      "needs_input": false,
+      "controller_error": null,
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      }
+    },
+    {
+      "case_id": "S08",
+      "controller_exit": 0,
+      "supervisor_timeout": false,
+      "wall_seconds": 810.0468142032623,
+      "settled": true,
+      "timed_out": false,
+      "needs_input": false,
+      "controller_error": null,
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      }
+    },
+    {
+      "case_id": "S09",
+      "controller_exit": 0,
+      "supervisor_timeout": false,
+      "wall_seconds": 1688.0805764198303,
+      "settled": true,
+      "timed_out": false,
+      "needs_input": false,
+      "controller_error": null,
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      }
+    },
+    {
+      "case_id": "A01",
+      "controller_exit": 0,
+      "supervisor_timeout": false,
+      "wall_seconds": 972.0499649047852,
+      "settled": true,
+      "timed_out": false,
+      "needs_input": false,
+      "controller_error": null,
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      }
+    },
+    {
+      "case_id": "A02",
+      "controller_exit": 0,
+      "supervisor_timeout": false,
+      "wall_seconds": 1805.091581106186,
+      "settled": false,
+      "timed_out": true,
+      "needs_input": false,
+      "controller_error": null,
+      "cleanup": {
+        "terminated_run_owned_pids": [
+          1352107,
+          1352272,
+          1352275,
+          1352462,
+          1352566,
+          1352873,
+          1352902,
+          1352940,
+          1353966,
+          1353969,
+          1353970,
+          1353971,
+          1353972
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "case_id": "A03",
+      "controller_exit": 0,
+      "supervisor_timeout": false,
+      "wall_seconds": 1792.0935974121094,
+      "settled": true,
+      "timed_out": false,
+      "needs_input": false,
+      "controller_error": null,
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      }
+    },
+    {
+      "case_id": "A04",
+      "controller_exit": 0,
+      "supervisor_timeout": false,
+      "wall_seconds": 1764.0943894386292,
+      "settled": true,
+      "timed_out": false,
+      "needs_input": false,
+      "controller_error": null,
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      }
+    },
+    {
+      "case_id": "A06",
+      "controller_exit": 0,
+      "supervisor_timeout": false,
+      "wall_seconds": 840.0395629405975,
+      "settled": true,
+      "timed_out": false,
+      "needs_input": false,
+      "controller_error": null,
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      }
+    },
+    {
+      "case_id": "A07",
+      "controller_exit": 0,
+      "supervisor_timeout": false,
+      "wall_seconds": 302.0204954147339,
+      "settled": false,
+      "timed_out": true,
+      "needs_input": false,
+      "controller_error": null,
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      }
+    }
+  ],
+  "active": null,
+  "finished": true
+}

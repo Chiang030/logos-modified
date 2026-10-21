@@ -1,0 +1,191 @@
+{
+  "review_status": "NATIVE_AND_TRANSIENT_MONITORS_VERIFIED_INCOMPLETE_65_OF_300",
+  "accuracy_pass": false,
+  "simulation_complete": false,
+  "manual_interventions_during_run": 0,
+  "checks": [
+    {
+      "model": "final/model.cas.h5",
+      "metric": "inlet-mach",
+      "raw": 0.4107039822603413,
+      "claimed": 0.4107039822603403,
+      "absolute_difference": 1.0547118733938987e-15
+    },
+    {
+      "model": "final/model.cas.h5",
+      "metric": "inlet-massflow",
+      "raw": 2.091177248393942,
+      "claimed": 2.091177248393942,
+      "absolute_difference": 0.0
+    },
+    {
+      "model": "final/model.cas.h5",
+      "metric": "inlet-pressure",
+      "raw": 81173.37199399086,
+      "claimed": 81173.37199399063,
+      "absolute_difference": 2.3283064365386963e-10
+    },
+    {
+      "model": "final/model.cas.h5",
+      "metric": "outlet-mach",
+      "raw": 0.5699834472774323,
+      "claimed": 0.5699834472774321,
+      "absolute_difference": 2.220446049250313e-16
+    },
+    {
+      "model": "final/model.cas.h5",
+      "metric": "outlet-massflow",
+      "raw": -2.382007794462626,
+      "claimed": -2.382007794462614,
+      "absolute_difference": 1.199040866595169e-14
+    },
+    {
+      "model": "final/model.cas.h5",
+      "metric": "outlet-pressure",
+      "raw": 64840.02792305437,
+      "claimed": 64840.02792305436,
+      "absolute_difference": 7.275957614183426e-12
+    },
+    {
+      "model": "final/model.cas.h5",
+      "metric": "domain-mass",
+      "raw": 0.006035463285237432,
+      "claimed": 0.006035463285237418,
+      "absolute_difference": 1.3877787807814457e-17
+    },
+    {
+      "model": "final/model.cas.h5",
+      "metric": "wall-force-x",
+      "raw": 28.75506440764711,
+      "claimed": 28.75506404618378,
+      "absolute_difference": 3.6146333215469895e-07
+    },
+    {
+      "model": "final/model.cas.h5",
+      "metric": "wall-force-y",
+      "raw": 0.778497888496986,
+      "claimed": 0.7784981497238732,
+      "absolute_difference": 2.61226887232624e-07
+    },
+    {
+      "model": "final/model.cas.h5",
+      "metric": "wall-force-z",
+      "raw": 6642.811597483863,
+      "claimed": 6642.811598642413,
+      "absolute_difference": 1.1585498214117251e-06
+    },
+    {
+      "model": "final/steady.cas.h5",
+      "metric": "inlet-mach",
+      "raw": 0.4160549072421212,
+      "claimed": 0.4160549072421212,
+      "absolute_difference": 0.0
+    },
+    {
+      "model": "final/steady.cas.h5",
+      "metric": "inlet-massflow",
+      "raw": 2.116113416556987,
+      "claimed": 2.116113416556982,
+      "absolute_difference": 4.884981308350689e-15
+    },
+    {
+      "model": "final/steady.cas.h5",
+      "metric": "inlet-pressure",
+      "raw": 80897.90417022088,
+      "claimed": 80897.90417022086,
+      "absolute_difference": 1.4551915228366852e-11
+    },
+    {
+      "model": "final/steady.cas.h5",
+      "metric": "outlet-mach",
+      "raw": 0.4489122753396864,
+      "claimed": 0.4489122753396866,
+      "absolute_difference": 1.6653345369377348e-16
+    },
+    {
+      "model": "final/steady.cas.h5",
+      "metric": "outlet-massflow",
+      "raw": -2.116113467397989,
+      "claimed": -2.116113467395911,
+      "absolute_difference": 2.077893412888443e-12
+    },
+    {
+      "model": "final/steady.cas.h5",
+      "metric": "outlet-pressure",
+      "raw": 74666.39249999997,
+      "claimed": 74666.39249999997,
+      "absolute_difference": 0.0
+    },
+    {
+      "model": "final/steady.cas.h5",
+      "metric": "domain-mass",
+      "raw": 0.005804222256580805,
+      "claimed": 0.005804222256580857,
+      "absolute_difference": 5.204170427930421e-17
+    }
+  ],
+  "monitor_review_summary": {
+    "source": "collected\\workspace\\final\\transient-monitor.out",
+    "rows": 66,
+    "unique_steps": 66,
+    "duplicate_step_rows": 0,
+    "last_step": 65,
+    "flow_time_s": 0.001856374,
+    "forcing_period_s": 0.0028559933214452665,
+    "periods_completed": 0.649992416320003,
+    "max_outlet_forcing_absolute_error_Pa": 0.0061565895593957976,
+    "mass_balance_max_normalized_residual": 0.0003474425001368688,
+    "mass_balance_max_excluding_immediately_after_adapt_interval": 3.479970189004594e-05,
+    "last_cycle_vs_previous_interpolated": {},
+    "limitations": [
+      "Mass difference uses first-order time discretization and delivered monitor samples. Adaptation remapping can cause jumps; per-adaptation mass accounting is required to separate them.",
+      "No frozen periodic-stability threshold; waveform comparisons are diagnostic, not an accuracy PASS."
+    ]
+  },
+  "transient_steps_meeting_declared_absolute_residual_checks": 0,
+  "transient_steps_checked": 65,
+  "review_findings": [
+    {
+      "category": "environment",
+      "finding": "Third CAD case stalled at initial import and recovered after isolated MainWin directories.",
+      "v2": "Create isolated MainWin and temporary directories on the first launch; bound the CAD stage separately."
+    },
+    {
+      "category": "api",
+      "finding": "Old mesh quality API failed; meshing workflow became invalid after switch_to_solver; cell register assignment required explicit creation.",
+      "v2": "Use settings.mesh.quality, save meshing workflow before switching, create named cell registers explicitly, and keep one valid session owner."
+    },
+    {
+      "category": "budget",
+      "finding": "Grid increased 15751 to 141055 to 789673 cells at steps25/50. Only65/300 steps completed, 0.649992 pressure cycles, despite a converged steady initial state.",
+      "v2": "Predict runtime after adaptation, advance one timestep at a time, checkpoint each step, and allocate sufficient solver budget before the next 300-step benchmark."
+    },
+    {
+      "category": "numerical",
+      "finding": "All65 transient steps fail the declared absolute residual checks; mass accumulation consistency alone does not validate transient convergence or periodic stability.",
+      "v2": "Specify per-step convergence semantics and actions at20-inner-iteration limit. A study with a higher limit is a distinct numerical variant, not a hidden replacement."
+    },
+    {
+      "category": "parameter",
+      "finding": "Density gradient normalization used the global average, matching the archived tutorial; V1 only said normalized gradient. Walls use default zero heat flux while energy is enabled.",
+      "v2": "State scale-by-global-average explicitly. Freeze stationary no-slip adiabatic walls as a V2 convention instead of leaving thermal defaults implicit."
+    },
+    {
+      "category": "instrumentation",
+      "finding": "Outer Python GNU-time missed detached native solver processes; native Fluent timing was added only for the continuation.",
+      "v2": "Instrument native solver processes from launch and label coverage of every CPU/RSS measurement."
+    },
+    {
+      "category": "artifact",
+      "finding": "Fixed300-second SCP timeout interrupted a1.97GB archive transfer; all data remained intact and verified resumable transfer succeeded.",
+      "v2": "Runner must budget transfer separately, support verified resume and final archive/file hashes; this is evaluator infrastructure, not a Logos model defect."
+    }
+  ],
+  "limitations": [
+    "No complete pressure cycle, last-cycle waveform or periodic-stability validation.",
+    "Steady initialization meets internal criteria but has no independent aerodynamic truth.",
+    "Three representative case/data pairs were reopened; other checkpoints are preserved, not all independently reopened.",
+    "Forcing error maximum0.00616Pa; mass-storage residual maximum0.0003474 of inlet flow including adaptation jumps,3.48e-5 excluding immediately following adaptation.",
+    "V2 has not been rerun."
+  ]
+}

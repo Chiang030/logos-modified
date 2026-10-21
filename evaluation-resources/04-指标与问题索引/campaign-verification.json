@@ -1,0 +1,540 @@
+{
+  "cases_checked": 14,
+  "expected_cases": 14,
+  "all_collected": true,
+  "same_recorded_runtime_fingerprint": false,
+  "fingerprint_scope": "Recorded launcher/system prompts/extensions/skill entry files; not a complete repository or environment snapshot",
+  "all_frozen_inputs_unchanged": true,
+  "all_collected_artifact_hashes_match": true,
+  "all_controller_cleanup_records_empty": true,
+  "cases": [
+    {
+      "case_id": "S07",
+      "frozen_inputs_unchanged": true,
+      "artifact_files": 154,
+      "artifact_hash_mismatches": [],
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      },
+      "has_review": true
+    },
+    {
+      "case_id": "S01",
+      "frozen_inputs_unchanged": true,
+      "artifact_files": 213,
+      "artifact_hash_mismatches": [],
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      },
+      "has_review": true
+    },
+    {
+      "case_id": "S03",
+      "frozen_inputs_unchanged": true,
+      "artifact_files": 170,
+      "artifact_hash_mismatches": [],
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      },
+      "has_review": true
+    },
+    {
+      "case_id": "S02",
+      "frozen_inputs_unchanged": true,
+      "artifact_files": 153,
+      "artifact_hash_mismatches": [],
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      },
+      "has_review": true
+    },
+    {
+      "case_id": "S04",
+      "frozen_inputs_unchanged": true,
+      "artifact_files": 170,
+      "artifact_hash_mismatches": [],
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      },
+      "has_review": true
+    },
+    {
+      "case_id": "S06",
+      "frozen_inputs_unchanged": true,
+      "artifact_files": 301,
+      "artifact_hash_mismatches": [],
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      },
+      "has_review": true
+    },
+    {
+      "case_id": "S08",
+      "frozen_inputs_unchanged": true,
+      "artifact_files": 302,
+      "artifact_hash_mismatches": [],
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      },
+      "has_review": true
+    },
+    {
+      "case_id": "S09",
+      "frozen_inputs_unchanged": true,
+      "artifact_files": 276,
+      "artifact_hash_mismatches": [],
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      },
+      "has_review": true
+    },
+    {
+      "case_id": "A01",
+      "frozen_inputs_unchanged": true,
+      "artifact_files": 56,
+      "artifact_hash_mismatches": [],
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      },
+      "has_review": true
+    },
+    {
+      "case_id": "A02",
+      "frozen_inputs_unchanged": true,
+      "artifact_files": 146,
+      "artifact_hash_mismatches": [],
+      "cleanup": {
+        "terminated_run_owned_pids": [
+          1352107,
+          1352272,
+          1352275,
+          1352462,
+          1352566,
+          1352873,
+          1352902,
+          1352940,
+          1353966,
+          1353969,
+          1353970,
+          1353971,
+          1353972
+        ],
+        "remaining": []
+      },
+      "has_review": true
+    },
+    {
+      "case_id": "A03",
+      "frozen_inputs_unchanged": true,
+      "artifact_files": 126,
+      "artifact_hash_mismatches": [],
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      },
+      "has_review": true
+    },
+    {
+      "case_id": "A04",
+      "frozen_inputs_unchanged": true,
+      "artifact_files": 229,
+      "artifact_hash_mismatches": [],
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      },
+      "has_review": true
+    },
+    {
+      "case_id": "A06",
+      "frozen_inputs_unchanged": true,
+      "artifact_files": 150,
+      "artifact_hash_mismatches": [],
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      },
+      "has_review": true
+    },
+    {
+      "case_id": "A07",
+      "frozen_inputs_unchanged": true,
+      "artifact_files": 12,
+      "artifact_hash_mismatches": [],
+      "cleanup": {
+        "terminated_run_owned_pids": [],
+        "remaining": []
+      },
+      "has_review": true
+    }
+  ],
+  "runtime_fingerprints": [
+    {
+      "case_id": "S07",
+      "files": {
+        "logos-agent/bin/logos.mjs": "ce902cd0ae91b8ae3047c302e1914530bda0a3ccea4d97fce213a6e8313d6412",
+        "logos-agent/pi-domain/prompts/system.md": "195b178bb0c9da3b59b14246616a5d90159221aa697220331b0b0a8c43215927",
+        "logos-agent/pi-domain/prompts/append.md": "23db339236d52c3528fd696d0521762308f6b092288e8a929e903e3045265b56",
+        "logos-agent/pi-domain/extensions/index.mjs": "460b5dd7b8dfcecc38ba78b73bf8575b45f56f32b79baf9572bcb340b6b994c7",
+        "vendor/pi/packages/coding-agent/package.json": "c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a",
+        "logos-agent/pi-domain/skills/fluent-sim/SKILL.md": "ee8c77fa8f4aebe08d2094868e73d1745bcca1441b62f2a3d04eb2bd9f813604",
+        "logos-agent/pi-domain/skills/hfss/SKILL.md": "c4c7531b21d342f68c62224a8b56f6a1d266f76c83ff342128cd2566c6973480",
+        "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md": "32a9e4e4f07c7b9be2ae58dc713b21fbb1692cd32077d5c06d25526721ebfaa1",
+        "logos-agent/pi-domain/skills/mechanical-sim/SKILL.md": "b3702e2c4aef7b3263f57879b0a65252614c5577977772879fcda0a177786e4d",
+        "logos-agent/pi-domain/skills/sim-cli/SKILL.md": "305d27c16018e773f7c9ae4d137bfde6ae186a2f61ce49a5e260a366beeffa68",
+        "logos-agent/pi-domain/skills/sim-cli/gui/SKILL.md": "5b21a606195d808dd0fe472ae304cbd564e99d795229e2233f21a8b2ec15d43b",
+        "logos-agent/pi-domain/skills/spaceclaim/SKILL.md": "c01e8dbd62f06ecdc788a043e28cd0a6591594ce6064209e0cd5d38ff1bdc347",
+        "logos-agent/pi-domain/skills/vibeflow-fluent/SKILL.md": "e197be20074df8862fa8ef58d95d2f9bd790785c61cd2dae917d34dd11192251",
+        "logos-agent/pi-domain/skills/workbench-sim/SKILL.md": "7ff99c81af519c8e4292e0abeff17732867bae4fd952aa1721a96d6c53bd41ba"
+      },
+      "node_version": "v22.23.3",
+      "model": "gpt-6.1-sol",
+      "thinking": "medium"
+    },
+    {
+      "case_id": "S01",
+      "files": {
+        "logos-agent/bin/logos.mjs": "ce902cd0ae91b8ae3047c302e1914530bda0a3ccea4d97fce213a6e8313d6412",
+        "logos-agent/pi-domain/prompts/system.md": "195b178bb0c9da3b59b14246616a5d90159221aa697220331b0b0a8c43215927",
+        "logos-agent/pi-domain/prompts/append.md": "23db339236d52c3528fd696d0521762308f6b092288e8a929e903e3045265b56",
+        "logos-agent/pi-domain/extensions/index.mjs": "460b5dd7b8dfcecc38ba78b73bf8575b45f56f32b79baf9572bcb340b6b994c7",
+        "vendor/pi/packages/coding-agent/package.json": "c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a",
+        "logos-agent/pi-domain/skills/fluent-sim/SKILL.md": "ee8c77fa8f4aebe08d2094868e73d1745bcca1441b62f2a3d04eb2bd9f813604",
+        "logos-agent/pi-domain/skills/hfss/SKILL.md": "c4c7531b21d342f68c62224a8b56f6a1d266f76c83ff342128cd2566c6973480",
+        "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md": "32a9e4e4f07c7b9be2ae58dc713b21fbb1692cd32077d5c06d25526721ebfaa1",
+        "logos-agent/pi-domain/skills/mechanical-sim/SKILL.md": "b3702e2c4aef7b3263f57879b0a65252614c5577977772879fcda0a177786e4d",
+        "logos-agent/pi-domain/skills/sim-cli/SKILL.md": "305d27c16018e773f7c9ae4d137bfde6ae186a2f61ce49a5e260a366beeffa68",
+        "logos-agent/pi-domain/skills/sim-cli/gui/SKILL.md": "5b21a606195d808dd0fe472ae304cbd564e99d795229e2233f21a8b2ec15d43b",
+        "logos-agent/pi-domain/skills/spaceclaim/SKILL.md": "c01e8dbd62f06ecdc788a043e28cd0a6591594ce6064209e0cd5d38ff1bdc347",
+        "logos-agent/pi-domain/skills/vibeflow-fluent/SKILL.md": "e197be20074df8862fa8ef58d95d2f9bd790785c61cd2dae917d34dd11192251",
+        "logos-agent/pi-domain/skills/workbench-sim/SKILL.md": "7ff99c81af519c8e4292e0abeff17732867bae4fd952aa1721a96d6c53bd41ba"
+      },
+      "node_version": "v22.23.3",
+      "model": "gpt-6.1-sol",
+      "thinking": "medium"
+    },
+    {
+      "case_id": "S03",
+      "files": {
+        "logos-agent/bin/logos.mjs": "ce902cd0ae91b8ae3047c302e1914530bda0a3ccea4d97fce213a6e8313d6412",
+        "logos-agent/pi-domain/prompts/system.md": "195b178bb0c9da3b59b14246616a5d90159221aa697220331b0b0a8c43215927",
+        "logos-agent/pi-domain/prompts/append.md": "23db339236d52c3528fd696d0521762308f6b092288e8a929e903e3045265b56",
+        "logos-agent/pi-domain/extensions/index.mjs": "460b5dd7b8dfcecc38ba78b73bf8575b45f56f32b79baf9572bcb340b6b994c7",
+        "vendor/pi/packages/coding-agent/package.json": "c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a",
+        "logos-agent/pi-domain/skills/fluent-sim/SKILL.md": "ee8c77fa8f4aebe08d2094868e73d1745bcca1441b62f2a3d04eb2bd9f813604",
+        "logos-agent/pi-domain/skills/hfss/SKILL.md": "c4c7531b21d342f68c62224a8b56f6a1d266f76c83ff342128cd2566c6973480",
+        "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md": "32a9e4e4f07c7b9be2ae58dc713b21fbb1692cd32077d5c06d25526721ebfaa1",
+        "logos-agent/pi-domain/skills/mechanical-sim/SKILL.md": "b3702e2c4aef7b3263f57879b0a65252614c5577977772879fcda0a177786e4d",
+        "logos-agent/pi-domain/skills/sim-cli/SKILL.md": "305d27c16018e773f7c9ae4d137bfde6ae186a2f61ce49a5e260a366beeffa68",
+        "logos-agent/pi-domain/skills/sim-cli/gui/SKILL.md": "5b21a606195d808dd0fe472ae304cbd564e99d795229e2233f21a8b2ec15d43b",
+        "logos-agent/pi-domain/skills/spaceclaim/SKILL.md": "c01e8dbd62f06ecdc788a043e28cd0a6591594ce6064209e0cd5d38ff1bdc347",
+        "logos-agent/pi-domain/skills/vibeflow-fluent/SKILL.md": "e197be20074df8862fa8ef58d95d2f9bd790785c61cd2dae917d34dd11192251",
+        "logos-agent/pi-domain/skills/workbench-sim/SKILL.md": "7ff99c81af519c8e4292e0abeff17732867bae4fd952aa1721a96d6c53bd41ba"
+      },
+      "node_version": "v22.23.3",
+      "model": "gpt-6.1-sol",
+      "thinking": "medium"
+    },
+    {
+      "case_id": "S02",
+      "files": {
+        "logos-agent/bin/logos.mjs": "ce902cd0ae91b8ae3047c302e1914530bda0a3ccea4d97fce213a6e8313d6412",
+        "logos-agent/pi-domain/prompts/system.md": "195b178bb0c9da3b59b14246616a5d90159221aa697220331b0b0a8c43215927",
+        "logos-agent/pi-domain/prompts/append.md": "23db339236d52c3528fd696d0521762308f6b092288e8a929e903e3045265b56",
+        "logos-agent/pi-domain/extensions/index.mjs": "460b5dd7b8dfcecc38ba78b73bf8575b45f56f32b79baf9572bcb340b6b994c7",
+        "vendor/pi/packages/coding-agent/package.json": "c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a",
+        "logos-agent/pi-domain/skills/fluent-sim/SKILL.md": "ee8c77fa8f4aebe08d2094868e73d1745bcca1441b62f2a3d04eb2bd9f813604",
+        "logos-agent/pi-domain/skills/hfss/SKILL.md": "c4c7531b21d342f68c62224a8b56f6a1d266f76c83ff342128cd2566c6973480",
+        "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md": "32a9e4e4f07c7b9be2ae58dc713b21fbb1692cd32077d5c06d25526721ebfaa1",
+        "logos-agent/pi-domain/skills/mechanical-sim/SKILL.md": "b3702e2c4aef7b3263f57879b0a65252614c5577977772879fcda0a177786e4d",
+        "logos-agent/pi-domain/skills/sim-cli/SKILL.md": "305d27c16018e773f7c9ae4d137bfde6ae186a2f61ce49a5e260a366beeffa68",
+        "logos-agent/pi-domain/skills/sim-cli/gui/SKILL.md": "5b21a606195d808dd0fe472ae304cbd564e99d795229e2233f21a8b2ec15d43b",
+        "logos-agent/pi-domain/skills/spaceclaim/SKILL.md": "c01e8dbd62f06ecdc788a043e28cd0a6591594ce6064209e0cd5d38ff1bdc347",
+        "logos-agent/pi-domain/skills/vibeflow-fluent/SKILL.md": "e197be20074df8862fa8ef58d95d2f9bd790785c61cd2dae917d34dd11192251",
+        "logos-agent/pi-domain/skills/workbench-sim/SKILL.md": "7ff99c81af519c8e4292e0abeff17732867bae4fd952aa1721a96d6c53bd41ba"
+      },
+      "node_version": "v22.23.3",
+      "model": "gpt-6.1-sol",
+      "thinking": "medium"
+    },
+    {
+      "case_id": "S04",
+      "files": {
+        "logos-agent/bin/logos.mjs": "ce902cd0ae91b8ae3047c302e1914530bda0a3ccea4d97fce213a6e8313d6412",
+        "logos-agent/pi-domain/prompts/system.md": "195b178bb0c9da3b59b14246616a5d90159221aa697220331b0b0a8c43215927",
+        "logos-agent/pi-domain/prompts/append.md": "23db339236d52c3528fd696d0521762308f6b092288e8a929e903e3045265b56",
+        "logos-agent/pi-domain/extensions/index.mjs": "460b5dd7b8dfcecc38ba78b73bf8575b45f56f32b79baf9572bcb340b6b994c7",
+        "vendor/pi/packages/coding-agent/package.json": "c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a",
+        "logos-agent/pi-domain/skills/fluent-sim/SKILL.md": "ee8c77fa8f4aebe08d2094868e73d1745bcca1441b62f2a3d04eb2bd9f813604",
+        "logos-agent/pi-domain/skills/hfss/SKILL.md": "c4c7531b21d342f68c62224a8b56f6a1d266f76c83ff342128cd2566c6973480",
+        "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md": "32a9e4e4f07c7b9be2ae58dc713b21fbb1692cd32077d5c06d25526721ebfaa1",
+        "logos-agent/pi-domain/skills/mechanical-sim/SKILL.md": "b3702e2c4aef7b3263f57879b0a65252614c5577977772879fcda0a177786e4d",
+        "logos-agent/pi-domain/skills/sim-cli/SKILL.md": "305d27c16018e773f7c9ae4d137bfde6ae186a2f61ce49a5e260a366beeffa68",
+        "logos-agent/pi-domain/skills/sim-cli/gui/SKILL.md": "5b21a606195d808dd0fe472ae304cbd564e99d795229e2233f21a8b2ec15d43b",
+        "logos-agent/pi-domain/skills/spaceclaim/SKILL.md": "c01e8dbd62f06ecdc788a043e28cd0a6591594ce6064209e0cd5d38ff1bdc347",
+        "logos-agent/pi-domain/skills/vibeflow-fluent/SKILL.md": "e197be20074df8862fa8ef58d95d2f9bd790785c61cd2dae917d34dd11192251",
+        "logos-agent/pi-domain/skills/workbench-sim/SKILL.md": "7ff99c81af519c8e4292e0abeff17732867bae4fd952aa1721a96d6c53bd41ba"
+      },
+      "node_version": "v22.23.3",
+      "model": "gpt-6.1-sol",
+      "thinking": "medium"
+    },
+    {
+      "case_id": "S06",
+      "files": {
+        "logos-agent/bin/logos.mjs": "ce902cd0ae91b8ae3047c302e1914530bda0a3ccea4d97fce213a6e8313d6412",
+        "logos-agent/pi-domain/prompts/system.md": "195b178bb0c9da3b59b14246616a5d90159221aa697220331b0b0a8c43215927",
+        "logos-agent/pi-domain/prompts/append.md": "23db339236d52c3528fd696d0521762308f6b092288e8a929e903e3045265b56",
+        "logos-agent/pi-domain/extensions/index.mjs": "460b5dd7b8dfcecc38ba78b73bf8575b45f56f32b79baf9572bcb340b6b994c7",
+        "vendor/pi/packages/coding-agent/package.json": "c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a",
+        "logos-agent/pi-domain/skills/fluent-sim/SKILL.md": "ee8c77fa8f4aebe08d2094868e73d1745bcca1441b62f2a3d04eb2bd9f813604",
+        "logos-agent/pi-domain/skills/hfss/SKILL.md": "c4c7531b21d342f68c62224a8b56f6a1d266f76c83ff342128cd2566c6973480",
+        "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md": "32a9e4e4f07c7b9be2ae58dc713b21fbb1692cd32077d5c06d25526721ebfaa1",
+        "logos-agent/pi-domain/skills/mechanical-sim/SKILL.md": "b3702e2c4aef7b3263f57879b0a65252614c5577977772879fcda0a177786e4d",
+        "logos-agent/pi-domain/skills/sim-cli/SKILL.md": "305d27c16018e773f7c9ae4d137bfde6ae186a2f61ce49a5e260a366beeffa68",
+        "logos-agent/pi-domain/skills/sim-cli/gui/SKILL.md": "5b21a606195d808dd0fe472ae304cbd564e99d795229e2233f21a8b2ec15d43b",
+        "logos-agent/pi-domain/skills/spaceclaim/SKILL.md": "c01e8dbd62f06ecdc788a043e28cd0a6591594ce6064209e0cd5d38ff1bdc347",
+        "logos-agent/pi-domain/skills/vibeflow-fluent/SKILL.md": "e197be20074df8862fa8ef58d95d2f9bd790785c61cd2dae917d34dd11192251",
+        "logos-agent/pi-domain/skills/workbench-sim/SKILL.md": "7ff99c81af519c8e4292e0abeff17732867bae4fd952aa1721a96d6c53bd41ba"
+      },
+      "node_version": "v22.23.3",
+      "model": "gpt-6.1-sol",
+      "thinking": "medium"
+    },
+    {
+      "case_id": "S08",
+      "files": {
+        "logos-agent/bin/logos.mjs": "ce902cd0ae91b8ae3047c302e1914530bda0a3ccea4d97fce213a6e8313d6412",
+        "logos-agent/pi-domain/prompts/system.md": "195b178bb0c9da3b59b14246616a5d90159221aa697220331b0b0a8c43215927",
+        "logos-agent/pi-domain/prompts/append.md": "23db339236d52c3528fd696d0521762308f6b092288e8a929e903e3045265b56",
+        "logos-agent/pi-domain/extensions/index.mjs": "460b5dd7b8dfcecc38ba78b73bf8575b45f56f32b79baf9572bcb340b6b994c7",
+        "vendor/pi/packages/coding-agent/package.json": "c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a",
+        "logos-agent/pi-domain/skills/fluent-sim/SKILL.md": "ee8c77fa8f4aebe08d2094868e73d1745bcca1441b62f2a3d04eb2bd9f813604",
+        "logos-agent/pi-domain/skills/hfss/SKILL.md": "c4c7531b21d342f68c62224a8b56f6a1d266f76c83ff342128cd2566c6973480",
+        "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md": "32a9e4e4f07c7b9be2ae58dc713b21fbb1692cd32077d5c06d25526721ebfaa1",
+        "logos-agent/pi-domain/skills/mechanical-sim/SKILL.md": "b3702e2c4aef7b3263f57879b0a65252614c5577977772879fcda0a177786e4d",
+        "logos-agent/pi-domain/skills/sim-cli/SKILL.md": "305d27c16018e773f7c9ae4d137bfde6ae186a2f61ce49a5e260a366beeffa68",
+        "logos-agent/pi-domain/skills/sim-cli/gui/SKILL.md": "5b21a606195d808dd0fe472ae304cbd564e99d795229e2233f21a8b2ec15d43b",
+        "logos-agent/pi-domain/skills/spaceclaim/SKILL.md": "c01e8dbd62f06ecdc788a043e28cd0a6591594ce6064209e0cd5d38ff1bdc347",
+        "logos-agent/pi-domain/skills/vibeflow-fluent/SKILL.md": "e197be20074df8862fa8ef58d95d2f9bd790785c61cd2dae917d34dd11192251",
+        "logos-agent/pi-domain/skills/workbench-sim/SKILL.md": "7ff99c81af519c8e4292e0abeff17732867bae4fd952aa1721a96d6c53bd41ba"
+      },
+      "node_version": "v22.23.3",
+      "model": "gpt-6.1-sol",
+      "thinking": "medium"
+    },
+    {
+      "case_id": "S09",
+      "files": {
+        "logos-agent/bin/logos.mjs": "ce902cd0ae91b8ae3047c302e1914530bda0a3ccea4d97fce213a6e8313d6412",
+        "logos-agent/pi-domain/prompts/system.md": "195b178bb0c9da3b59b14246616a5d90159221aa697220331b0b0a8c43215927",
+        "logos-agent/pi-domain/prompts/append.md": "23db339236d52c3528fd696d0521762308f6b092288e8a929e903e3045265b56",
+        "logos-agent/pi-domain/extensions/index.mjs": "460b5dd7b8dfcecc38ba78b73bf8575b45f56f32b79baf9572bcb340b6b994c7",
+        "vendor/pi/packages/coding-agent/package.json": "c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a",
+        "logos-agent/pi-domain/skills/fluent-sim/SKILL.md": "ee8c77fa8f4aebe08d2094868e73d1745bcca1441b62f2a3d04eb2bd9f813604",
+        "logos-agent/pi-domain/skills/hfss/SKILL.md": "c4c7531b21d342f68c62224a8b56f6a1d266f76c83ff342128cd2566c6973480",
+        "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md": "32a9e4e4f07c7b9be2ae58dc713b21fbb1692cd32077d5c06d25526721ebfaa1",
+        "logos-agent/pi-domain/skills/mechanical-sim/SKILL.md": "b3702e2c4aef7b3263f57879b0a65252614c5577977772879fcda0a177786e4d",
+        "logos-agent/pi-domain/skills/sim-cli/SKILL.md": "305d27c16018e773f7c9ae4d137bfde6ae186a2f61ce49a5e260a366beeffa68",
+        "logos-agent/pi-domain/skills/sim-cli/gui/SKILL.md": "5b21a606195d808dd0fe472ae304cbd564e99d795229e2233f21a8b2ec15d43b",
+        "logos-agent/pi-domain/skills/spaceclaim/SKILL.md": "c01e8dbd62f06ecdc788a043e28cd0a6591594ce6064209e0cd5d38ff1bdc347",
+        "logos-agent/pi-domain/skills/vibeflow-fluent/SKILL.md": "e197be20074df8862fa8ef58d95d2f9bd790785c61cd2dae917d34dd11192251",
+        "logos-agent/pi-domain/skills/workbench-sim/SKILL.md": "7ff99c81af519c8e4292e0abeff17732867bae4fd952aa1721a96d6c53bd41ba"
+      },
+      "node_version": "v22.23.3",
+      "model": "gpt-6.1-sol",
+      "thinking": "medium"
+    },
+    {
+      "case_id": "A01",
+      "files": {
+        "logos-agent/bin/logos.mjs": "ce902cd0ae91b8ae3047c302e1914530bda0a3ccea4d97fce213a6e8313d6412",
+        "logos-agent/pi-domain/prompts/system.md": "195b178bb0c9da3b59b14246616a5d90159221aa697220331b0b0a8c43215927",
+        "logos-agent/pi-domain/prompts/append.md": "23db339236d52c3528fd696d0521762308f6b092288e8a929e903e3045265b56",
+        "logos-agent/pi-domain/extensions/index.mjs": "460b5dd7b8dfcecc38ba78b73bf8575b45f56f32b79baf9572bcb340b6b994c7",
+        "vendor/pi/packages/coding-agent/package.json": "c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a",
+        "logos-agent/pi-domain/skills/fluent-sim/SKILL.md": "ee8c77fa8f4aebe08d2094868e73d1745bcca1441b62f2a3d04eb2bd9f813604",
+        "logos-agent/pi-domain/skills/hfss/SKILL.md": "c4c7531b21d342f68c62224a8b56f6a1d266f76c83ff342128cd2566c6973480",
+        "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md": "32a9e4e4f07c7b9be2ae58dc713b21fbb1692cd32077d5c06d25526721ebfaa1",
+        "logos-agent/pi-domain/skills/mechanical-sim/SKILL.md": "b3702e2c4aef7b3263f57879b0a65252614c5577977772879fcda0a177786e4d",
+        "logos-agent/pi-domain/skills/sim-cli/SKILL.md": "305d27c16018e773f7c9ae4d137bfde6ae186a2f61ce49a5e260a366beeffa68",
+        "logos-agent/pi-domain/skills/sim-cli/gui/SKILL.md": "5b21a606195d808dd0fe472ae304cbd564e99d795229e2233f21a8b2ec15d43b",
+        "logos-agent/pi-domain/skills/spaceclaim/SKILL.md": "c01e8dbd62f06ecdc788a043e28cd0a6591594ce6064209e0cd5d38ff1bdc347",
+        "logos-agent/pi-domain/skills/vibeflow-fluent/SKILL.md": "e197be20074df8862fa8ef58d95d2f9bd790785c61cd2dae917d34dd11192251",
+        "logos-agent/pi-domain/skills/workbench-sim/SKILL.md": "7ff99c81af519c8e4292e0abeff17732867bae4fd952aa1721a96d6c53bd41ba"
+      },
+      "node_version": "v22.23.3",
+      "model": "gpt-6.1-sol",
+      "thinking": "medium"
+    },
+    {
+      "case_id": "A02",
+      "files": {
+        "logos-agent/bin/logos.mjs": "ce902cd0ae91b8ae3047c302e1914530bda0a3ccea4d97fce213a6e8313d6412",
+        "logos-agent/pi-domain/prompts/system.md": "195b178bb0c9da3b59b14246616a5d90159221aa697220331b0b0a8c43215927",
+        "logos-agent/pi-domain/prompts/append.md": "23db339236d52c3528fd696d0521762308f6b092288e8a929e903e3045265b56",
+        "logos-agent/pi-domain/extensions/index.mjs": "460b5dd7b8dfcecc38ba78b73bf8575b45f56f32b79baf9572bcb340b6b994c7",
+        "vendor/pi/packages/coding-agent/package.json": "c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a",
+        "logos-agent/pi-domain/skills/fluent-sim/SKILL.md": "ee8c77fa8f4aebe08d2094868e73d1745bcca1441b62f2a3d04eb2bd9f813604",
+        "logos-agent/pi-domain/skills/hfss/SKILL.md": "c4c7531b21d342f68c62224a8b56f6a1d266f76c83ff342128cd2566c6973480",
+        "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md": "32a9e4e4f07c7b9be2ae58dc713b21fbb1692cd32077d5c06d25526721ebfaa1",
+        "logos-agent/pi-domain/skills/mechanical-sim/SKILL.md": "b3702e2c4aef7b3263f57879b0a65252614c5577977772879fcda0a177786e4d",
+        "logos-agent/pi-domain/skills/sim-cli/SKILL.md": "305d27c16018e773f7c9ae4d137bfde6ae186a2f61ce49a5e260a366beeffa68",
+        "logos-agent/pi-domain/skills/sim-cli/gui/SKILL.md": "5b21a606195d808dd0fe472ae304cbd564e99d795229e2233f21a8b2ec15d43b",
+        "logos-agent/pi-domain/skills/spaceclaim/SKILL.md": "c01e8dbd62f06ecdc788a043e28cd0a6591594ce6064209e0cd5d38ff1bdc347",
+        "logos-agent/pi-domain/skills/vibeflow-fluent/SKILL.md": "e197be20074df8862fa8ef58d95d2f9bd790785c61cd2dae917d34dd11192251",
+        "logos-agent/pi-domain/skills/workbench-sim/SKILL.md": "7ff99c81af519c8e4292e0abeff17732867bae4fd952aa1721a96d6c53bd41ba"
+      },
+      "node_version": "v22.23.3",
+      "model": "gpt-6.1-sol",
+      "thinking": "medium"
+    },
+    {
+      "case_id": "A03",
+      "files": {
+        "logos-agent/bin/logos.mjs": "ce902cd0ae91b8ae3047c302e1914530bda0a3ccea4d97fce213a6e8313d6412",
+        "logos-agent/pi-domain/prompts/system.md": "195b178bb0c9da3b59b14246616a5d90159221aa697220331b0b0a8c43215927",
+        "logos-agent/pi-domain/prompts/append.md": "23db339236d52c3528fd696d0521762308f6b092288e8a929e903e3045265b56",
+        "logos-agent/pi-domain/extensions/index.mjs": "460b5dd7b8dfcecc38ba78b73bf8575b45f56f32b79baf9572bcb340b6b994c7",
+        "vendor/pi/packages/coding-agent/package.json": "c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a",
+        "logos-agent/pi-domain/skills/fluent-sim/SKILL.md": "ee8c77fa8f4aebe08d2094868e73d1745bcca1441b62f2a3d04eb2bd9f813604",
+        "logos-agent/pi-domain/skills/hfss/SKILL.md": "c4c7531b21d342f68c62224a8b56f6a1d266f76c83ff342128cd2566c6973480",
+        "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md": "32a9e4e4f07c7b9be2ae58dc713b21fbb1692cd32077d5c06d25526721ebfaa1",
+        "logos-agent/pi-domain/skills/mechanical-sim/SKILL.md": "b3702e2c4aef7b3263f57879b0a65252614c5577977772879fcda0a177786e4d",
+        "logos-agent/pi-domain/skills/sim-cli/SKILL.md": "305d27c16018e773f7c9ae4d137bfde6ae186a2f61ce49a5e260a366beeffa68",
+        "logos-agent/pi-domain/skills/sim-cli/gui/SKILL.md": "5b21a606195d808dd0fe472ae304cbd564e99d795229e2233f21a8b2ec15d43b",
+        "logos-agent/pi-domain/skills/solidcraft/SKILL.md": "223b9de7e88297d2dcd0fb5765968ec8a7817e9330478b2e4af3c5ff08cac516",
+        "logos-agent/pi-domain/skills/spaceclaim/SKILL.md": "c01e8dbd62f06ecdc788a043e28cd0a6591594ce6064209e0cd5d38ff1bdc347",
+        "logos-agent/pi-domain/skills/vibeflow-fluent/SKILL.md": "e197be20074df8862fa8ef58d95d2f9bd790785c61cd2dae917d34dd11192251",
+        "logos-agent/pi-domain/skills/workbench-sim/SKILL.md": "7ff99c81af519c8e4292e0abeff17732867bae4fd952aa1721a96d6c53bd41ba"
+      },
+      "node_version": "v22.23.3",
+      "model": "gpt-6.1-sol",
+      "thinking": "medium"
+    },
+    {
+      "case_id": "A04",
+      "files": {
+        "logos-agent/bin/logos.mjs": "ce902cd0ae91b8ae3047c302e1914530bda0a3ccea4d97fce213a6e8313d6412",
+        "logos-agent/pi-domain/prompts/system.md": "195b178bb0c9da3b59b14246616a5d90159221aa697220331b0b0a8c43215927",
+        "logos-agent/pi-domain/prompts/append.md": "23db339236d52c3528fd696d0521762308f6b092288e8a929e903e3045265b56",
+        "logos-agent/pi-domain/extensions/index.mjs": "460b5dd7b8dfcecc38ba78b73bf8575b45f56f32b79baf9572bcb340b6b994c7",
+        "vendor/pi/packages/coding-agent/package.json": "c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a",
+        "logos-agent/pi-domain/skills/fluent-sim/SKILL.md": "ee8c77fa8f4aebe08d2094868e73d1745bcca1441b62f2a3d04eb2bd9f813604",
+        "logos-agent/pi-domain/skills/hfss/SKILL.md": "c4c7531b21d342f68c62224a8b56f6a1d266f76c83ff342128cd2566c6973480",
+        "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md": "32a9e4e4f07c7b9be2ae58dc713b21fbb1692cd32077d5c06d25526721ebfaa1",
+        "logos-agent/pi-domain/skills/mechanical-sim/SKILL.md": "b3702e2c4aef7b3263f57879b0a65252614c5577977772879fcda0a177786e4d",
+        "logos-agent/pi-domain/skills/sim-cli/SKILL.md": "305d27c16018e773f7c9ae4d137bfde6ae186a2f61ce49a5e260a366beeffa68",
+        "logos-agent/pi-domain/skills/sim-cli/gui/SKILL.md": "5b21a606195d808dd0fe472ae304cbd564e99d795229e2233f21a8b2ec15d43b",
+        "logos-agent/pi-domain/skills/solidcraft/SKILL.md": "223b9de7e88297d2dcd0fb5765968ec8a7817e9330478b2e4af3c5ff08cac516",
+        "logos-agent/pi-domain/skills/spaceclaim/SKILL.md": "c01e8dbd62f06ecdc788a043e28cd0a6591594ce6064209e0cd5d38ff1bdc347",
+        "logos-agent/pi-domain/skills/vibeflow-fluent/SKILL.md": "e197be20074df8862fa8ef58d95d2f9bd790785c61cd2dae917d34dd11192251",
+        "logos-agent/pi-domain/skills/workbench-sim/SKILL.md": "7ff99c81af519c8e4292e0abeff17732867bae4fd952aa1721a96d6c53bd41ba"
+      },
+      "node_version": "v22.23.3",
+      "model": "gpt-6.1-sol",
+      "thinking": "medium"
+    },
+    {
+      "case_id": "A06",
+      "files": {
+        "logos-agent/bin/logos.mjs": "ce902cd0ae91b8ae3047c302e1914530bda0a3ccea4d97fce213a6e8313d6412",
+        "logos-agent/pi-domain/prompts/system.md": "195b178bb0c9da3b59b14246616a5d90159221aa697220331b0b0a8c43215927",
+        "logos-agent/pi-domain/prompts/append.md": "23db339236d52c3528fd696d0521762308f6b092288e8a929e903e3045265b56",
+        "logos-agent/pi-domain/extensions/index.mjs": "460b5dd7b8dfcecc38ba78b73bf8575b45f56f32b79baf9572bcb340b6b994c7",
+        "vendor/pi/packages/coding-agent/package.json": "c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a",
+        "logos-agent/pi-domain/skills/fluent-sim/SKILL.md": "ee8c77fa8f4aebe08d2094868e73d1745bcca1441b62f2a3d04eb2bd9f813604",
+        "logos-agent/pi-domain/skills/hfss/SKILL.md": "c4c7531b21d342f68c62224a8b56f6a1d266f76c83ff342128cd2566c6973480",
+        "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md": "32a9e4e4f07c7b9be2ae58dc713b21fbb1692cd32077d5c06d25526721ebfaa1",
+        "logos-agent/pi-domain/skills/mechanical-sim/SKILL.md": "b3702e2c4aef7b3263f57879b0a65252614c5577977772879fcda0a177786e4d",
+        "logos-agent/pi-domain/skills/sim-cli/SKILL.md": "305d27c16018e773f7c9ae4d137bfde6ae186a2f61ce49a5e260a366beeffa68",
+        "logos-agent/pi-domain/skills/sim-cli/gui/SKILL.md": "5b21a606195d808dd0fe472ae304cbd564e99d795229e2233f21a8b2ec15d43b",
+        "logos-agent/pi-domain/skills/solidcraft/SKILL.md": "223b9de7e88297d2dcd0fb5765968ec8a7817e9330478b2e4af3c5ff08cac516",
+        "logos-agent/pi-domain/skills/spaceclaim/SKILL.md": "c01e8dbd62f06ecdc788a043e28cd0a6591594ce6064209e0cd5d38ff1bdc347",
+        "logos-agent/pi-domain/skills/vibeflow-fluent/SKILL.md": "e197be20074df8862fa8ef58d95d2f9bd790785c61cd2dae917d34dd11192251",
+        "logos-agent/pi-domain/skills/workbench-sim/SKILL.md": "7ff99c81af519c8e4292e0abeff17732867bae4fd952aa1721a96d6c53bd41ba"
+      },
+      "node_version": "v22.23.3",
+      "model": "gpt-6.1-sol",
+      "thinking": "medium"
+    },
+    {
+      "case_id": "A07",
+      "files": {
+        "logos-agent/bin/logos.mjs": "ce902cd0ae91b8ae3047c302e1914530bda0a3ccea4d97fce213a6e8313d6412",
+        "logos-agent/pi-domain/prompts/system.md": "195b178bb0c9da3b59b14246616a5d90159221aa697220331b0b0a8c43215927",
+        "logos-agent/pi-domain/prompts/append.md": "23db339236d52c3528fd696d0521762308f6b092288e8a929e903e3045265b56",
+        "logos-agent/pi-domain/extensions/index.mjs": "460b5dd7b8dfcecc38ba78b73bf8575b45f56f32b79baf9572bcb340b6b994c7",
+        "vendor/pi/packages/coding-agent/package.json": "c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a",
+        "logos-agent/pi-domain/skills/fluent-sim/SKILL.md": "ee8c77fa8f4aebe08d2094868e73d1745bcca1441b62f2a3d04eb2bd9f813604",
+        "logos-agent/pi-domain/skills/hfss/SKILL.md": "c4c7531b21d342f68c62224a8b56f6a1d266f76c83ff342128cd2566c6973480",
+        "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md": "32a9e4e4f07c7b9be2ae58dc713b21fbb1692cd32077d5c06d25526721ebfaa1",
+        "logos-agent/pi-domain/skills/mechanical-sim/SKILL.md": "b3702e2c4aef7b3263f57879b0a65252614c5577977772879fcda0a177786e4d",
+        "logos-agent/pi-domain/skills/sim-cli/SKILL.md": "305d27c16018e773f7c9ae4d137bfde6ae186a2f61ce49a5e260a366beeffa68",
+        "logos-agent/pi-domain/skills/sim-cli/gui/SKILL.md": "5b21a606195d808dd0fe472ae304cbd564e99d795229e2233f21a8b2ec15d43b",
+        "logos-agent/pi-domain/skills/solidcraft/SKILL.md": "223b9de7e88297d2dcd0fb5765968ec8a7817e9330478b2e4af3c5ff08cac516",
+        "logos-agent/pi-domain/skills/spaceclaim/SKILL.md": "c01e8dbd62f06ecdc788a043e28cd0a6591594ce6064209e0cd5d38ff1bdc347",
+        "logos-agent/pi-domain/skills/vibeflow-fluent/SKILL.md": "e197be20074df8862fa8ef58d95d2f9bd790785c61cd2dae917d34dd11192251",
+        "logos-agent/pi-domain/skills/workbench-sim/SKILL.md": "7ff99c81af519c8e4292e0abeff17732867bae4fd952aa1721a96d6c53bd41ba"
+      },
+      "node_version": "v22.23.3",
+      "model": "gpt-6.1-sol",
+      "thinking": "medium"
+    }
+  ],
+  "access_review": {
+    "scope": "Heuristic scan of recorded tool arguments only; no OS/network sandbox or proof of isolation",
+    "flags": []
+  },
+  "runtime_fingerprint_differences": [
+    {
+      "case_id": "A03",
+      "baseline_case_id": "S07",
+      "added_files": [
+        "logos-agent/pi-domain/skills/solidcraft/SKILL.md"
+      ],
+      "removed_files": [],
+      "changed_files": [],
+      "runtime_fields_changed": {}
+    },
+    {
+      "case_id": "A04",
+      "baseline_case_id": "S07",
+      "added_files": [
+        "logos-agent/pi-domain/skills/solidcraft/SKILL.md"
+      ],
+      "removed_files": [],
+      "changed_files": [],
+      "runtime_fields_changed": {}
+    },
+    {
+      "case_id": "A06",
+      "baseline_case_id": "S07",
+      "added_files": [
+        "logos-agent/pi-domain/skills/solidcraft/SKILL.md"
+      ],
+      "removed_files": [],
+      "changed_files": [],
+      "runtime_fields_changed": {}
+    },
+    {
+      "case_id": "A07",
+      "baseline_case_id": "S07",
+      "added_files": [
+        "logos-agent/pi-domain/skills/solidcraft/SKILL.md"
+      ],
+      "removed_files": [],
+      "changed_files": [],
+      "runtime_fields_changed": {}
+    }
+  ]
+}

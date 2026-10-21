@@ -1,0 +1,168 @@
+{
+  "review_status": "RAW_FREQUENCIES_AND_INDEPENDENT_REFERENCE_VERIFIED",
+  "frequency_checks": [
+    {
+      "variant": "base",
+      "mode": 1,
+      "raw_hz": 8.32338513720207,
+      "reported_hz": 8.32338513720207,
+      "relative_difference": 0.0
+    },
+    {
+      "variant": "base",
+      "mode": 2,
+      "raw_hz": 16.27452744286817,
+      "reported_hz": 16.27452744286817,
+      "relative_difference": 0.0
+    },
+    {
+      "variant": "base",
+      "mode": 3,
+      "raw_hz": 50.89146302917462,
+      "reported_hz": 50.89146302917462,
+      "relative_difference": 0.0
+    },
+    {
+      "variant": "base",
+      "mode": 4,
+      "raw_hz": 60.24850970225172,
+      "reported_hz": 60.24850970225172,
+      "relative_difference": 0.0
+    },
+    {
+      "variant": "base",
+      "mode": 5,
+      "raw_hz": 89.20848789035782,
+      "reported_hz": 89.20848789035782,
+      "relative_difference": 0.0
+    },
+    {
+      "variant": "base",
+      "mode": 6,
+      "raw_hz": 129.8520328520481,
+      "reported_hz": 129.8520328520481,
+      "relative_difference": 0.0
+    },
+    {
+      "variant": "base",
+      "mode": 7,
+      "raw_hz": 138.637651557325,
+      "reported_hz": 138.637651557325,
+      "relative_difference": 0.0
+    },
+    {
+      "variant": "base",
+      "mode": 8,
+      "raw_hz": 182.2348249747422,
+      "reported_hz": 182.2348249747422,
+      "relative_difference": 0.0
+    },
+    {
+      "variant": "refined",
+      "mode": 1,
+      "raw_hz": 8.318225957409918,
+      "reported_hz": 8.318225957409918,
+      "relative_difference": 0.0
+    },
+    {
+      "variant": "refined",
+      "mode": 2,
+      "raw_hz": 16.26451862343473,
+      "reported_hz": 16.26451862343473,
+      "relative_difference": 0.0
+    },
+    {
+      "variant": "refined",
+      "mode": 3,
+      "raw_hz": 50.11671453792511,
+      "reported_hz": 50.11671453792511,
+      "relative_difference": 0.0
+    },
+    {
+      "variant": "refined",
+      "mode": 4,
+      "raw_hz": 60.20208429383224,
+      "reported_hz": 60.20208429383224,
+      "relative_difference": 0.0
+    },
+    {
+      "variant": "refined",
+      "mode": 5,
+      "raw_hz": 88.04726377241266,
+      "reported_hz": 88.04726377241266,
+      "relative_difference": 0.0
+    },
+    {
+      "variant": "refined",
+      "mode": 6,
+      "raw_hz": 129.7519733868571,
+      "reported_hz": 129.7519733868571,
+      "relative_difference": 0.0
+    },
+    {
+      "variant": "refined",
+      "mode": 7,
+      "raw_hz": 133.0230669205901,
+      "reported_hz": 133.0230669205901,
+      "relative_difference": 0.0
+    },
+    {
+      "variant": "refined",
+      "mode": 8,
+      "raw_hz": 180.9777953993836,
+      "reported_hz": 180.9777953993836,
+      "relative_difference": 0.0
+    }
+  ],
+  "all_frequency_claims_match": true,
+  "grid_independence": "NOT_ESTABLISHED_max_4.0498267_percent",
+  "first_attempt_success_agent_reported": false,
+  "manual_interventions_during_run": 0,
+  "review_findings": [
+    {
+      "category": "prompt_gap",
+      "finding": "General structural force-balance instruction triggered unnecessary modal dynamic-reaction reconstruction and a postprocess repair",
+      "v2": "Specify modal eigenpair residual/orthogonality checks; no static reaction balance; use rotational DOFs for pure torsion MAC"
+    },
+    {
+      "category": "artifact",
+      "finding": "Plain Python strings damaged LaTeX; agent repaired autonomously",
+      "v2": "Use raw strings for formula generation; reject control characters in final Markdown"
+    }
+  ],
+  "audit_overlap_note": "Independent read-only RST extraction ran ~3.63s while next case S01 was active; excluded from S07 timings.",
+  "independent_official_reproduction": {
+    "reference_hz": [
+      8.323385137201461,
+      16.27452744286811,
+      50.89146302917458,
+      60.24850970225183,
+      89.20848789035841,
+      129.852032852049,
+      138.6376515573286,
+      182.234824974742
+    ],
+    "agent_hz": [
+      8.32338513720207,
+      16.27452744286817,
+      50.89146302917462,
+      60.24850970225172,
+      89.20848789035782,
+      129.8520328520481,
+      138.637651557325,
+      182.2348249747422
+    ],
+    "relative_errors": [
+      7.320223513280142e-14,
+      3.7110836398555806e-15,
+      8.37715436106956e-16,
+      1.886965142929783e-15,
+      6.6905729729669804e-15,
+      7.004085202186935e-15,
+      2.603590768535708e-14,
+      1.0917340636752777e-15
+    ],
+    "calibrated_after_run": true,
+    "leaderboard_eligible": false
+  }
+}

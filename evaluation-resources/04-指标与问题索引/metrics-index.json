@@ -1,0 +1,161 @@
+{
+  "suite_id": "20261019-allcases-discovery-v1",
+  "finished": true,
+  "active": null,
+  "cases": [
+    {
+      "case_id": "S07",
+      "status": "COMPLETED",
+      "settled": true,
+      "tool_errors": 0,
+      "wall_seconds": 422.69433288200526,
+      "tokens": 855020,
+      "estimated_cost_usd": 0.3943504,
+      "accuracy": "RAW_FREQUENCIES_AND_INDEPENDENT_REFERENCE_VERIFIED",
+      "transfer_verified": true
+    },
+    {
+      "case_id": "S01",
+      "status": "PASS_WITH_REPAIRS",
+      "settled": true,
+      "tool_errors": 1,
+      "wall_seconds": 434.38369207200594,
+      "tokens": 836336,
+      "estimated_cost_usd": 0.3426112,
+      "accuracy": "OFFICIAL_CORE_AND_RAW_RESULTS_VERIFIED",
+      "transfer_verified": true
+    },
+    {
+      "case_id": "S03",
+      "status": "COMPLETED",
+      "settled": true,
+      "tool_errors": 2,
+      "wall_seconds": 456.18087114498485,
+      "tokens": 1005921,
+      "estimated_cost_usd": 0.38130600000000003,
+      "accuracy": "RAW_RESULTS_AND_LAME_COMPARISON_VERIFIED",
+      "transfer_verified": true
+    },
+    {
+      "case_id": "S02",
+      "status": "COMPLETED",
+      "settled": true,
+      "tool_errors": 1,
+      "wall_seconds": 385.5769209769787,
+      "tokens": 572070,
+      "estimated_cost_usd": 0.2878472,
+      "accuracy": "RAW_STRESS_VERIFIED_EMPIRICAL_COMPARISON",
+      "transfer_verified": true
+    },
+    {
+      "case_id": "S04",
+      "status": "COMPLETED_INTERNAL_CHECKS",
+      "settled": true,
+      "tool_errors": 1,
+      "wall_seconds": 353.9032266740105,
+      "tokens": 547742,
+      "estimated_cost_usd": 0.2672072,
+      "accuracy": "RAW_DISPLACEMENTS_VERIFIED_OFFICIAL_COMPARISON",
+      "transfer_verified": true
+    },
+    {
+      "case_id": "S06",
+      "status": "COMPLETED",
+      "settled": true,
+      "tool_errors": 1,
+      "wall_seconds": 592.9083063689759,
+      "tokens": 1548663,
+      "estimated_cost_usd": 0.48679800000000006,
+      "accuracy": "RAW_RESULTS_VERIFIED_OFFICIAL_COMPARISON",
+      "transfer_verified": true
+    },
+    {
+      "case_id": "S08",
+      "status": "COMPLETED_WITH_WARNINGS",
+      "settled": true,
+      "tool_errors": 3,
+      "wall_seconds": 806.3547121419688,
+      "tokens": 1856813,
+      "estimated_cost_usd": 0.5473684,
+      "accuracy": "RAW_FREQUENCIES_VERIFIED_NUMERICAL_WARNING_UNRESOLVED",
+      "transfer_verified": true
+    },
+    {
+      "case_id": "S09",
+      "status": "COMPLETED_WITH_WARNINGS",
+      "settled": true,
+      "tool_errors": 2,
+      "wall_seconds": 1685.786106047046,
+      "tokens": 6271092,
+      "estimated_cost_usd": 1.4060944,
+      "accuracy": "RAW_SCOPED_RESULTS_VERIFIED_DISPLACEMENT_SCOPE_AMBIGUITY",
+      "transfer_verified": true
+    },
+    {
+      "case_id": "A01",
+      "status": "NEEDS_INPUT",
+      "settled": true,
+      "tool_errors": 3,
+      "wall_seconds": 969.6288304940099,
+      "tokens": 3420294,
+      "estimated_cost_usd": 0.7880168000000002,
+      "accuracy": "NATIVE_CASE_REOPENED_NOT_SOLVED_MISSING_THERMAL_BC",
+      "transfer_verified": true
+    },
+    {
+      "case_id": "A02",
+      "status": "INCOMPLETE",
+      "settled": false,
+      "tool_errors": 3,
+      "wall_seconds": null,
+      "tokens": 7144693,
+      "estimated_cost_usd": null,
+      "accuracy": "NATIVE_AND_MONITORS_VERIFIED_UNCONVERGED_CONTROLLER_TIMEOUT",
+      "transfer_verified": true
+    },
+    {
+      "case_id": "A03",
+      "status": "INCOMPLETE",
+      "settled": true,
+      "tool_errors": 1,
+      "wall_seconds": 1789.1848971660365,
+      "tokens": 8114769,
+      "estimated_cost_usd": 1.45029,
+      "accuracy": "NATIVE_AND_TRANSIENT_MONITORS_VERIFIED_INCOMPLETE_65_OF_300",
+      "transfer_verified": true
+    },
+    {
+      "case_id": "A04",
+      "status": "COMPLETED_UNCONVERGED",
+      "settled": true,
+      "tool_errors": 1,
+      "wall_seconds": 1761.2728558620438,
+      "tokens": 5028736,
+      "estimated_cost_usd": 1.1263215999999996,
+      "accuracy": "RAW_RESULTS_AND_NATIVE_REOPEN_VERIFIED_UNCONVERGED",
+      "transfer_verified": true
+    },
+    {
+      "case_id": "A06",
+      "status": "COMPLETED_WITH_LIMITATIONS",
+      "settled": true,
+      "tool_errors": 3,
+      "wall_seconds": 839.1423878319329,
+      "tokens": 4440543,
+      "estimated_cost_usd": 0.9732812,
+      "accuracy": "NATIVE_CASE_REOPENED_RESULTS_REPRODUCED_WITH_LIMITATIONS",
+      "transfer_verified": true
+    },
+    {
+      "case_id": "A07",
+      "status": null,
+      "settled": false,
+      "tool_errors": 1,
+      "wall_seconds": null,
+      "tokens": 47700,
+      "estimated_cost_usd": null,
+      "accuracy": "READINESS_INCOMPLETE_MISSING_PHYSICAL_DEFINITION",
+      "transfer_verified": true
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+[
+  {
+    "id": "PRE-01",
+    "phase": "before_run",
+    "cases": [
+      "S01",
+      "S02",
+      "S03",
+      "S04",
+      "S06",
+      "S07",
+      "S08"
+    ],
+    "category": "environment",
+    "finding": "Integration venv lacks PyMAPDL and MAPDL reader; native MAPDL executable exists",
+    "action": "V1 gives native APDL fallback and absolute executable",
+    "requires_user": false
+  },
+  {
+    "id": "PRE-02",
+    "phase": "before_run",
+    "cases": [
+      "A07"
+    ],
+    "category": "prompt_gap",
+    "finding": "Official asset only; no Reynolds number, fluid properties, boundaries or validated reference",
+    "action": "Queue a readiness audit; require NEEDS_INPUT, prohibit fabricated flow condition",
+    "requires_user": true
+  },
+  {
+    "id": "PRE-03",
+    "phase": "before_run",
+    "cases": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A06"
+    ],
+    "category": "numerical",
+    "finding": "Tutorial iteration counts/implicit defaults do not establish converged benchmark truth",
+    "action": "V1 states stop criteria and explicit budgets; preserve incomplete status",
+    "requires_user": false
+  },
+  {
+    "id": "PRE-04",
+    "phase": "before_run",
+    "cases": [
+      "A02",
+      "A03",
+      "A04",
+      "A06"
+    ],
+    "category": "parameter",
+    "finding": "Some material/model/temperature choices implicit in tutorial; no frozen numerical references yet",
+    "action": "Explicit choices recorded in V1 prompts; results are diagnostic variant, not original validated reference",
+    "requires_user": false
+  },
+  {
+    "id": "PRE-05",
+    "phase": "before_run",
+    "cases": [
+      "S07",
+      "S08"
+    ],
+    "category": "parameter",
+    "finding": "Requested mode count differs from available frequency window; cyclic modes can be degenerate",
+    "action": "V1 requires actual sets, mode correspondence and common-grid MAC; no fixed count assumption",
+    "requires_user": false
+  },
+  {
+    "id": "PRE-06",
+    "phase": "before_run",
+    "cases": [
+      "S03",
+      "S04",
+      "S06",
+      "S08"
+    ],
+    "category": "scope",
+    "finding": "Official scripts contain extra subcases or misleading comments",
+    "action": "V1 fixes pressure-only S03, explicit shell variants S04, nonlinear S06, seven-sector-only S08",
+    "requires_user": false
+  }
+]

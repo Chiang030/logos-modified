@@ -1,0 +1,637 @@
+{
+  "case_id": "S06",
+  "execution": {
+    "settled": true,
+    "aborted": false,
+    "timed_out": false,
+    "controller_error": null,
+    "interactive_request_count": 0,
+    "needs_input_artifact": false
+  },
+  "agent_reported_status": "COMPLETED",
+  "independent_accuracy_status": "RAW_RESULTS_VERIFIED_OFFICIAL_COMPARISON",
+  "agent_wall_seconds": 592.9083063689759,
+  "total_wall_seconds": 593.3715260450263,
+  "sampled_peak_tree_rss_mib": 767.34765625,
+  "child_user_cpu_seconds": 12.490331,
+  "child_system_cpu_seconds": 2.82599,
+  "assistant_turns": 41,
+  "tools": {
+    "read": 4,
+    "bash": 21,
+    "write": 7,
+    "edit": 11
+  },
+  "tool_calls": 43,
+  "tool_error_count": 1,
+  "tool_seconds_sum": 32.94251141580753,
+  "tokens": {
+    "input": 64467,
+    "output": 21156,
+    "cacheRead": 1463040,
+    "cacheWrite": 0,
+    "reasoning": 4245,
+    "totalTokens": 1548663
+  },
+  "runtime_estimated_cost_usd": 0.48679800000000006,
+  "actual_billed_cost_usd": null,
+  "model_id": "gpt-6.1-sol",
+  "thinking_level": "medium",
+  "artifact_count": 301,
+  "artifact_bytes": 9613075,
+  "transfer_verified": true,
+  "agent_reported_issues": {
+    "issues": [
+      {
+        "stage": "后处理",
+        "category": "api",
+        "symptom": "PRESOL,SMISC缺少序号，被求解器忽略；所需SX输出仍存在。",
+        "evidence": "attempts/01/base/model.err:9-14；attempts/01/base/final_listing.txt末尾",
+        "attempt": 1,
+        "action": "attempts/02使用ETABLE的具体SMISC序号并以PRETAB输出；保留首次日志。",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "明确BEAM188 SMISC必须使用序号，不调用无序号PRESOL,SMISC。"
+      },
+      {
+        "stage": "求解设置",
+        "category": "parameter",
+        "symptom": "CNVTOL未指定MINREF，求解器提示采用默认值1。",
+        "evidence": "attempts/01/base/model.err:3-8",
+        "attempt": 1,
+        "action": "attempts/02显式指定MINREF=1，保持原有默认物理和收敛准则。",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "CNVTOL同时写明范数和MINREF。"
+      },
+      {
+        "stage": "反力导出",
+        "category": "api",
+        "symptom": "对未约束自由度循环*GET,RF未获得新值，参数保留先前节点值，导致非底节点出现重复FX/FY/MZ。",
+        "evidence": "attempts/02/base/extraction/reactions.csv:2-6；对照attempts/02/base/final_listing.txt的PRRSOL",
+        "attempt": 2,
+        "action": "attempts/03仅提取实际约束自由度，非约束项留空；最终采用attempts/05反力表并核验整体平衡。",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "反力提取须按DLIST约束掩码筛选，并和PRRSOL交叉核对。"
+      },
+      {
+        "stage": "截面应力导出",
+        "category": "api",
+        "symptom": "向*GET,SECR附加I/J端标签未生效，日志仍显示AT ELEMENT NODE I。",
+        "evidence": "attempts/03/base/extraction/solver.out:211-225",
+        "attempt": 3,
+        "action": "attempts/04测试数值1/2端标签；仍取I端，未采用这两轮J字段。",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "*GET,SECR极值必须检查求解器回显的实际单元端位置，不能依据CSV列名认定。"
+      },
+      {
+        "stage": "截面应力导出",
+        "category": "api",
+        "symptom": "数值1/2端标签同样未改变SECR取值位置。",
+        "evidence": "attempts/04/base/extraction/solver.out:211-225",
+        "attempt": 4,
+        "action": "attempts/05删除未经验证的J端GET字段；使用精确I端极值和PRESOL两端完整截面节点表核验：本例全第一单元最大、最小均位于I端。",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "保留PRESOL两端表作为定位证据，受支持的SECR默认I端仅声明为I端。"
+      },
+      {
+        "stage": "交付验证",
+        "category": "artifact",
+        "symptom": "最终内联验证脚本的嵌套打印表达式缺一个右花括号，解析阶段SyntaxError。",
+        "evidence": "attempts/08/validation/01.log",
+        "attempt": 8,
+        "action": "保存首次错误；改用独立verify_artifacts.py，完成语法、哈希、收敛标志及原生文件检查；不重新求解。",
+        "resolved": true,
+        "requires_human": false,
+        "question": null,
+        "prompt_v2_suggestion": "最终验证采用独立脚本，避免复杂的嵌套内联打印表达式。"
+      }
+    ],
+    "first_attempt_success": false,
+    "repair_count": 5,
+    "repair_count_definition": "以归档修复轮次计：02修正PRESOL并明确默认MINREF；03修正反力提取并尝试端标签；04更换端标签测试；05移除无效J字段并采用原生两端表核对；08修复交付验证脚本语法。每轮两模型不重复计数。"
+  },
+  "needs_input": null,
+  "tool_errors": [
+    {
+      "elapsed_s": 509.1252813960309,
+      "tool": "bash",
+      "tool_call_id": "call_1217e1bc05e94ff6b8acf678b3384830|fc_0d9cf5ad5854dccc016ad5cecd49cc8193a4dafbc123e6291d",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "  File \"<stdin>\", line 20\n    print(json.dumps({'checks':checks,'metrics':{label:{k:v['value'] for k,v in r['metrics'][label].items() if k in ['top_UX','first_element_SX_max','first_element_SX_min','bottom_FY']} for label in ['base','refined']},ensure_ascii=False,indent=2))\n                                                                                                                                                                                                                                                      ^\nSyntaxError: closing parenthesis ')' does not match opening parenthesis '{'\n\n\nCommand exited with code 1"
+          }
+        ],
+        "structuredContent": {
+          "output": "  File \"<stdin>\", line 20\n    print(json.dumps({'checks':checks,'metrics':{label:{k:v['value'] for k,v in r['metrics'][label].items() if k in ['top_UX','first_element_SX_max','first_element_SX_min','bottom_FY']} for label in ['base','refined']},ensure_ascii=False,indent=2))\n                                                                                                                                                                                                                                                      ^\nSyntaxError: closing parenthesis ')' does not match opening parenthesis '{'\n",
+          "truncated": false,
+          "exit_code": 1,
+          "wall_time_seconds": 0.1
+        },
+        "isError": true
+      }
+    }
+  ],
+  "controller_followups": 0,
+  "human_interventions": 0,
+  "cleanup": {
+    "terminated_run_owned_pids": [],
+    "remaining": []
+  },
+  "event_estimated_cost_usd": 0.48679800000000006,
+  "controller_artifact_manifest_mismatches": [],
+  "collection_manifest_source": "controller_manifest",
+  "controller_wall_seconds": 593.3715260450263,
+  "agent_reported_physics_metrics": {
+    "base": {
+      "top_UX": {
+        "value": 0.1088152246762466,
+        "unit": "in",
+        "evidence": "final/base/load_displacement.csv:16"
+      },
+      "top_UY": {
+        "value": -0.004803369798090549,
+        "unit": "in",
+        "evidence": "final/base/load_displacement.csv:16"
+      },
+      "first_element_SX_max": {
+        "value": 1807.343872070312,
+        "unit": "psi",
+        "evidence": "final/base/section_extrema.csv:2; final/base/first_element_section_stress.csv"
+      },
+      "first_element_SX_min": {
+        "value": -2396.00048828125,
+        "unit": "psi",
+        "evidence": "final/base/section_extrema.csv:2; final/base/first_element_section_stress.csv"
+      },
+      "bottom_FX": {
+        "value": 9.91627121436911e-05,
+        "unit": "lbf",
+        "evidence": "final/base/reactions.csv:2"
+      },
+      "bottom_FY": {
+        "value": 4000.001070643055,
+        "unit": "lbf",
+        "evidence": "final/base/reactions.csv:2"
+      },
+      "bottom_FZ": {
+        "value": -4.351866300787334e-05,
+        "unit": "lbf",
+        "evidence": "final/base/reactions.csv:2"
+      },
+      "bottom_MX": {
+        "value": -13414.53851852641,
+        "unit": "lbf*in",
+        "evidence": "final/base/reactions.csv:2"
+      },
+      "bottom_MY": {
+        "value": 0.0003626123308596019,
+        "unit": "lbf*in",
+        "evidence": "final/base/reactions.csv:2"
+      },
+      "bottom_MZ": {
+        "value": 435.2427908226693,
+        "unit": "lbf*in",
+        "evidence": "final/base/reactions.csv:2"
+      },
+      "force_balance_relative": {
+        "value": 2.6880636553506434e-07,
+        "unit": "1",
+        "evidence": "final/base/balance.json"
+      },
+      "moment_balance_residual_norm": {
+        "value": 0.019856376740609912,
+        "unit": "lbf*in",
+        "evidence": "final/base/balance.json"
+      },
+      "cpu_user_seconds": {
+        "value": 0.39,
+        "unit": "s",
+        "evidence": "final/base/time.txt"
+      },
+      "cpu_system_seconds": {
+        "value": 0.11,
+        "unit": "s",
+        "evidence": "final/base/time.txt"
+      },
+      "peak_RSS": {
+        "value": 501992.0,
+        "unit": "KiB",
+        "evidence": "final/base/time.txt"
+      },
+      "exit_code": {
+        "value": 0.0,
+        "unit": "1",
+        "evidence": "final/base/time.txt"
+      },
+      "wall_time": {
+        "value": 1.76,
+        "unit": "s",
+        "evidence": "final/base/time.txt"
+      }
+    },
+    "refined": {
+      "top_UX": {
+        "value": 0.1088152134826378,
+        "unit": "in",
+        "evidence": "final/refined/load_displacement.csv:16"
+      },
+      "top_UY": {
+        "value": -0.004803369748478289,
+        "unit": "in",
+        "evidence": "final/refined/load_displacement.csv:16"
+      },
+      "first_element_SX_max": {
+        "value": 1805.27197265625,
+        "unit": "psi",
+        "evidence": "final/refined/section_extrema.csv:2; final/refined/first_element_section_stress.csv"
+      },
+      "first_element_SX_min": {
+        "value": -2395.170166015625,
+        "unit": "psi",
+        "evidence": "final/refined/section_extrema.csv:2; final/refined/first_element_section_stress.csv"
+      },
+      "bottom_FX": {
+        "value": 4.992928746833103e-05,
+        "unit": "lbf",
+        "evidence": "final/refined/reactions.csv:2"
+      },
+      "bottom_FY": {
+        "value": 4000.001078930074,
+        "unit": "lbf",
+        "evidence": "final/refined/reactions.csv:2"
+      },
+      "bottom_FZ": {
+        "value": -6.783312595323497e-06,
+        "unit": "lbf",
+        "evidence": "final/refined/reactions.csv:2"
+      },
+      "bottom_MX": {
+        "value": -13414.5388657277,
+        "unit": "lbf*in",
+        "evidence": "final/refined/reactions.csv:2"
+      },
+      "bottom_MY": {
+        "value": 0.0001721178283674019,
+        "unit": "lbf*in",
+        "evidence": "final/refined/reactions.csv:2"
+      },
+      "bottom_MZ": {
+        "value": 435.2428871650133,
+        "unit": "lbf*in",
+        "evidence": "final/refined/reactions.csv:2"
+      },
+      "force_balance_relative": {
+        "value": 2.7002118418665847e-07,
+        "unit": "1",
+        "evidence": "final/refined/balance.json"
+      },
+      "moment_balance_residual_norm": {
+        "value": 0.019710666123607407,
+        "unit": "lbf*in",
+        "evidence": "final/refined/balance.json"
+      },
+      "cpu_user_seconds": {
+        "value": 0.39,
+        "unit": "s",
+        "evidence": "final/refined/time.txt"
+      },
+      "cpu_system_seconds": {
+        "value": 0.12,
+        "unit": "s",
+        "evidence": "final/refined/time.txt"
+      },
+      "peak_RSS": {
+        "value": 502676.0,
+        "unit": "KiB",
+        "evidence": "final/refined/time.txt"
+      },
+      "exit_code": {
+        "value": 0.0,
+        "unit": "1",
+        "evidence": "final/refined/time.txt"
+      },
+      "wall_time": {
+        "value": 1.76,
+        "unit": "s",
+        "evidence": "final/refined/time.txt"
+      }
+    },
+    "mesh_relative_change": {
+      "top_UX": {
+        "value": 1.0286804983878567e-05,
+        "unit": "%",
+        "evidence": "final/base/load_displacement.csv:16; final/refined/load_displacement.csv:16"
+      },
+      "first_element_SX_max": {
+        "value": 0.1147693779909231,
+        "unit": "%",
+        "evidence": "final/base/section_extrema.csv:2; final/base/first_element_section_stress.csv; final/refined/section_extrema.csv:2; final/refined/first_element_section_stress.csv"
+      },
+      "first_element_SX_min": {
+        "value": 0.03466652505138056,
+        "unit": "%",
+        "evidence": "final/base/section_extrema.csv:2; final/base/first_element_section_stress.csv; final/refined/section_extrema.csv:2; final/refined/first_element_section_stress.csv"
+      }
+    }
+  },
+  "agent_reported_convergence": {
+    "base": {
+      "converged": true,
+      "full_load_reached": true,
+      "accepted_substeps": 15,
+      "equilibrium_iterations": 16,
+      "force_relative_tolerance": 0.0001,
+      "moment_relative_tolerance": 0.0001,
+      "last_force_residual_lbf": 0.002622,
+      "last_force_criterion_lbf": 0.5657,
+      "last_moment_residual_lbf_in": 0.02368,
+      "last_moment_criterion_lbf_in": 1.898,
+      "evidence": [
+        "final/base/solver.out",
+        "final/base/nonlinear_convergence.csv",
+        "final/base/accepted_substeps.csv",
+        "final/base/balance.json"
+      ]
+    },
+    "refined": {
+      "converged": true,
+      "full_load_reached": true,
+      "accepted_substeps": 15,
+      "equilibrium_iterations": 16,
+      "force_relative_tolerance": 0.0001,
+      "moment_relative_tolerance": 0.0001,
+      "last_force_residual_lbf": 0.002527,
+      "last_force_criterion_lbf": 0.5657,
+      "last_moment_residual_lbf_in": 0.01683,
+      "last_moment_criterion_lbf_in": 1.898,
+      "evidence": [
+        "final/refined/solver.out",
+        "final/refined/nonlinear_convergence.csv",
+        "final/refined/accepted_substeps.csv",
+        "final/refined/balance.json"
+      ]
+    }
+  },
+  "agent_reported_limitations": [
+    "没有独立真值；仅报告计算结果、非线性收敛、整体平衡及两网格比较，不声称物理精度通过。",
+    "截面应力由 BEAM188 截面节点恢复值定义；I 端精确极值使用 *GET,SECR，J 端及全部截面节点表由原生 PRESOL 输出保留约5位有效数字，不外推额外的外纤维值。",
+    "4单元第一单元范围为0–15 in，8单元为0–7.5 in；两者第一单元固定端I截面的比较位于同一物理位置。",
+    "所有Z平面对称约束均按原题保留；USER偏置使截面形心与节点线在局部Z方向有3.3535 in距离，产生对称约束上的反向MX反力，不能仅用底节点MX判断整体力矩平衡。"
+  ],
+  "delivery_presence_checks": {
+    "results.json": true,
+    "issues.json": true,
+    "report.md": true
+  },
+  "delivered_final_native_files": [
+    "final/base/model.db",
+    "final/base/model.rst",
+    "final/refined/model.db",
+    "final/refined/model.rst"
+  ],
+  "native_presence_caveat": "File presence alone does not establish reopenability, convergence or physical accuracy; see review.json and independent audits.",
+  "usage_coverage": "session_statistics_and_observed_events",
+  "frozen_local_inputs_unchanged": {
+    "prompt.md": true,
+    "run-config.json": true
+  },
+  "provided_assets_unchanged": {},
+  "event_counts": {
+    "response": 5,
+    "agent_start": 1,
+    "turn_start": 41,
+    "message_start": 86,
+    "message_end": 86,
+    "message_update": 16620,
+    "tool_execution_start": 43,
+    "tool_execution_end": 43,
+    "turn_end": 41,
+    "tool_execution_update": 58,
+    "agent_end": 1,
+    "agent_settled": 1
+  },
+  "model_error_count": 0,
+  "session_statistics": {
+    "sessionFile": "/home/jiangjincheng/logos-benchmark-runs/20261019-allcases-discovery-v1/S06/sessions/2026-10-19T07-55-03-266Z_01a15328-28e2-7069-bd1c-f8d33aaa849c.jsonl",
+    "sessionId": "01a15328-28e2-7069-bd1c-f8d33aaa849c",
+    "userMessages": 1,
+    "assistantMessages": 41,
+    "toolCalls": 43,
+    "toolResults": 43,
+    "totalMessages": 86,
+    "tokens": {
+      "input": 64467,
+      "output": 21156,
+      "cacheRead": 1463040,
+      "cacheWrite": 0,
+      "total": 1548663
+    },
+    "cost": 0.48679800000000006,
+    "contextUsage": {
+      "tokens": 59671,
+      "contextWindow": 272000,
+      "percent": 21.937867647058823
+    }
+  },
+  "first_visible_text_seconds": 4.122851083986461,
+  "final_assistant_text": "### 1. 状态更新\n\n**S06 已实际完成，状态为 `COMPLETED`。** 4 单元与 8 单元模型均完成 4000 lbf 全载荷的大变形静力求解，力和力矩满足规定的 `1e-4` 相对收敛容差。重跑脚本已实际执行成功，原生文件及哈希一致性检查通过。\n\n| 项目 | 设置或结果 |\n|---|---|\n| 单位 | in–lbf–psi |\n| 模型 | 60 in 柱，BEAM188 三次插值，4 / 8 个单元 |\n| 截面 | CHAN，按给定 SECDATA 参数 |\n| 截面偏置 | 实际回显为局部 Y=0、Z=0.6465 in |\n| 非线性 | `NLGEOM,ON`，自动子步 |\n| 收敛历史 | 两模型均为 15 个收敛子步、16 次平衡迭代 |\n\n| 指标 | 4 单元 | 8 单元 |\n|---|---:|---:|\n| 顶端 UX / in | 0.108815224676 | 0.108815213483 |\n| 第一单元 SX 最大 / psi | 1807.343872 | 1805.271973 |\n| 第一单元 SX 最小 / psi | −2396.000488 | −2395.170166 |\n| 底部 FY / lbf | 4000.001071 | 4000.001079 |\n| 底部 MZ / lbf·in | 435.242791 | 435.242887 |\n| 合力残差 / 4000 lbf | 2.688×10⁻⁷ | 2.700×10⁻⁷ |\n\nSX 极值均位于第一单元固定端截面；已用两端完整截面节点表核对。网格加密后，UX、SX 最大值、SX 最小值的相对变化分别为 **0.0000103%、0.1148%、0.0347%**。\n\n截面保持默认方位。给定偏置与全节点 Z 对称约束共同产生较大的反向 MX 约束反力，已将所有约束反力纳入整体平衡；没有修改载荷、几何或约束。这里只报告计算结果与内部核验，**没有独立真值支持物理精度判定**。\n\n交付文件：\n\n- [report.md](report.md)：参数、局部轴与偏置审查、结果、平衡和修复说明。\n- [results.json](results.json)、[issues.json](issues.json)：机器结果及完整问题记录。\n- [final/base](final/base)、[final/refined](final/refined)：各自的 `model.db`、`model.rst`、`model.inp`，原始求解日志、载荷—位移、截面应力、反力及非线性收敛历史。\n- [rerun.sh](rerun.sh)：重跑入口；配套建模、提取、汇总和验证脚本均已保存。\n- [validation.json](validation.json)：最终文件与收敛证据检查结果。\n\n首次运行日志及所有错误均已保留。`first_attempt_success=false`，记录了 **6 项问题现象、5 轮修复**，包括后处理 API 取值问题和最后验证脚本的一次语法错误；均已解决。没有删除文件或修改其他项目、全局环境。\n\n### 2. Todo\n\n- `completed`：参数整理与环境核验。\n- `completed`：首次最小语法、网格、截面及约束检查。\n- `completed`：4 单元和 8 单元非线性求解。\n- `completed`：应力定位、全约束反力、整体平衡与网格比较。\n- `completed`：原生结果归档、报告、重跑及一致性验证。\n\n当前没有进行中的任务。\n\n### 3. 下一步\n\n本案例无需补充输入。需要再次复现时，在本目录运行 `bash rerun.sh`；脚本将使用新的 `attempts` 编号保存运行记录。全部求解批进程已退出。",
+  "saved_backend_timing_records": [
+    {
+      "identical_record_paths": [
+        "attempts/01/base/time.txt"
+      ],
+      "wall_seconds": 1.82,
+      "user_cpu_seconds": 0.38,
+      "system_cpu_seconds": 0.13,
+      "max_rss_kib": 501664.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/01/precheck/time.txt"
+      ],
+      "wall_seconds": 1.76,
+      "user_cpu_seconds": 0.36,
+      "system_cpu_seconds": 0.11,
+      "max_rss_kib": 471756.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/01/refined/time.txt"
+      ],
+      "wall_seconds": 1.77,
+      "user_cpu_seconds": 0.4,
+      "system_cpu_seconds": 0.11,
+      "max_rss_kib": 502228.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/02/base/time.txt"
+      ],
+      "wall_seconds": 1.76,
+      "user_cpu_seconds": 0.38,
+      "system_cpu_seconds": 0.12,
+      "max_rss_kib": 502224.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/02/base/extraction/time.txt"
+      ],
+      "wall_seconds": 1.72,
+      "user_cpu_seconds": 0.34,
+      "system_cpu_seconds": 0.13,
+      "max_rss_kib": 467876.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/02/refined/time.txt"
+      ],
+      "wall_seconds": 1.75,
+      "user_cpu_seconds": 0.4,
+      "system_cpu_seconds": 0.11,
+      "max_rss_kib": 502028.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/02/refined/extraction/time.txt"
+      ],
+      "wall_seconds": 1.71,
+      "user_cpu_seconds": 0.35,
+      "system_cpu_seconds": 0.1,
+      "max_rss_kib": 467840.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/03/base/extraction/time.txt"
+      ],
+      "wall_seconds": 1.72,
+      "user_cpu_seconds": 0.36,
+      "system_cpu_seconds": 0.1,
+      "max_rss_kib": 467356.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/03/refined/extraction/time.txt"
+      ],
+      "wall_seconds": 1.72,
+      "user_cpu_seconds": 0.36,
+      "system_cpu_seconds": 0.1,
+      "max_rss_kib": 467284.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/04/base/extraction/time.txt"
+      ],
+      "wall_seconds": 1.72,
+      "user_cpu_seconds": 0.35,
+      "system_cpu_seconds": 0.12,
+      "max_rss_kib": 467236.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/04/refined/extraction/time.txt"
+      ],
+      "wall_seconds": 1.71,
+      "user_cpu_seconds": 0.35,
+      "system_cpu_seconds": 0.11,
+      "max_rss_kib": 467352.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/05/base/extraction/time.txt"
+      ],
+      "wall_seconds": 1.72,
+      "user_cpu_seconds": 0.35,
+      "system_cpu_seconds": 0.12,
+      "max_rss_kib": 466852.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/05/refined/extraction/time.txt"
+      ],
+      "wall_seconds": 1.7,
+      "user_cpu_seconds": 0.35,
+      "system_cpu_seconds": 0.1,
+      "max_rss_kib": 467032.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/06/base/time.txt",
+        "final/base/time.txt"
+      ],
+      "wall_seconds": 1.76,
+      "user_cpu_seconds": 0.39,
+      "system_cpu_seconds": 0.11,
+      "max_rss_kib": 501992.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/06/precheck/time.txt"
+      ],
+      "wall_seconds": 1.71,
+      "user_cpu_seconds": 0.35,
+      "system_cpu_seconds": 0.12,
+      "max_rss_kib": 471632.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/06/refined/time.txt",
+        "final/refined/time.txt"
+      ],
+      "wall_seconds": 1.76,
+      "user_cpu_seconds": 0.39,
+      "system_cpu_seconds": 0.12,
+      "max_rss_kib": 502676.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/07/base/extraction/time.txt",
+        "final/base/extraction_time.txt"
+      ],
+      "wall_seconds": 1.71,
+      "user_cpu_seconds": 0.35,
+      "system_cpu_seconds": 0.11,
+      "max_rss_kib": 467192.0,
+      "exit_status": 0.0
+    },
+    {
+      "identical_record_paths": [
+        "attempts/07/refined/extraction/time.txt",
+        "final/refined/extraction_time.txt"
+      ],
+      "wall_seconds": 1.72,
+      "user_cpu_seconds": 0.37,
+      "system_cpu_seconds": 0.1,
+      "max_rss_kib": 467740.0,
+      "exit_status": 0.0
+    }
+  ],
+  "stage_timing_limit": "Backend process timings and RPC tool durations are measured; a process/tool can span multiple stages. Identical timing files are grouped, not asserted to be distinct invocations. No complete independent per-stage wall-clock instrumentation.",
+  "resource_coverage_limit": "Controller samples the observed Logos descendant process tree. Detached/reparented Fluent/MPI processes can escape that tree; GNU-time around a Python launcher need not cover native solver descendants. RSS sums can double-count shared pages. These values are partial sampled measurements, not complete solver resource accounting."
+}

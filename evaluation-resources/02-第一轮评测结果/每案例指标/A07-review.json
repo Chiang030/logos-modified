@@ -1,0 +1,15 @@
+{
+  "case_id": "A07",
+  "independent_accuracy_status": "READINESS_INCOMPLETE_MISSING_PHYSICAL_DEFINITION",
+  "review_findings": [
+    {
+      "finding": "STEP and MSH assets were inventoried and the STEP header is parseable, but no physical case definition or reference outputs were supplied.",
+      "v2": "Stop with needs_input.json after a bounded asset check; do not infer flow, material, boundary conditions, or acceptance thresholds."
+    },
+    {
+      "finding": "The read-only Fluent check exceeded the 300 s case budget and timed out before a complete readiness report was written.",
+      "v2": "Use a separate short asset-inspection timeout (recommended 60 s) and make timeout itself a structured readiness failure."
+    }
+  ],
+  "review_scope": "Independent local review of collected native evidence; no frozen accuracy reference for CFD."
+}

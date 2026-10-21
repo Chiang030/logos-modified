@@ -1,0 +1,5 @@
+{
+  "checked_cases": 6,
+  "scope": "Heuristic scan of tool call arguments; not OS/network isolation",
+  "flags": []
+}

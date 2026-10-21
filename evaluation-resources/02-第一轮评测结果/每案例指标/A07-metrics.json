@@ -1,0 +1,129 @@
+{
+  "case_id": "A07",
+  "execution": {
+    "settled": false,
+    "aborted": null,
+    "timed_out": true,
+    "controller_error": null,
+    "interactive_request_count": 0,
+    "needs_input_artifact": false
+  },
+  "agent_reported_status": null,
+  "independent_accuracy_status": "READINESS_INCOMPLETE_MISSING_PHYSICAL_DEFINITION",
+  "agent_wall_seconds": null,
+  "total_wall_seconds": 300.45666638109833,
+  "sampled_peak_tree_rss_mib": 1442.77734375,
+  "child_user_cpu_seconds": 1.3379519999999998,
+  "child_system_cpu_seconds": 0.139418,
+  "assistant_turns": 12,
+  "tools": {
+    "read": 5,
+    "bash": 5
+  },
+  "tool_calls": 10,
+  "tool_error_count": 1,
+  "tool_seconds_sum": 75.10226079099812,
+  "tokens": {
+    "input": 4631,
+    "output": 1981,
+    "cacheRead": 41088,
+    "cacheWrite": 0,
+    "reasoning": 367,
+    "totalTokens": 47700
+  },
+  "runtime_estimated_cost_usd": null,
+  "actual_billed_cost_usd": null,
+  "model_id": "gpt-6.1-sol",
+  "thinking_level": "medium",
+  "artifact_count": 12,
+  "artifact_bytes": 2484956,
+  "transfer_verified": true,
+  "agent_reported_issues": null,
+  "needs_input": {
+    "status": "NEEDS_INPUT",
+    "missing": [
+      "flow direction and velocity",
+      "fluid properties",
+      "boundary conditions",
+      "reference dimensions",
+      "solver/acceptance definition"
+    ],
+    "reason": "Assets contain STEP/MSH only; no physical case definition."
+  },
+  "tool_errors": [
+    {
+      "elapsed_s": 274.3365529750008,
+      "tool": "bash",
+      "tool_call_id": "call_137fa3130a7a4aafb6a13661f6b45c76|fc_0a2e4e61b8043c63016ad6d473cbf481938e61addf8e1cb099",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "(no output)\n\nCommand exited with code 124"
+          }
+        ],
+        "structuredContent": {
+          "output": "",
+          "truncated": false,
+          "exit_code": 124,
+          "wall_time_seconds": 75
+        },
+        "isError": true
+      }
+    }
+  ],
+  "controller_followups": 0,
+  "human_interventions": 0,
+  "cleanup": {
+    "terminated_run_owned_pids": [],
+    "remaining": []
+  },
+  "event_estimated_cost_usd": 0.033180799999999996,
+  "controller_artifact_manifest_mismatches": [],
+  "collection_manifest_source": "post_cleanup_collection_manifest",
+  "controller_wall_seconds": 300.45666638109833,
+  "agent_reported_physics_metrics": null,
+  "agent_reported_convergence": null,
+  "agent_reported_limitations": null,
+  "delivery_presence_checks": {
+    "results.json": false,
+    "issues.json": false,
+    "report.md": false
+  },
+  "delivered_final_native_files": [],
+  "native_presence_caveat": "File presence alone does not establish reopenability, convergence or physical accuracy; see review.json and independent audits.",
+  "usage_coverage": "observed_completed_messages_only; interrupted_request_usage_may_be_missing",
+  "frozen_local_inputs_unchanged": {
+    "prompt.md": true,
+    "run-config.json": true
+  },
+  "provided_assets_unchanged": {
+    "flow_over_cylinder.stp": true,
+    "flow_over_cylinder.msh": true
+  },
+  "event_counts": {
+    "response": 2,
+    "agent_start": 9,
+    "turn_start": 13,
+    "message_start": 24,
+    "message_end": 24,
+    "turn_end": 12,
+    "agent_end": 8,
+    "auto_retry_start": 8,
+    "entry_appended": 8,
+    "message_update": 1042,
+    "auto_retry_end": 3,
+    "tool_execution_start": 10,
+    "tool_execution_update": 13,
+    "tool_execution_end": 10
+  },
+  "model_error_count": 8,
+  "session_statistics": null,
+  "first_visible_text_seconds": 57.83468691702001,
+  "final_assistant_text": "",
+  "saved_backend_timing_records": [],
+  "stage_timing_limit": "Backend process timings and RPC tool durations are measured; a process/tool can span multiple stages. Identical timing files are grouped, not asserted to be distinct invocations. No complete independent per-stage wall-clock instrumentation.",
+  "resource_coverage_limit": "Controller samples the observed Logos descendant process tree. Detached/reparented Fluent/MPI processes can escape that tree; GNU-time around a Python launcher need not cover native solver descendants. RSS sums can double-count shared pages. These values are partial sampled measurements, not complete solver resource accounting.",
+  "review_status": "REVIEWED",
+  "evaluator_status": "INCOMPLETE / READINESS_CHECK_TIMEOUT"
+}

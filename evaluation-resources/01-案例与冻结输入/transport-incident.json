@@ -1,0 +1,38 @@
+{
+  "status": "RECOVERED_AND_RECONCILED",
+  "recorded_at_utc": "2026-10-19T11:42:43.559470+00:00",
+  "host": "leadhk01",
+  "address": "192.168.100.120",
+  "evidence": [
+    "SSH ConnectTimeout=5 returned Connection timed out",
+    "ping returned Destination host unreachable",
+    "Original supervisor SSH session ended with Connection reset"
+  ],
+  "last_confirmed_collected_cases": [
+    "S07",
+    "S01",
+    "S03",
+    "S02",
+    "S04",
+    "S06",
+    "S08",
+    "S09",
+    "A01",
+    "A02",
+    "A03"
+  ],
+  "last_observed_active_case": "A04",
+  "remaining_remote_state": "RECONCILED; no owned processes remained after A06/A07 cleanup",
+  "user_response": "正在恢复服务器或网络",
+  "resume_rule": "Inspect current status and owned processes first; do not blindly restart or overwrite frozen run directories",
+  "attribution": "Transport/environment incident, separate from Logos case failures",
+  "recovery_checks": [
+    {
+      "at_utc": "2026-10-19T11:47:27.866828+00:00",
+      "returncode": 255,
+      "output": "ssh: connect to host 192.168.100.120 port 22: Connection timed out"
+    }
+  ],
+  "resolved_at_utc": "2026-10-20T02:49:21.137078+00:00",
+  "recovery_summary": "SSH restored; remote status inspected; A04 was already complete and safely collected; A06/A07 were run by the non-resetting pending-case resume controller; all 14 cases are now locally collected."
+}

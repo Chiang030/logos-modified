@@ -1,0 +1,48 @@
+{
+  "review_status": "RAW_FREQUENCIES_VERIFIED_NUMERICAL_WARNING_UNRESOLVED",
+  "checks": [
+    {
+      "variant": "base",
+      "raw_count": 40,
+      "claimed_count": 40,
+      "maximum_absolute_frequency_difference_Hz": 0.0,
+      "all_40_match": true
+    },
+    {
+      "variant": "refined",
+      "raw_count": 40,
+      "claimed_count": 40,
+      "maximum_absolute_frequency_difference_Hz": 0.0,
+      "all_40_match": true
+    }
+  ],
+  "manual_interventions_during_run": 0,
+  "accuracy_pass": false,
+  "limitations": [
+    "No independent converged physical reference.",
+    "Native cyclic mode vectors and full-disk reconstruction have not been independently validated.",
+    "LANB conditioning warning is unresolved; custom Rayleigh quadrature is not an eigenpair residual."
+  ],
+  "review_findings": [
+    {
+      "category": "mesh",
+      "finding": "Initial periodic surfaces were not node-matched; moving CYCLIC before meshing did not resolve mapping constraints.",
+      "v2": "Check paired corner and midside coordinates after sector rotation before solving; use an explicitly matching periodic mesh."
+    },
+    {
+      "category": "api",
+      "finding": "UX/UY/UZ are rejected APDL array names.",
+      "v2": "Use non-reserved names such as disp_x, disp_y, disp_z."
+    },
+    {
+      "category": "numerical",
+      "finding": "Free cyclic structure at required 1 Hz shift retains LANB conditioning warnings; no local eigenpair residual measured.",
+      "v2": "Preserve free boundaries and the requested shift. Record warnings and numerical acceptance limits; do not equate mesh stability or Rayleigh checks with a converged eigenpair."
+    },
+    {
+      "category": "modal",
+      "finding": "Nonzero harmonic indices contain five degenerate pairs among ten result sets.",
+      "v2": "Record harmonic/set mapping and degeneracy; use subspace comparisons for degenerate mode pairs."
+    }
+  ]
+}

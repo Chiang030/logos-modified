@@ -1,0 +1,203 @@
+{
+  "review_status": "RAW_SCOPED_RESULTS_VERIFIED_DISPLACEMENT_SCOPE_AMBIGUITY",
+  "checks": [
+    {
+      "step": 1,
+      "metric": "solver_solid_nodes_displacement_max_including_generated_cut_nodes",
+      "raw": 0.39527773482946,
+      "claimed": 0.3852827695473377,
+      "absolute_difference": 0.009994965282122292
+    },
+    {
+      "step": 1,
+      "metric": "stress_all_max",
+      "raw": 1622.818481563218,
+      "claimed": 1622.8184815675588,
+      "absolute_difference": 4.340790837886743e-09
+    },
+    {
+      "step": 1,
+      "metric": "support_reaction",
+      "raw": [
+        -336.0619098954389,
+        16.21915696012047,
+        -5.651715089254964
+      ],
+      "claimed": [
+        -336.06190989544,
+        16.21915696012,
+        -5.651715089255
+      ],
+      "absolute_difference": 1.1368683772161603e-12
+    },
+    {
+      "step": 2,
+      "metric": "solver_solid_nodes_displacement_max_including_generated_cut_nodes",
+      "raw": 0.40325258981889,
+      "claimed": 0.39309217536818436,
+      "absolute_difference": 0.010160414450705646
+    },
+    {
+      "step": 2,
+      "metric": "stress_all_max",
+      "raw": 1647.802153516042,
+      "claimed": 1647.8021535204389,
+      "absolute_difference": 4.3969521357212216e-09
+    },
+    {
+      "step": 2,
+      "metric": "support_reaction",
+      "raw": [
+        -499711.4372676478,
+        -10.70755245666868,
+        -19.59576692186971
+      ],
+      "claimed": [
+        -499711.43726765,
+        -10.707552456669,
+        -19.59576692187
+      ],
+      "absolute_difference": 2.153683453798294e-09
+    },
+    {
+      "step": 3,
+      "metric": "solver_solid_nodes_displacement_max_including_generated_cut_nodes",
+      "raw": 0.3953544279507842,
+      "claimed": 0.3853831914756166,
+      "absolute_difference": 0.009971236475167566
+    },
+    {
+      "step": 3,
+      "metric": "stress_all_max",
+      "raw": 1615.033802173425,
+      "claimed": 1615.0338021777159,
+      "absolute_difference": 4.290768629289232e-09
+    },
+    {
+      "step": 3,
+      "metric": "support_reaction",
+      "raw": [
+        77.40733995249093,
+        -387.9428734652678,
+        -35.4563262503568
+      ],
+      "claimed": [
+        77.407339952491,
+        -387.94287346527,
+        -35.456326250357
+      ],
+      "absolute_difference": 2.2168933355715126e-12
+    },
+    {
+      "step": 4,
+      "metric": "solver_solid_nodes_displacement_max_including_generated_cut_nodes",
+      "raw": 0.3907375311415084,
+      "claimed": 0.38087155329923095,
+      "absolute_difference": 0.00986597784227744
+    },
+    {
+      "step": 4,
+      "metric": "stress_all_max",
+      "raw": 1596.307527514408,
+      "claimed": 1596.307527518637,
+      "absolute_difference": 4.228922989568673e-09
+    },
+    {
+      "step": 4,
+      "metric": "support_reaction",
+      "raw": [
+        499254.0681967318,
+        -74.07773681315255,
+        -40.11491288950197
+      ],
+      "claimed": [
+        499254.06819673,
+        -74.077736813153,
+        -40.114912889502
+      ],
+      "absolute_difference": 1.8044374883174896e-09
+    },
+    {
+      "step": 1,
+      "metric": "Mechanical_original_mesh_nodes_displacement_max",
+      "raw": 0.3852827644327182,
+      "node": 22391,
+      "claimed": 0.3852827695473377,
+      "absolute_difference": 5.114619505697249e-09,
+      "scope_nodes": 22427
+    },
+    {
+      "step": 2,
+      "metric": "Mechanical_original_mesh_nodes_displacement_max",
+      "raw": 0.3930921733877642,
+      "node": 22391,
+      "claimed": 0.39309217536818436,
+      "absolute_difference": 1.9804201611961503e-09,
+      "scope_nodes": 22427
+    },
+    {
+      "step": 3,
+      "metric": "Mechanical_original_mesh_nodes_displacement_max",
+      "raw": 0.3853832008687079,
+      "node": 22391,
+      "claimed": 0.3853831914756166,
+      "absolute_difference": 9.393091304765733e-09,
+      "scope_nodes": 22427
+    },
+    {
+      "step": 4,
+      "metric": "Mechanical_original_mesh_nodes_displacement_max",
+      "raw": 0.3808715619319631,
+      "node": 22391,
+      "claimed": 0.38087155329923095,
+      "absolute_difference": 8.632732140245736e-09,
+      "scope_nodes": 22427
+    }
+  ],
+  "manual_interventions_during_run": 0,
+  "accuracy_pass": false,
+  "limitations": [
+    "No independent converged reference or mesh study.",
+    "MPC overlap/overconstraint, thin layer mesh and residual force imbalance remain.",
+    "Native mixed-element/material warnings concern discretization error estimates; those estimates are not used as accuracy evidence.",
+    "Contact/bolt values checked against submitted scripts/logs but not all independently recomputed.",
+    "Unqualified displacement maximum is scope-dependent; original-node Mechanical values match raw within 1e-8 mm, but generated cut nodes yield higher extrema."
+  ],
+  "review_findings": [
+    {
+      "category": "environment",
+      "finding": "Linux embedding required mechanical-env with installation root; default gRPC lacked certificate.",
+      "v2": "Use the tested embedding wrapper and child-process environment. Do not probe unavailable gRPC after a valid route is established."
+    },
+    {
+      "category": "api",
+      "finding": "Broad InternalValue introspection crashed Mechanical and left project locks.",
+      "v2": "Query narrow public APIs; restore through a new imported project and preserve the crashed attempt."
+    },
+    {
+      "category": "parameter",
+      "finding": "Import generated nine unintended contacts; formal solve correctly retained only six specified pairs.",
+      "v2": "Assert the exact active contact set and source/target names before solving."
+    },
+    {
+      "category": "api",
+      "finding": "Four-step pretension table needed four values; force-controlled first-step WorkingLoad returned zero reaction.",
+      "v2": "Set step count first, verify Load/Lock in native input; read applied preload in force-control and reaction/working load in locked steps."
+    },
+    {
+      "category": "artifact",
+      "finding": "Embedded JSON was truncated without file close; .NET UInt32 needed conversion.",
+      "v2": "Use context-managed files and explicit Python numeric conversion before serialization."
+    },
+    {
+      "category": "numerical",
+      "finding": "Solver converged but MPC/mesh warnings and approximately 0.15% final-step force imbalance remain; stresses exceed 1.5 GPa in a purely elastic model.",
+      "v2": "Separate nonlinear convergence from force balance, mesh adequacy and strength validity; preserve prescribed contacts and stiffness settings."
+    },
+    {
+      "category": "sampling_definition",
+      "finding": "Mechanical maximum displacement excludes solver-generated pretension-cut nodes. Original-node maximum is 0.393092 mm at step 2, while all solid-element nodes reach 0.403253 mm (about 2.58% higher). The declared global maximum needs a scope qualifier.",
+      "v2": "Define original mesh versus solver-generated cut/auxiliary nodes. Export both scoped maxima and node IDs; distinguish pretension adjustment DOF from structural displacement."
+    }
+  ]
+}

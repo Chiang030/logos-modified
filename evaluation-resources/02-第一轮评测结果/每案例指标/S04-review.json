@@ -1,0 +1,48 @@
+{
+  "review_status": "RAW_DISPLACEMENTS_VERIFIED_OFFICIAL_COMPARISON",
+  "checks": [
+    {
+      "variant": "shell181_8x8",
+      "raw_loaded_uy_in": -0.1099599881662024,
+      "reported_loaded_uy_in": -0.109959988166202,
+      "claim_absolute_difference": 3.885780586188048e-16,
+      "official_reference_magnitude_in": 0.1139,
+      "relative_error_to_official_target": 0.03459185104299919
+    },
+    {
+      "variant": "shell281_16x16",
+      "raw_loaded_uy_in": -0.1138274474975539,
+      "reported_loaded_uy_in": -0.113827447497554,
+      "claim_absolute_difference": 9.71445146547012e-17,
+      "official_reference_magnitude_in": 0.1139,
+      "relative_error_to_official_target": 0.0006369842181396147
+    },
+    {
+      "variant": "shell281_8x8",
+      "raw_loaded_uy_in": -0.1136990084039194,
+      "reported_loaded_uy_in": -0.113699008403919,
+      "claim_absolute_difference": 4.0245584642661925e-16,
+      "official_reference_magnitude_in": 0.1139,
+      "relative_error_to_official_target": 0.0017646320990395007
+    }
+  ],
+  "manual_interventions_during_run": 0,
+  "accuracy_note": "SHELL181 prescribed 8x8 differs from analytical target by about 3.46%; no common 1% accuracy gate was frozen. Do not call all variants an accuracy PASS. SHELL281 fine mesh differs by about 0.064%.",
+  "review_findings": [
+    {
+      "category": "artifact",
+      "finding": "APDL character literal header truncated to 8 characters; vectorized VWRITE repeated/misaligned reaction rows",
+      "v2": "Use numeric raw export plus Python CSV headers, or validated format literals. Control VWRITE vector length and check node uniqueness and row counts."
+    },
+    {
+      "category": "artifact",
+      "finding": "Checksum included an actively written postprocess log and failed",
+      "v2": "Finalize all writers before checksums, exclude the manifest and active logs."
+    },
+    {
+      "category": "evaluator",
+      "finding": "Prescribed low-order coarse mesh has expected discretization error versus analytical target",
+      "v2": "Freeze element-specific reference/error criteria before running; do not force a universal 1% threshold onto all prescribed meshes."
+    }
+  ]
+}

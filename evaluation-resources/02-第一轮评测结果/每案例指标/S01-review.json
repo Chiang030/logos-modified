@@ -1,0 +1,84 @@
+{
+  "review_status": "OFFICIAL_CORE_AND_RAW_RESULTS_VERIFIED",
+  "checks": [
+    {
+      "variant": "base",
+      "raw": {
+        "element_count": 4.0,
+        "node_count": 6.0,
+        "xmin_in": 0.0,
+        "xmax_in": 480.0,
+        "midpoint_uy_in": 0.18246325383211,
+        "middle_max_eqv_stress_psi": 11440.74609375,
+        "left_reaction_fy_lbf": 100000.0000000018,
+        "right_reaction_fy_lbf": 99999.99999999693,
+        "strain_energy_in_lbf": 23667.47802734375,
+        "youngs_modulus_psi": 30000000.0,
+        "poisson_ratio": 0.3
+      },
+      "model_checks": {
+        "centerline_coordinates": true,
+        "constraints_exact_match": true,
+        "loaded_elements_and_direction": true,
+        "beam188_cubic_section_output": true,
+        "area_and_strong_axis_inertia": true
+      },
+      "claim_relative_errors": {
+        "midpoint_uy_in": 0.0,
+        "middle_max_eqv_stress_psi": 0.0,
+        "left_reaction_fy_lbf": 0.0,
+        "right_reaction_fy_lbf": 0.0,
+        "strain_energy_in_lbf": 0.0
+      },
+      "official_displacement_error": 0.0025453507258792122,
+      "official_stress_error": 0.00357421875
+    },
+    {
+      "variant": "refined",
+      "raw": {
+        "element_count": 8.0,
+        "node_count": 10.0,
+        "xmin_in": 0.0,
+        "xmax_in": 480.0,
+        "midpoint_uy_in": 0.1824632538321078,
+        "middle_max_eqv_stress_psi": 11440.74609375,
+        "left_reaction_fy_lbf": 100000.0000000084,
+        "right_reaction_fy_lbf": 99999.99999998232,
+        "strain_energy_in_lbf": 23667.41436767578,
+        "youngs_modulus_psi": 30000000.0,
+        "poisson_ratio": 0.3
+      },
+      "model_checks": {
+        "centerline_coordinates": true,
+        "constraints_exact_match": true,
+        "loaded_elements_and_direction": true,
+        "beam188_cubic_section_output": true,
+        "area_and_strong_axis_inertia": true
+      },
+      "claim_relative_errors": {
+        "midpoint_uy_in": 0.0,
+        "middle_max_eqv_stress_psi": 0.0,
+        "left_reaction_fy_lbf": 0.0,
+        "right_reaction_fy_lbf": 0.0,
+        "strain_energy_in_lbf": 0.0
+      },
+      "official_displacement_error": 0.002545350725867012,
+      "official_stress_error": 0.00357421875
+    }
+  ],
+  "physics_repairs": 2,
+  "tool_repairs": 1,
+  "manual_interventions_during_run": 0,
+  "review_findings": [
+    {
+      "category": "parameter",
+      "finding": "Repeated BEAM188 local-axis/SFBEAM face interpretation failures despite complete global physical specification",
+      "v2": "Provide unambiguous local-axis and section-orientation contract: for +X connectivity and orientation K on +Y, local z is +Y and local y is -Z; verify actual basis, strong-axis I and face1 positive pressure using a minimal load-direction check before full run."
+    },
+    {
+      "category": "interaction",
+      "finding": "Edit tool rejected nonunique oldText; recovered without model-state change",
+      "v2": "Require unique multiline edit context and distinguish edit-call retries from physics repairs."
+    }
+  ]
+}

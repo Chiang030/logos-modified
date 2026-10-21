@@ -1,0 +1,182 @@
+{
+  "suite_id": "20261019-allcases-discovery-v1",
+  "remote_root": "/home/jiangjincheng/logos-benchmark-runs/20261019-allcases-discovery-v1",
+  "purpose": "diagnose interventions and improve prompts; not frozen accuracy leaderboard",
+  "cases": [
+    {
+      "id": "S07",
+      "title": "梁模态与振型",
+      "budget_seconds": 900,
+      "assets": {},
+      "status": "PENDING"
+    },
+    {
+      "id": "S01",
+      "title": "VM002 梁应力与挠度",
+      "budget_seconds": 900,
+      "assets": {},
+      "status": "PENDING"
+    },
+    {
+      "id": "S03",
+      "title": "VM025 厚壁圆筒",
+      "budget_seconds": 900,
+      "assets": {},
+      "status": "PENDING"
+    },
+    {
+      "id": "S02",
+      "title": "带孔板应力集中",
+      "budget_seconds": 900,
+      "assets": {},
+      "status": "PENDING"
+    },
+    {
+      "id": "S04",
+      "title": "VM006 受夹压圆柱薄壳",
+      "budget_seconds": 900,
+      "assets": {},
+      "status": "PENDING"
+    },
+    {
+      "id": "S06",
+      "title": "VM014 偏心受压细长柱大变形",
+      "budget_seconds": 900,
+      "assets": {},
+      "status": "PENDING"
+    },
+    {
+      "id": "S08",
+      "title": "周期叶盘模态与行波振型",
+      "budget_seconds": 900,
+      "assets": {},
+      "status": "PENDING"
+    },
+    {
+      "id": "S09",
+      "title": "螺栓预紧与摩擦接触",
+      "budget_seconds": 1800,
+      "assets": {
+        "example_06_bolt_pret_geom.pmdb": {
+          "source": "models/S09/example_06_bolt_pret_geom.pmdb",
+          "sha256": "0d0bb40d1dae0bacfd876325c795b99d3d6c08dd8d611a04ca92a98038a27fc5",
+          "bytes": 530152
+        },
+        "example_06_bolt_pret_geom.agdb": {
+          "source": "models/S09/example_06_bolt_pret_geom.agdb",
+          "sha256": "409e652d039a60b2c260ae6494dd5cef1550ada738ae5098f4af55d1b46757ea",
+          "bytes": 2647104
+        },
+        "example_06_Mat_Copper.xml": {
+          "source": "models/S09/example_06_Mat_Copper.xml",
+          "sha256": "064ebd50ed482519ceada9aef895cd1ed476acb48daea43e4caf61d48ecf909f",
+          "bytes": 5118
+        },
+        "example_06_Mat_Steel.xml": {
+          "source": "models/S09/example_06_Mat_Steel.xml",
+          "sha256": "76d467ea8834fa3f49fc3ca7d02a1eb6f29388044561c1dcf0f9912fcc0ab0e3",
+          "bytes": 5118
+        }
+      },
+      "status": "PENDING"
+    },
+    {
+      "id": "A01",
+      "title": "跨声速三维机翼",
+      "budget_seconds": 1800,
+      "assets": {
+        "wing.scdoc": {
+          "source": "models/A01/wing.scdoc",
+          "sha256": "7c6c8ec5e0e7a2d8793bbb348aad9e6b0abbd4414bf1e9a6bef1008ba8ffa5dd",
+          "bytes": 511831
+        },
+        "wing.pmdb": {
+          "source": "models/A01/wing.pmdb",
+          "sha256": "24ac63c6bf8ff519b749d623b2b6348ba05ed77093bf5084299653a29aabfd64",
+          "bytes": 792296
+        }
+      },
+      "status": "PENDING"
+    },
+    {
+      "id": "A02",
+      "title": "Ahmed 车体外流",
+      "budget_seconds": 1800,
+      "assets": {
+        "ahmed_body_20_0degree_boi_half.scdoc": {
+          "source": "models/A02/ahmed_body_20_0degree_boi_half.scdoc",
+          "sha256": "c556f59648902acb3c9141ffe44c6b4e9822a920100cd861cf76a79e2ce656e9",
+          "bytes": 158833
+        },
+        "ahmed_body_20_0degree_boi_half.scdoc.pmdb": {
+          "source": "models/A02/ahmed_body_20_0degree_boi_half.scdoc.pmdb",
+          "sha256": "1203c6d4be879c8aba8caa1f9a18794e33dd07c331990528b088454163db6315",
+          "bytes": 530152
+        }
+      },
+      "status": "PENDING"
+    },
+    {
+      "id": "A03",
+      "title": "瞬态可压缩喷管",
+      "budget_seconds": 1800,
+      "assets": {
+        "nozzle.dsco": {
+          "source": "models/A03/nozzle.dsco",
+          "sha256": "277bae408925049568617c0cc93e6a561c39063ffae172913f33d0cc3ef0aac3",
+          "bytes": 141743
+        },
+        "nozzle.dsco.pmdb": {
+          "source": "models/A03/nozzle.dsco.pmdb",
+          "sha256": "7aec53e0737c15e060029290c52ee1d55741e6222733c7bcfd45c8824942c729",
+          "bytes": 530152
+        }
+      },
+      "status": "PENDING"
+    },
+    {
+      "id": "A04",
+      "title": "轴流风扇性能曲线",
+      "budget_seconds": 1800,
+      "assets": {
+        "axial_fan.msh.h5": {
+          "source": "models/A04/axial_fan.msh.h5",
+          "sha256": "24d61debdd8501daf7546f7680e5bf95f2f1b1c18f01b1445df5b1ee56ff71d1",
+          "bytes": 13121108
+        }
+      },
+      "status": "PENDING"
+    },
+    {
+      "id": "A06",
+      "title": "探针气流及单向流固耦合",
+      "budget_seconds": 1800,
+      "assets": {
+        "fsi_1way.msh.h5": {
+          "source": "models/A06/fsi_1way.msh.h5",
+          "sha256": "7c51aaea81aef1b1eabd05f70bfc7f763e4f9b3838c549a78e90802d03b5b5c1",
+          "bytes": 3277481
+        }
+      },
+      "status": "PENDING"
+    },
+    {
+      "id": "A07",
+      "title": "圆柱绕流模型",
+      "budget_seconds": 300,
+      "assets": {
+        "flow_over_cylinder.stp": {
+          "source": "models/A07/flow_over_cylinder.stp",
+          "sha256": "15f5bfbbc55c340b5e6862b4921491aded92b7aa9a97d27aac25273034c48fc9",
+          "bytes": 7074
+        },
+        "flow_over_cylinder.msh": {
+          "source": "models/A07/flow_over_cylinder.msh",
+          "sha256": "5ac5c262ea1614d16e0770ae41381bc915cce87929f5f1f7a07c8591d7279b88",
+          "bytes": 2461498
+        }
+      },
+      "status": "PENDING"
+    }
+  ]
+}

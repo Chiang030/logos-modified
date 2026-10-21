@@ -1,0 +1,78 @@
+{
+  "review_status": "RAW_RESULTS_VERIFIED_OFFICIAL_COMPARISON",
+  "checks": [
+    {
+      "variant": "base",
+      "metric": "top_UX",
+      "raw": 0.1088152246762466,
+      "claimed": 0.1088152246762466,
+      "official_reference": 0.1086,
+      "claim_absolute_difference": 0.0,
+      "reference_relative_error": 0.001981811015162066
+    },
+    {
+      "variant": "base",
+      "metric": "first_element_SX_max",
+      "raw": 1807.343872070312,
+      "claimed": 1807.343872070312,
+      "official_reference": 1803.63,
+      "claim_absolute_difference": 0.0,
+      "reference_relative_error": 0.002059109723342335
+    },
+    {
+      "variant": "base",
+      "metric": "first_element_SX_min",
+      "raw": -2396.00048828125,
+      "claimed": -2396.00048828125,
+      "official_reference": -2394.53,
+      "claim_absolute_difference": 0.0,
+      "reference_relative_error": 0.0006141030938220861
+    },
+    {
+      "variant": "refined",
+      "metric": "top_UX",
+      "raw": 0.1088152134826378,
+      "claimed": 0.1088152134826378,
+      "official_reference": 0.1086,
+      "claim_absolute_difference": 0.0,
+      "reference_relative_error": 0.0019817079432577957
+    },
+    {
+      "variant": "refined",
+      "metric": "first_element_SX_max",
+      "raw": 1805.27197265625,
+      "claimed": 1805.27197265625,
+      "official_reference": 1803.63,
+      "claim_absolute_difference": 0.0,
+      "reference_relative_error": 0.0009103711161656719
+    },
+    {
+      "variant": "refined",
+      "metric": "first_element_SX_min",
+      "raw": -2395.170166015625,
+      "claimed": -2395.170166015625,
+      "official_reference": -2394.53,
+      "claim_absolute_difference": 0.0,
+      "reference_relative_error": 0.00026734516403001835
+    }
+  ],
+  "manual_interventions_during_run": 0,
+  "section_extraction_note": "Independent SECR query verifies default I-end extrema. Agent separately archived complete I/J PRESOL section tables to confirm extrema are at I for this case.",
+  "review_findings": [
+    {
+      "category": "api",
+      "finding": "RF queried for unconstrained DOFs reused stale values; guessed SECR I/J selectors did not change actual selected end",
+      "v2": "Mask reaction extraction by actual constrained DOFs; verify extraction location from solver echo. Query supported interfaces once rather than trying multiple guessed selectors; retain native end-section listings."
+    },
+    {
+      "category": "parameter",
+      "finding": "Default MINREF and unindexed SMISC output caused avoidable warning/ignored-command paths",
+      "v2": "State CNVTOL norm/MINREF and use documented BEAM188 SMISC item numbers with ETABLE/PRETAB."
+    },
+    {
+      "category": "artifact",
+      "finding": "Complex inline validator expression had a syntax error at final delivery",
+      "v2": "Use a standalone validator, syntax-check before execution, keep failures separate from solver retries."
+    }
+  ]
+}
