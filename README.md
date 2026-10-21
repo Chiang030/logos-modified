@@ -121,6 +121,36 @@ Ansys 系 Skill 完整复制自用户指定的 `reusable-assets/harnesses/ansys-
 
 ## 基本工作流程
 
+### 几何 → 气动/结构管线
+
+工程主干:SolidCraft 负责建模与结构修改,FreeCAD 以第二内核独立校核,gmsh 划分气动/结构网格,分别进入 CFD 与 FEA,两条支线可按载荷/变形迭代(气动弹性):
+
+```mermaid
+flowchart LR
+    CASE["caseDict<br/>仿真任务定义"] --> SC
+
+    subgraph CAD["CAD 几何阶段"]
+        direction TB
+        SC["SolidCraft<br/>参数化重建 · 结构修改<br/>（默认建模路径）"]
+        FC["FreeCAD<br/>独立校核 · 体检修复<br/>（第二内核 oracle）"]
+        SC -->|"导出 STEP"| FC
+        FC -->|"校核不通过，退回"| SC
+    end
+
+    FC -->|"校核通过"| GMSH["gmsh<br/>网格生成<br/>物理组 · 边界层 · MSH/INP"]
+    SC -.->|"备选"| SPACE["SpaceClaim<br/>去特征 · 几何修复"]
+    SPACE -.-> GMSH
+
+    GMSH -->|"气动网格"| AERO["气动 CFD<br/>Fluent · VibeFlow"]
+    GMSH -->|"结构网格"| FEM["结构 FEA<br/>Mechanical · Workbench"]
+
+    AERO <-->|"载荷 / 变形（气动弹性迭代）"| FEM
+    AERO --> POST["后处理 · 报告<br/>logos-simulation-workflow"]
+    FEM --> POST
+```
+
+SolidCraft 的 `.solidcraft` 设计是可编辑源,按阶段导出 STEP 等产物;FreeCAD 校核(体检、对称差对比)不通过就退回修改,通过才放行给 gmsh——生产工具不给自己发合格证。SpaceClaim 是面向求解器的几何前处理备选路径。全程由 `logos-simulation-workflow` + `sim-cli` 管理阶段交接与验收。
+
 **日常使用(按项目开会话):**
 
 ```bash
