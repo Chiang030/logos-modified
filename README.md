@@ -1,5 +1,21 @@
 # LOGOS — Aircraft Design & Simulation Agent
 
+**[中文(主版本)](README.md)** · [English](README.en.md)
+
+```
+
+            ⣠⢤        ⣤⣤⡇     ⣤⣤⣤⣤⣤⣤    ⢠⣤⣿⣿⣿⣿⣿⠛  ⣤⣼⣿⣿⣤⣤   ⢠⣼⣿⣿⣿⣿⡟
+     ⠔⠂⠉ ⣠⣽⡿⣳⡿      ⢰⣶⣿⣿⠇   ⢀⣶⣿⣿⣿⣿⣿⣿⣶⡀⢀⣰⣾⣿⣿⣿⠿⠿⠉ ⢀⣶⣿⣿⡿⢿⣿⣿⣶⡀⢀⣾⣿⣿⠿⠿⠏⠁
+   ⠔  ⣠⣴⣿⣿⢟⣽⣿⡇⠢     ⣸⣿⣿⣿    ⣾⣿⡿⠏⠉⠉⠹⣿⡿⠇⠸⣿⣏⡉⢉⣉⣀⣀⣀⢀⣾⣿⡿⠉⠁⠈⠉⠿⠿⢇⠈⣉⣉⣹⣶⣀⣀⣀
+  ⠘⣠⣴⣿⣿⣿⣿⣫⣿⣿⣿⠃ ⠃    ⣿⣿⣿⡟    ⣿⣿⠃    ⣿⣧⡄⣤⣿⣿⠃⣼⣿⣿⣿⣿⢸⣿⣿⠃    ⣤⣤⣼ ⢻⣿⣿⣿⣿⣿⣿
+ ⠐⠻⣿⣿⣿⣿⣿⣷⣿⣿⣿⣿  ⠘    ⠛⠛⠛⠃⢠⣤⣤⣤⢠⣿⣧⣤⣤⣤⣿⣿⣿⡇⣿⣿⣿⣧  ⣤⣤⣤ ⣤⣼⣧⣤⢠⣤⣼⣿⣿⠃     ⣼⣿⣿
+  ⠘⡄⠙⠻⢿⣿⣿⣿⣿⣿⡇ ⢠⠃    ⣀⣀⣶⣶⣾⣿⡿⠿⠸⣿⣿⣿⣿⣿⣿⡿⠿⠁⠿⣿⣿⣿⣶⣶⣿⣿⠿⠆⠿⣿⣿⣿⣾⣿⣿⡿⠿⣀⣰⣶⣶⣶⣶⣿⣿⡿
+   ⠐⠗⢀ ⠉⠻⢿⣿⣿⡇⠔⠁    ⠰⠿⠏⠉⠉⠉⠉⠁  ⠉⠉⠿⠿⠏⠉⠁   ⠉⠉⠿⠿⠿⠏⠉   ⠉⠹⠿⠿⠿⠉⠁⠰⠿⠿⠿⠿⠿⠿⠿⠉⠁
+      ⠉ ⠒⠒⠉⠛             AIRCRAFT DESIGN & SIMULATION AGENT
+```
+
+> 当前服务端版本:**v0.2.0** · VS Code 插件:**v0.1.7**(暂未跟进 v0.2.0)
+
 LOGOS 是部署在 Linux 服务器上的智能体平台:以 [Pi runtime](https://github.com/earendil-works/pi)(Deep Agents 风格的 coding-agent 内核, vendored 在 `vendor/pi/`)为底座,面向**飞行器设计 / 仿真 / CAD / ECAD / 3D 可视化**的工程任务。用户在项目目录里与它对话,它按 Skill 路由调用 MCP 服务、仿真 CLI 和系统工具,产出可验收的工程结果。
 
 本仓库(`logos-modified`)是该平台在服务器上实际运行的那份代码:Pi 源码之上的产品层(`logos-agent/`)、自维护的工具集成(`integrations/`)、内置技能(`pi-domain/skills/`)和部署脚本。
@@ -8,6 +24,7 @@ LOGOS 是部署在 Linux 服务器上的智能体平台:以 [Pi runtime](https:/
 
 ## 目录
 
+- [使用方式](#使用方式)
 - [仓库结构](#仓库结构)
 - [已接入的软件](#已接入的软件)
 - [MCP 服务](#mcp-服务)
@@ -16,6 +33,27 @@ LOGOS 是部署在 Linux 服务器上的智能体平台:以 [Pi runtime](https:/
 - [基本工作流程](#基本工作流程)
 - [安装与部署](#安装与部署)
 - [验证状态](#验证状态)
+
+---
+
+## 使用方式
+
+### 方式一(推荐):VS Code Remote-SSH + 终端 CLI
+
+1. 在 VS Code 安装 **Remote-SSH** 扩展,连接服务器(例 `ssh jiangjincheng@172.19.103.12`);
+2. 打开目标项目文件夹,开一个集成终端;
+3. 输入 **`logos-here`** 唤醒:它按当前目录建一个专属 tmux 会话并启动 LOGOS,纸飞机 + LOGOS 字标动画出现即成功;同一项目再次调用会自动接回原会话;
+4. 之后的对话与任务执行都在该终端里进行,支持全部 v0.2.0 能力。
+
+![CLI 方式:终端里 logos-here 唤醒 LOGOS](docs/images/usage-cli-logos-here.png)
+
+### 方式二:VS Code 插件(v0.1.7)
+
+LOGOS VS Code 扩展提供图形化面板:服务器连接状态、会话管理、Agent 注册表(聊天中用 `@智能体名` 唤起,如 `@logos` 主智能体、`@kicad`、`@freecad`、`@ansys`)。
+
+![插件方式:VS Code 扩展面板](docs/images/usage-vscode-plugin.png)
+
+> **注意**:插件目前只更新到 **v0.1.7**,落后于服务端 v0.2.0(新技能与集成未包含),推荐优先使用方式一。插件详细操作见《LOGOS 仿真助手智能体插件手册》(PPT,待入库后在此链接)。
 
 ---
 
@@ -155,10 +193,11 @@ SolidCraft 的 `.solidcraft` 设计是可编辑源,按阶段导出 STEP 等产�
 
 ```bash
 cd /path/to/your/project        # LOGOS 以此为工作区,发现该项目的 AGENTS.md
-~/.local/bin/logos              # 或 bash /path/to/logos-server/bin/logos
+logos-here                      # 推荐:按当前目录一键建/接回专属 tmux 会话
+~/.local/bin/logos              # 或直接跑入口脚本
 ```
 
-服务器上的惯例是每个项目开一个 tmux 会话跑 `bin/logos`,互不干扰。任务进来后:
+服务器上的惯例是每个项目开一个 tmux 会话跑 `bin/logos`,互不干扰;`logos-here` 就是这个惯例的一键包装。任务进来后:
 
 1. **路由**:Pi 按 Skill 的 frontmatter description 把任务路由到对应技能(kicad 任务 → `kicad` skill,3D logo → `blender` skill,仿真 → `logos-simulation-workflow` + `sim-cli`……);
 2. **取证据**:技能正文/`references/` 里有本机验证过的事实表(哪个二进制、哪个版本),先核实再动手;
@@ -198,6 +237,7 @@ Windows 解压后同样跑 `pi:setup` + `setup.py` + `.env`,用 `logos.cmd` 启�
 | sim 集成(57 项 Python 测试 + 8 项 Node 测试,doctor 双插件健康) | ✅(未启动授权求解器) | 打包时 |
 | KiCad 10.0.7 系统栈 + 9.0.9 用户态栈、MCP fork 47 工具 | ✅ 服务器实测 | 2026-10-21 |
 | Blender 5.2.2 LTS + systemd xvfb 常驻实例 + MCP 工具名实测 | ✅ 服务器实测 | 2026-10-21 |
+| FreeCAD 1.1.4 技能三脚本,10 项回归 | ✅ 服务器实测 | 2026-10-21 |
 | HFSS / Fluent / Mechanical / Workbench 实机求解 | ⚠️ 技能与链路就绪,许可与 GUI 附件化需服务器现场验证 | — |
 
 许可证:根目录 `LICENSE`;Pi 上游与各集成上游的许可证在 `vendor/pi/` 与各集成目录内。
