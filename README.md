@@ -1,77 +1,171 @@
-# LOGOS server deployment
+# LOGOS — Aircraft Design & Simulation Agent
 
-This bundle includes LOGOS and its Pi source foundation. It is an installable
-source distribution, not an offline binary. No Git/submodule checkout is
-required. Node.js >=22.19 is required; Python 3.10+ (3.11 recommended) and venv
-support are required for the simulation tools. Initial setup needs internet.
+LOGOS 是部署在 Linux 服务器上的智能体平台:以 [Pi runtime](https://github.com/earendil-works/pi)(Deep Agents 风格的 coding-agent 内核, vendored 在 `vendor/pi/`)为底座,面向**飞行器设计 / 仿真 / CAD / ECAD / 3D 可视化**的工程任务。用户在项目目录里与它对话,它按 Skill 路由调用 MCP 服务、仿真 CLI 和系统工具,产出可验收的工程结果。
 
-## Linux installation
+本仓库(`logos-modified`)是该平台在服务器上实际运行的那份代码:Pi 源码之上的产品层(`logos-agent/`)、自维护的工具集成(`integrations/`)、内置技能(`pi-domain/skills/`)和部署脚本。
 
-No system/global installation is required. If dependencies are already present,
-launch directly from any project folder:
+---
+
+## 目录
+
+- [仓库结构](#仓库结构)
+- [已接入的软件](#已接入的软件)
+- [MCP 服务](#mcp-服务)
+- [内置 Skills](#内置-skills)
+- [已实现的功能](#已实现的功能)
+- [基本工作流程](#基本工作流程)
+- [安装与部署](#安装与部署)
+- [验证状态](#验证状态)
+
+---
+
+## 仓库结构
+
+```
+logos-server/
+├── bin/logos                # 入口脚本(保留调用者工作目录,发现项目 AGENTS.md)
+├── start.sh / install.sh    # 部署入口 / 可选的一键依赖准备
+├── logos-agent/             # LOGOS 产品层(Pi 之上的 CLI + 提示词 + 技能 + 集成)
+│   ├── bin/logos.mjs        # 真正的启动器:预加载 Pi 源码解析器,注入分层提示词
+│   ├── pi-domain/
+│   │   ├── prompts/         # system.md(基础角色)+ append.md(全局追加规则)
+│   │   ├── skills/          # 12 个内置 Skill(见下文)
+│   │   ├── extensions/      # simulation.mjs 等自定义工具注册
+│   │   └── src/ui/logo.mjs  # 终端 ASCII 动画(纸飞机 + 星点轨道 + LOGOS 字标)
+│   ├── integrations/
+│   │   ├── sim-cli/         # 仿真 CLI 核心(v0.3.9,LOGOS 维护 fork)
+│   │   ├── plugins/         # Mechanical / Workbench 插件(0.1.6+logos.1 / 0.1.2+logos.1)
+│   │   ├── kicad-mcp-server/# KiCad MCP 服务源码 fork(见 NOTICE 的补丁清单)
+│   │   ├── blender-mcp/     # blender MCP 启动器 + 注册脚本
+│   │   └── setup.py         # 一键创建 .venv 并安装上述组件
+│   ├── docs/                # builtin-skills.md / simulation-tool.md / wordmark-design.md
+│   └── deploy/              # 分发打包用的启动脚本副本
+├── docs/                    # ansys-261-connection-issues.md 等运维记录
+└── vendor/pi/               # Pi 源码 submodule(官方 v1.1.0 起点)
+```
+
+## 已接入的软件
+
+以下软件均已在服务器上实测可用(验证日期见 [验证状态](#验证状态)):
+
+| 领域 | 软件 | 接入方式 |
+|---|---|---|
+| CFD | Ansys Fluent | sim 会话 / PyFluent 脚本 / 文件侧审查;VibeFlow 批处理流程 |
+| 结构 FEA | Ansys Mechanical | sim-cli + PyMechanical(实时会话), DPF(离线 .rst) |
+| 多物理项目 | Ansys Workbench | sim-cli journal 驱动 + 持久会话 |
+| 高频电磁 | Ansys HFSS | PyAEDT / AEDT(不含 3D Layout、Maxwell 等) |
+| 几何前处理 | Ansys SpaceClaim / Discovery | 脚本 + GUI 附件化操作 |
+| CAD 参数化建模 | SolidCraft | `solidcraft` MCP(参数化重建、装配、测量、截图) |
+| 网格生成 | Gmsh | CLI / Python API(STEP/BREP 导入、物理组、边界层、MSH/INP 导出) |
+| ECAD | KiCad 10.0.7(系统)+ 9.0.9(用户态备选) | `kicad` MCP fork + kicad-cli |
+| 3D 制作渲染 | Blender 5.2.2 LTS | `blender` MCP(xvfb 常驻 GUI 实例,插件监听 127.0.0.1:9876) |
+| 批处理 CFD | VibeFlow / VibeCAE | caseDict → .cas.h5/.dat.h5、journal、并行、UDF |
+
+底座运行时:Node.js ≥ 22.19(Pi 源码)、Python 3.11(集成 .venv)、DeepSeek API(`logos-agent/.env` 配 Key)。
+
+## MCP 服务
+
+MCP 服务统一注册在 `~/.pi/agent/mcp.json`(不在仓库内,由各集成的 `register-mcp.py` 写入;merge 不替换、先备份)。当前注册的三个服务均为 `exposure: deferred` + 中文 description(兼作技能路由提示):
+
+| 服务 | 启动器 | timeout | 能力 |
+|---|---|---|---|
+| `solidcraft` | `~/.local/bin/solidcraft-cli mcp --allow-path ~/projects` | 1800s | CAD 参数化建模、构型重建、几何编辑、机构装配、测量检查、截图导出 |
+| `kicad` | `integrations/kicad-mcp-server/bin/kicad-mcp-server` | 300s | 原理图/PCB 分析、ERC/DRC、网表追踪、Gerber/SVG/STEP 导出、元件库检索、固件 pin/设备树生成(47 个工具) |
+| `blender` | `integrations/blender-mcp/bin/blender-mcp-server` | 300s | 文字/SVG logo 立体化、金属材质、PNG 渲染、转圈 MP4、GLB 导出 |
+
+要点:
+
+- **kicad MCP 是 LOGOS 自维护 fork**(基于 Seeed Studio 0.1.0,补丁见 `integrations/kicad-mcp-server/NOTICE`)。不要把 agent 指向 pip 另装的副本——两个 editable install 会互相遮蔽,历史上的 "ERC always passes" bug 就是这么漏掉的。启动器按 `$LOGOS_KICAD_PYTHON` → `integrations/.venv` → `~/.local/opt/kicad-mcp-venv` → `PATH` 顺序探测解释器。
+- **blender MCP 依赖常驻 GUI 实例**:插件不能在 `--background` 下跑,由 systemd --user 单元 `blender-mcp.service` 用 `xvfb-run` 承载,linger 已开。启动器固定 uvx 路径 + 清华 PyPI 镜像(astral.sh 被代理挡)。
+- 移动本仓库目录后,在各集成目录重跑 `python3 register-mcp.py` 并重启 LOGOS 会话即可。
+
+除 MCP 外,启动器还注册了两个内置工具(`pi-domain/extensions/simulation.mjs`):
+
+- `simulation_discover` — 探测目标主机上的 Mechanical/Workbench 安装;
+- `simulation` — 对选定的安装 ID 执行 `launch` / `probe` / `attach`,驱动求解会话。
+
+加上 Pi 自带的 `bash` / `edit` 等通用工具,构成完整工具面。
+
+## 内置 Skills
+
+Skill 放在 `pi-domain/skills/<name>/SKILL.md`(Claude 式 frontmatter,正文含 Scope 路由、本机验证事实表、验证命令),由启动器通过 `--skill` 统一注册,**新会话直接生效,无需构建**;`--no-skills` 可关闭。运行时按需读取,配套深资料在同目录 `references/`。
+
+| Skill | 用途 |
+|---|---|
+| `logos-simulation-workflow` | caseDict 与仿真开发/执行的总流程:几何 → 网格 → 求解 → 后处理 → 报告的阶段交接 |
+| `sim-cli` | 跨求解器纪律:安装选择、运行时证据、会话所有权、输入要求、验收与失败处理 |
+| `fluent-sim` | Fluent 三条控制路径:live sim 会话 / PyFluent 直连 / 文件侧审查 |
+| `mechanical-sim` | Mechanical(PyMechanical 实时会话)与 DPF(离线 .rst 结果) |
+| `workbench-sim` | Workbench 项目、journal、持久会话与向 Mechanical 的交接 |
+| `hfss` | HFSS 3D:PyAEDT / AEDT / sim-plugin-hfss / 原生工作流 |
+| `spaceclaim` | SpaceClaim / Discovery 几何检查、修复、去特征、脚本化(仅用户明确指定时) |
+| `solidcraft` | CAD 构型重建的默认路径:图纸/尺寸/参考模型/STEP → 参数化三维零件与装配 |
+| `gmsh` | 有限元网格:导入、修复、物理组、尺寸场、边界层、质量检查、多格式导出 |
+| `kicad` | KiCad 项目全流程(见上表 MCP 能力),环境事实表区分系统 10.0.7 与用户态 9.0.9 |
+| `blender` | 3D logo / 品牌渲染:挤出倒角、PBR 金属材质、透明底/深色底 PNG、转圈 MP4、GLB |
+| `vibeflow-fluent` | caseDict → Fluent 商用 CFD 批处理:headless 执行、journal、残差监控、断点 |
+
+Ansys 系 Skill 完整复制自用户指定的 `reusable-assets/harnesses/ansys-agent-harness/skills`,来源见 `skills/import-manifest.json`。
+
+## 已实现的功能
+
+- **LOGOS CLI**(`bin/logos` → `logos-agent/bin/logos.mjs`):保留调用者工作目录、发现项目 `AGENTS.md`;终端欢迎动画(纸飞机 + 星点轨道 + 图片转换的 LOGOS 字标,窄终端自动降级),`/logos` 重播,`LOGOS_WORDMARK` / `LOGOS_NO_ANIMATION` / `LOGOS_ASCII` 可调;支持交互 / print / JSON / RPC 四种模式(RPC 供 VS Code 等客户端复用同一入口)。
+- **分层系统提示词**:`pi-domain/prompts/system.md`(基础角色,经 `--system-prompt` 注入)+ `append.md`(全局追加规则)+ Skills + `references/toolchain.md`(实例工具链快照,不自动注入);改完重启生效。
+- **仿真集成**(`integrations/`):sim-cli 核心 + Mechanical/Workbench 两个 LOGOS 维护插件,隔离在 `.venv`;`simulation_discover` / `simulation` 内置工具打通"探测 → 选 ID → probe → 会话执行"链路;远端机器需部署同源修改版。
+- **KiCad 集成**:MCP fork(47 工具,29 项离线回归 + 14 项 stdio 冒烟测试),技能内维护双版本工具链事实表。
+- **Blender/3D 集成**:MCP + 常驻 GUI 实例,覆盖 3D logo 全流程(含 `references/demo_logo.py` 演示脚本)。
+- **SolidCraft CAD 集成**:外部 CLI 的 MCP 包装,`--allow-path` 限定可访问项目目录。
+- **API 配置**:启动器自动读取 `logos-agent/.env`(不依赖 cwd),`DEEPSEEK_API_KEY` + `LOGOS_PROVIDER` / `LOGOS_MODEL`,命令行参数优先。
+
+## 基本工作流程
+
+**日常使用(按项目开会话):**
 
 ```bash
+cd /path/to/your/project        # LOGOS 以此为工作区,发现该项目的 AGENTS.md
+~/.local/bin/logos              # 或 bash /path/to/logos-server/bin/logos
+```
+
+服务器上的惯例是每个项目开一个 tmux 会话跑 `bin/logos`,互不干扰。任务进来后:
+
+1. **路由**:Pi 按 Skill 的 frontmatter description 把任务路由到对应技能(kicad 任务 → `kicad` skill,3D logo → `blender` skill,仿真 → `logos-simulation-workflow` + `sim-cli`……);
+2. **取证据**:技能正文/`references/` 里有本机验证过的事实表(哪个二进制、哪个版本),先核实再动手;
+3. **执行**:MCP 工具(`mcp__kicad__*` / `mcp__blender__*` / `mcp__solidcraft__*`)、`simulation_discover`+`simulation`(求解器)、`bash`/`edit`(通用)按需组合;
+4. **验收**:按技能里的验收规则输出证据(测试脚本、导出文件、截图),失败路径也有明确处理。
+
+**给 LOGOS 加新工具的家法(以 kicad / blender 为先例):**
+
+1. MCP 服务注册进 `~/.pi/agent/mcp.json`(merge 不替换;字段 command / timeout / `exposure:"deferred"` / description 用中文并带技能路由提示);启动器放 `logos-agent/integrations/<name>/bin/`,配 `register-mcp.py`(带备份 / `--dry-run` / `--remove`);
+2. 技能放 `logos-agent/pi-domain/skills/<name>/SKILL.md`(frontmatter + Scope 路由 + 带验证日期的环境事实表 + 验证命令),深资料放 `references/`;
+3. 重启会话即生效,无需构建。
+
+**改 Pi 内核**:先在 `vendor/pi/` 提交(它有自己的 Git 历史,来自官方 v1.1.0),再由根仓库记录新的 submodule 提交;要共享需推到自己的 fork 并更新子模块地址。
+
+## 安装与部署
+
+详见 [start.sh / install.sh](install.sh)。要点:
+
+```bash
+# 依赖已就绪时,任意项目目录直接:
 bash /path/to/logos-server/start.sh
+
+# 全新服务器,一次性准备:
+npm --prefix logos-agent run pi:setup          # Node 依赖 + 模型目录
+python3 logos-agent/integrations/setup.py      # 仿真/KiCad 集成 .venv(可选)
+cp logos-agent/.env.example logos-agent/.env   # 填 DEEPSEEK_API_KEY 等
+# 可选:install.sh --with-sim --shortcut 在 ~/.local/bin 建 logos 快捷方式
 ```
 
-For a fresh server, prepare dependencies once:
+Windows 解压后同样跑 `pi:setup` + `setup.py` + `.env`,用 `logos.cmd` 启动。安装不等于已授权求解器可用;能力矩阵从零开始,以服务器实测为准。网络受限环境:astral.sh 被代理挡时 `uv` 用 pip + 清华镜像装,PyPI 走 `UV_DEFAULT_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple`。
 
-```bash
-npm --prefix /path/to/logos-server/logos-agent run pi:setup
-python3 /path/to/logos-server/logos-agent/integrations/setup.py # optional simulation tools
-cp /path/to/logos-server/logos-agent/.env.example /path/to/logos-server/logos-agent/.env
-```
+## 验证状态
 
-Fill the `.env` file locally. `start.sh` never installs dependencies and preserves
-your current project directory. `install.sh` below is an optional convenience
-script for the same preparation plus a shortcut, not a required system install.
+| 项目 | 状态 | 日期 |
+|---|---|---|
+| Linux 部署 + Pi 源码启动 | ✅ 服务器实测 | 2026-10-09 起 |
+| sim 集成(57 项 Python 测试 + 8 项 Node 测试,doctor 双插件健康) | ✅(未启动授权求解器) | 打包时 |
+| KiCad 10.0.7 系统栈 + 9.0.9 用户态栈、MCP fork 47 工具 | ✅ 服务器实测 | 2026-10-21 |
+| Blender 5.2.2 LTS + systemd xvfb 常驻实例 + MCP 工具名实测 | ✅ 服务器实测 | 2026-10-21 |
+| HFSS / Fluent / Mechanical / Workbench 实机求解 | ⚠️ 技能与链路就绪,许可与 GUI 附件化需服务器现场验证 | — |
 
-```bash
-tar -xzf logos-server-20261009.tar.gz
-cd logos-server
-bash install.sh --with-sim --shortcut
-nano logos-agent/.env
-```
-
-`--with-sim` installs the local sim core, Mechanical/Workbench plugins and their
-SDK dependencies. Omit it for chat/file tools only. `--shortcut` creates a
-symlink in `~/.local/bin`, preserving any existing entry. Add that directory to
-PATH if needed; no shell startup file is edited automatically.
-
-Start in the workspace you want LOGOS to use:
-
-```bash
-cd /path/to/your/project
-~/.local/bin/logos
-# Or, when ~/.local/bin is on PATH:
-logos
-# Direct entry if no shortcut was installed:
-/path/to/logos-server/bin/logos
-```
-
-The entry preserves your working directory and discovers its AGENTS.md. Product
-prompts, Skills and `.env` are located relative to the installed LOGOS package.
-There is no development-workspace AGENTS.md at the deployment root.
-
-## Windows
-
-After unzipping, run `npm --prefix logos-agent run pi:setup`, optionally
-`python logos-agent/integrations/setup.py`, and copy `.env.example` to `.env`.
-Run the package's absolute `logos.cmd` path from the desired project folder.
-Windows virtual environments and node_modules are never copied to Linux.
-
-## Included and excluded
-
-Included: current CLI, character logo, prompts, eight product Skills, simulation
-tools and patched sim sources, complete Pi source, package locks and upstream
-licenses. Excluded: real `.env`, API keys, installed dependencies, virtual
-environments, Git history, operation logs and host-specific caches. Configure
-credentials on the server. Dependency versions may vary by OS; installation is
-not a claim of licensed solver availability or 2026 R1 compatibility.
-
-The capability matrix starts without verified combinations. Probe the server's
-own installations. Linux discovery is covered by path fixtures; actual Linux
-Ansys, licensing, GUI attachment and physical acceptance require server tests.
-For GUI control, start sim serve from an interactive desktop; SSH alone does
-not provide a desktop session. Redeploy/restart remote sim servers to load the
-patched source. No solver or user project is launched by installation checks.
+许可证:根目录 `LICENSE`;Pi 上游与各集成上游的许可证在 `vendor/pi/` 与各集成目录内。
