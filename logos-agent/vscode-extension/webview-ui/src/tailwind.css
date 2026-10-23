@@ -63,3 +63,5 @@ details > summary::-webkit-details-marker { display: none; }
 .logos-settings p { margin: 8px 0; color: #aab4c3; overflow-wrap: anywhere; }
 .logos-settings ul { margin: 8px 0 8px 20px; list-style: disc; }
 .logos-settings .settings-check { display: flex; gap: 8px; align-items: center; }
+.logos-settings .settings-badge { display: inline-block; margin-left: 6px; padding: 1px 7px; border: 1px solid #454545; border-radius: 999px; color: #9aa4b2; font-size: 11px; vertical-align: 1px; }
+.logos-settings .settings-hint { color: #7d8794; font-size: 11px; }

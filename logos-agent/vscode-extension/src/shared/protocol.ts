@@ -1,3 +1,5 @@
+import { isProviderId, type ProviderId } from "./providerPresets";
+
 export type RuntimeStatus = "idle" | "starting" | "ready" | "running" | "stopping" | "error";
 
 export interface ModelOption {
@@ -41,7 +43,10 @@ export interface RestoredTool extends ToolCallView { position: number; }
 export interface SessionListEntry { sessionId: string; title: string; sessionFile?: string; }
 
 export type ApiProtocol = "openai-completions" | "openai-responses" | "anthropic-messages" | "google-generative-ai";
+export type ModelSource = "upstream" | "fallback";
+export type OpenAiLoginPhase = "waiting" | "exchanging" | "done";
 export interface ConnectionSettings {
+  providerId: ProviderId;
   baseUrl: string;
   api: ApiProtocol;
   modelId: string;
@@ -53,6 +58,7 @@ export interface ConnectionSettings {
 }
 export interface SettingsView extends ConnectionSettings {
   hasApiKey: boolean;
+  hasOpenAiLogin: boolean;
   bundledSkills: string[];
   configDirectory: string;
   domainDirectory: string;
@@ -60,7 +66,8 @@ export interface SettingsView extends ConnectionSettings {
 
 export type ExtensionToWebviewMessage =
   | { type: "settings/loaded"; settings: SettingsView }
-  | { type: "settings/models"; modelIds: string[] }
+  | { type: "settings/models"; modelIds: string[]; source: ModelSource }
+  | { type: "settings/openaiLoginStatus"; phase: OpenAiLoginPhase; url?: string }
   | { type: "settings/saved" }
   | { type: "settings/error"; message: string }
   | { type: "runtime/status"; status: RuntimeStatus; detail?: string }
@@ -82,6 +89,10 @@ export type WebviewToExtensionMessage =
   | { type: "settings/load" }
   | { type: "settings/models"; baseUrl: string; api: ApiProtocol; apiKey?: string }
   | { type: "settings/save"; settings: ConnectionSettings; apiKey?: string; deleteApiKey?: boolean }
+  | { type: "settings/openaiLogin" }
+  | { type: "settings/openaiCancelLogin" }
+  | { type: "settings/openaiManualCallback"; url: string }
+  | { type: "settings/openaiLogout" }
   | { type: "webview/ready" }
   | { type: "chat/send"; text: string }
   | { type: "chat/abort" }
@@ -99,6 +110,12 @@ export function isWebviewToExtensionMessage(value: unknown): value is WebviewToE
       return typeof value.baseUrl === "string" && isApiProtocol(value.api) && (value.apiKey === undefined || typeof value.apiKey === "string");
     case "settings/save":
       return isConnectionSettings(value.settings) && (value.apiKey === undefined || typeof value.apiKey === "string") && (value.deleteApiKey === undefined || typeof value.deleteApiKey === "boolean");
+    case "settings/openaiLogin":
+    case "settings/openaiCancelLogin":
+    case "settings/openaiLogout":
+      return true;
+    case "settings/openaiManualCallback":
+      return typeof value.url === "string" && value.url.length > 0;
     case "webview/ready":
     case "chat/abort":
     case "session/new":
@@ -123,6 +140,7 @@ export function isApiProtocol(value: unknown): value is ApiProtocol {
 
 export function isConnectionSettings(value: unknown): value is ConnectionSettings {
   return isRecord(value) && typeof value.baseUrl === "string" && isApiProtocol(value.api)
+    && (value.providerId === undefined || isProviderId(value.providerId))
     && typeof value.modelId === "string" && Array.isArray(value.modelIds) && value.modelIds.every((id) => typeof id === "string")
     && typeof value.systemPrompt === "string" && typeof value.appendPrompt === "string"
     && typeof value.skillsEnabled === "boolean" && Array.isArray(value.skillPaths) && value.skillPaths.every((path) => typeof path === "string");

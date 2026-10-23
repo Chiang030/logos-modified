@@ -5,6 +5,7 @@ import { SessionStore } from "./sessionStore";
 import { LogosWebviewProvider } from "./webviewBridge";
 import { installBundledRuntime } from "./bundledInstallation";
 import { ConnectionSettingsStore } from "./connectionSettings";
+import { OpenAiAuthStore } from "./auth/openAiAuthStore";
 import { registerUpdateChecks } from "./updateChecker";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -19,9 +20,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   const storageRoot = context.storageUri?.fsPath ?? context.globalStorageUri.fsPath;
   const installation = await installBundledRuntime(context.extensionUri.fsPath, context.globalStorageUri.fsPath);
+  const openAiAuth = new OpenAiAuthStore(context.secrets, context.globalState);
   const settings = new ConnectionSettingsStore(
     join(context.globalStorageUri.fsPath, "logos-agent", "config"),
-    join(installation, "logos-agent", "pi-domain"), context.secrets,
+    join(installation, "logos-agent", "pi-domain"), context.secrets, openAiAuth,
   );
   const sessions = new SessionStore(join(storageRoot, "sessions"));
   const runtime = new LocalRuntime({
@@ -32,7 +34,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     settings,
     profileDirectory: join(storageRoot, "logos-agent", "profile"),
   });
-  const provider = new LogosWebviewProvider(context, runtime, sessions, settings);
+  const provider = new LogosWebviewProvider(context, runtime, sessions, settings, openAiAuth);
   const output = vscode.window.createOutputChannel("LOGOS");
   const outputSubscription = runtime.onDidEvent((event) => {
     if (event.type === "stderr" && event.text) output.append(event.text);

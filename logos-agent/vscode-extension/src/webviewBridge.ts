@@ -14,6 +14,13 @@ import {
 } from "./shared/protocol";
 import type { RpcRecord } from "./rpcClient";
 import { ConnectionSettingsStore } from "./connectionSettings";
+import { OpenAiAuthStore } from "./auth/openAiAuthStore";
+
+interface PendingOpenAiLogin {
+  abort: AbortController;
+  timeout: NodeJS.Timeout;
+  manual?: { resolve(url: string): void; reject(error: Error): void };
+}
 
 export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private view: vscode.WebviewView | undefined;
@@ -24,12 +31,14 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
   private sequence = 0;
   private assistantSequence = 0;
   private currentAssistantId: string | undefined;
+  private openAiLogin: PendingOpenAiLogin | undefined;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly runtime: LocalRuntime,
     private readonly sessions: SessionStore,
     private readonly settings: ConnectionSettingsStore,
+    private readonly openAiAuth: OpenAiAuthStore,
   ) {
     this.disposables.push(runtime.onDidEvent((event) => this.handleRuntimeEvent(event)));
   }
@@ -66,9 +75,11 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
         case "settings/load":
           this.post({ type: "settings/loaded", settings: await this.settings.view() });
           break;
-        case "settings/models":
-          this.post({ type: "settings/models", modelIds: await this.settings.models(value.baseUrl, value.api, value.apiKey) });
+        case "settings/models": {
+          const discovery = await this.settings.models(value.baseUrl, value.api, value.apiKey);
+          this.post({ type: "settings/models", modelIds: discovery.modelIds, source: discovery.source });
           break;
+        }
         case "settings/save":
           if (["starting", "running", "stopping"].includes(this.runtime.currentStatus)) throw new Error("请等待当前任务结束或停止后再保存设置。");
           await this.settings.save(value.settings, value.apiKey, value.deleteApiKey);
@@ -79,6 +90,19 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
             await this.runtime.start();
             await this.publishRuntimeConfig();
           }
+          break;
+        case "settings/openaiLogin":
+          await this.beginOpenAiLogin();
+          break;
+        case "settings/openaiCancelLogin":
+          this.cancelOpenAiLogin();
+          break;
+        case "settings/openaiManualCallback":
+          this.openAiLogin?.manual?.resolve(value.url);
+          break;
+        case "settings/openaiLogout":
+          await this.openAiAuth.logout();
+          this.post({ type: "settings/loaded", settings: await this.settings.view() });
           break;
         case "webview/ready":
           this.post({ type: "settings/loaded", settings: await this.settings.view() });
@@ -139,6 +163,38 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     } catch (error) {
       this.post({ type: value.type.startsWith("settings/") ? "settings/error" : "runtime/error", message: error instanceof Error ? error.message : String(error) });
     }
+  }
+
+  private async beginOpenAiLogin(): Promise<void> {
+    if (this.openAiLogin) return;
+    const abort = new AbortController();
+    const timeout = setTimeout(() => this.cancelOpenAiLogin(), 10 * 60 * 1000);
+    const pending: PendingOpenAiLogin = { abort, timeout };
+    this.openAiLogin = pending;
+    try {
+      await this.openAiAuth.login({
+        signal: abort.signal,
+        openExternal: (url) => vscode.env.openExternal(vscode.Uri.parse(url)),
+        notify: (event) => this.post(event.type === "url"
+          ? { type: "settings/openaiLoginStatus", phase: "waiting", url: event.url }
+          : { type: "settings/openaiLoginStatus", phase: "exchanging" }),
+        manualCallbackUrl: () => new Promise<string>((resolve, reject) => { pending.manual = { resolve, reject }; }),
+      });
+      this.post({ type: "settings/openaiLoginStatus", phase: "done" });
+      this.post({ type: "settings/loaded", settings: await this.settings.view() });
+    } finally {
+      clearTimeout(timeout);
+      this.openAiLogin = undefined;
+      pending.manual?.reject(new Error("登录已结束。"));
+    }
+  }
+
+  private cancelOpenAiLogin(): void {
+    const pending = this.openAiLogin;
+    if (!pending) return;
+    pending.abort.abort();
+    // 等待浏览器回调或手动粘贴时，中断信号本身唤不醒竞速，需要同时拒绝手动粘贴的挂起 Promise。
+    pending.manual?.reject(new Error("登录已取消。"));
   }
 
   private async sendPrompt(text: string): Promise<void> {
