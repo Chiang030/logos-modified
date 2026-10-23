@@ -5,8 +5,11 @@ import { SessionStore } from "./sessionStore";
 import { LogosWebviewProvider } from "./webviewBridge";
 import { installBundledRuntime } from "./bundledInstallation";
 import { ConnectionSettingsStore } from "./connectionSettings";
+import { registerUpdateChecks } from "./updateChecker";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  // 更新检查不依赖工作区，需在无工作区的提前返回之前注册。
+  context.subscriptions.push(registerUpdateChecks(context));
   const workspace = vscode.workspace.workspaceFolders?.[0];
   const workspaceRoot = workspace?.uri.fsPath;
   if (!workspaceRoot) {

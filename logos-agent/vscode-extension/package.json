@@ -27,6 +27,7 @@
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
+    "onStartupFinished",
     "onCommand:logos.openChat",
     "onCommand:logos.restartRuntime",
     "onCommand:logos.newSession"
@@ -48,6 +49,18 @@
       {
         "command": "logos.newSession",
         "title": "LOGOS: New Session"
+      },
+      {
+        "command": "logos.checkUpdate",
+        "title": "LOGOS: Check for Updates"
+      },
+      {
+        "command": "logos.update.setToken",
+        "title": "LOGOS: Set Update Token"
+      },
+      {
+        "command": "logos.update.clearToken",
+        "title": "LOGOS: Clear Update Token"
       }
     ],
     "menus": {
@@ -78,6 +91,18 @@
           "default": "",
           "scope": "application",
           "description": "Absolute LoongSuite Pilot data directory. Empty uses .loongsuite-pilot in your home directory. Restart LOGOS after changing this setting."
+        },
+        "logos.update.feedUrl": {
+          "type": "string",
+          "default": "https://api.github.com/repos/Lead-Intelligent/logos",
+          "scope": "application",
+          "description": "GitHub API base URL used to check for LOGOS extension updates. It must serve GitHub-shaped releases JSON; point it at an internal mirror to bypass GitHub."
+        },
+        "logos.update.autoCheck": {
+          "type": "boolean",
+          "default": true,
+          "scope": "application",
+          "description": "Silently check for LOGOS extension updates on startup (at most once every 24 hours)."
         }
       }
     }
