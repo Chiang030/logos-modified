@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { width: 100%; height: 100%; overflow: hidden; }
+body { margin: 0; min-width: 280px; background: #131313; }
+.custom-scrollbar { scrollbar-color: #2b2b2b transparent; scrollbar-width: thin; }
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { border-radius: 4px; background: #2b2b2b; }
+button:disabled { cursor: default; opacity: .55; }
+
+.markdown-content { overflow-wrap: anywhere; }
+.markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4 { margin: .8em 0 .35em; color: #fff; font-weight: 700; line-height: 1.3; }
+.markdown-content h1 { font-size: 1.35em; }
+.markdown-content h2 { font-size: 1.2em; }
+.markdown-content h3 { font-size: 1.1em; }
+.markdown-content h4 { font-size: 1em; }
+.markdown-content p { margin: .45em 0; }
+.markdown-content ul, .markdown-content ol { margin: .45em 0; padding-left: 1.5em; }
+.markdown-content li { margin: .2em 0; }
+.markdown-content blockquote { margin: .6em 0; padding-left: .8em; border-left: 2px solid #38bdf8; color: #a1a1aa; }
+.markdown-content a { color: #38bdf8; text-decoration: underline; text-underline-offset: 2px; }
+.markdown-content code { padding: .1em .3em; border-radius: 3px; background: #0e0e0e; color: #7dd3fc; font-family: ui-monospace, monospace; font-size: .92em; }
+.markdown-content pre { margin: .6em 0; overflow-x: auto; border-radius: 4px; padding: .7em; background: #0e0e0e; color: #d4d4d8; }
+.markdown-content pre code { padding: 0; background: transparent; color: inherit; }
+.markdown-content hr { margin: .8em 0; border: 0; border-top: 1px solid #2b2b2b; }
+.markdown-content del { color: #a1a1aa; }
+.md-table { display: flex; flex-direction: column; width: 100%; margin: .7em 0; overflow-x: auto; border: 1px solid #2b2b2b; border-radius: 4px; }
+.md-table-head, .md-table-body { display: flex; flex-direction: column; min-width: max-content; }
+.md-table-row { display: flex; border-top: 1px solid #2b2b2b; }
+.md-table-head .md-table-row { border-top: 0; background: #1c1c1c; }
+.md-table-cell { min-width: 100px; flex: 1 1 0; padding: .35em .55em; }
+.md-table-header { color: #fff; font-weight: 600; }
+details > summary::-webkit-details-marker { display: none; }
+.timeline-entry { content-visibility: auto; contain-intrinsic-size: auto 96px; }
+
+.control-footer { min-width: 0; }
+.control-dock, .control-meta, .control-picker, .control-context, .picker-button { min-width: 0; }
+.control-picker { flex: 0 1 auto; }
+.picker-button { width: 100%; }
+.picker-button > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 520px) {
+  .control-dock { align-items: flex-start; }
+  .control-meta { flex-basis: calc(100% - 36px); }
+  .control-picker { flex: 1 1 0; }
+  .control-context { flex: 1 1 100%; }
+}
+
+[hidden] { display: none !important; }
+.logos-settings { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; user-select: text; font-size: 12px; }
+.settings-heading { display: flex; align-items: center; justify-content: space-between; font-size: 16px; margin-bottom: 12px; }
+.logos-settings label { display: block; margin: 12px 0; }
+.logos-settings input:not([type=checkbox]), .logos-settings select, .logos-settings textarea { display: block; width: 100%; margin-top: 6px; border: 1px solid #454545; border-radius: 5px; padding: 8px; background: #202024; color: #eee; font: inherit; }
+.logos-settings textarea { resize: vertical; }
+.logos-settings button { padding: 6px 12px; border: 1px solid #454545; border-radius: 5px; background: #26262b; }
+.logos-settings button:disabled { opacity: .5; cursor: default; }
+.logos-settings .settings-save { background: #0284c7; border-color: #0284c7; color: white; }
+.settings-actions { display: flex; gap: 8px; margin: 16px 0; }
+.logos-settings details { border-top: 1px solid #333; margin-top: 14px; padding-top: 12px; }
+.logos-settings summary { cursor: pointer; }
+.logos-settings p { margin: 8px 0; color: #aab4c3; overflow-wrap: anywhere; }
+.logos-settings ul { margin: 8px 0 8px 20px; list-style: disc; }
+.logos-settings .settings-check { display: flex; gap: 8px; align-items: center; }
