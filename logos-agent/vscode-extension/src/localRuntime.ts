@@ -7,6 +7,7 @@ import * as vscode from "vscode";
 import { RpcClient, type RpcExit, type RpcRecord } from "./rpcClient";
 import { NodeRuntimeError, resolveLaunchSpec, verifyNodeRuntime } from "./runtimeLaunch";
 import { SessionStore } from "./sessionStore";
+import { preparePilotTelemetry } from "./pilotTelemetry";
 import { isRecord, type ContextUsage, type ModelOption, type RuntimeConfig, type RuntimeStatus } from "./shared/protocol";
 
 export interface RuntimeEvent {
@@ -80,7 +81,12 @@ export class LocalRuntime implements vscode.Disposable {
       this.emit({ type: "log", text: `Node.js ${node.version} detected via ${node.command}` });
       this.emit({ type: "log", text: `Starting ${spec.bundled ? "bundled" : "configured"} LOGOS core: ${spec.scriptPath}` });
       await mkdir(this.options.sessionDirectory, { recursive: true });
-      const prepared = await this.options.settings.prepareRuntime(this.options.profileDirectory, this.options.workspaceRoot);
+      const configuration = vscode.workspace.getConfiguration("logos");
+      const prepared = await preparePilotTelemetry(
+        await this.options.settings.prepareRuntime(this.options.profileDirectory, this.options.workspaceRoot),
+        { enabled: configuration.get<boolean>("observability.enabled", false), dataDirectory: configuration.get<string>("observability.pilotDataDirectory", "") },
+      );
+      this.emit({ type: "log", text: prepared.detail });
       const args = [
         ...spec.args,
         "--mode",

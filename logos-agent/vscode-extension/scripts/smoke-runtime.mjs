@@ -1,8 +1,8 @@
 import { createServer } from "node:http";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
@@ -36,7 +36,16 @@ await new Promise((done) => server.listen(0, "127.0.0.1", done));
 const url = `http://127.0.0.1:${server.address().port}/v1`;
 assert.deepEqual(await store.models(url, "openai-completions", "smoke-test-key"), ["logos-smoke-model"]);
 await store.save({ ...await store.load(), baseUrl: url, modelId: "logos-smoke-model", modelIds: ["logos-smoke-model"] });
-const prepared = await store.prepareRuntime(join(temporaryRoot, "isolated profile"), temporaryRoot);
+let prepared = await store.prepareRuntime(join(temporaryRoot, "isolated profile"), temporaryRoot);
+const withPilot = process.argv.includes("--with-pilot");
+const pilotDirectory = process.env.LOONGSUITE_PILOT_DATA_DIR || join(homedir(), ".loongsuite-pilot");
+if (withPilot) {
+  const telemetryModule = join(temporaryRoot, "telemetry.mjs");
+  await build({ entryPoints: [join(extensionDirectory, "src", "pilotTelemetry.ts")], outfile: telemetryModule, bundle: true, platform: "node", format: "esm" });
+  const { preparePilotTelemetry } = await import(pathToFileURL(telemetryModule).href);
+  prepared = await preparePilotTelemetry(prepared, { enabled: true, dataDirectory: pilotDirectory });
+  assert(prepared.env.LOONGSUITE_PILOT_DATA_DIR, prepared.detail);
+}
 await mkdir(sessionDirectory, { recursive: true });
 await mkdir(join(temporaryRoot, ".pi"), { recursive: true });
 await writeFile(join(temporaryRoot, ".pi", "settings.json"), JSON.stringify({ defaultProvider: "wrong-pi", extensions: ["does-not-exist"] }));
@@ -67,6 +76,8 @@ try {
   const commands = await request("get_commands");
   assert(commands.commands.some((item) => item.name === "logos"), `LOGOS extension missing: ${stderr}`);
   assert(commands.commands.some((item) => item.name === "skill:logos-simulation-workflow"), "LOGOS skills missing");
+  assert(commands.commands.some((item) => item.name === "skill:gmsh"), "Gmsh skill missing");
+  assert(commands.commands.some((item) => item.name === "skill:kicad"), "KiCad skill missing");
   await request("prompt", { message: "Reply with OK." });
   const deadline = Date.now() + 15000;
   while (!records.some((record) => record.type === "agent_settled") && Date.now() < deadline) await new Promise((done) => setTimeout(done, 50));
@@ -78,6 +89,16 @@ try {
   assert(captured.body.tools.some((tool) => tool.function.name === "simulation"), "Missing Logos simulation tool");
   const messages = await request("get_messages");
   assert(JSON.stringify(messages).includes("LOGOS_SMOKE_OK"), `Streaming response missing: ${JSON.stringify(messages)}`);
+  if (withPilot) {
+    const logDirectory = join(pilotDirectory, "logs", "pi-coding-agent");
+    const files = (await readdir(logDirectory)).filter((name) => name.endsWith(".jsonl"));
+    const lines = (await Promise.all(files.map((name) => readFile(join(logDirectory, name), "utf8")))).join("\n");
+    const events = lines.split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line)).filter((event) => event["gen_ai.session.id"] === initial.sessionId);
+    assert(events.some((event) => event["event.name"] === "llm.request"), `Pilot request missing: ${stderr}`);
+    assert(events.some((event) => event["event.name"] === "llm.response"), `Pilot response missing: ${stderr}`);
+    assert(!lines.includes("smoke-test-key"), "Model credential leaked into telemetry");
+    console.log(`Pilot captured LOGOS session ${initial.sessionId}; trace ${events.find((event) => event.trace_id)?.trace_id}`);
+  }
   await request("abort");
   await request("new_session");
   await request("switch_session", { sessionPath: initial.sessionFile });

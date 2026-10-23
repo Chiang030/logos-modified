@@ -69,5 +69,13 @@ for (const file of payload.files) {
   const data = await readFile(join(payloadRoot, file.path));
   if (createHash("sha256").update(data).digest("hex") !== file.sha256) throw new Error(`Payload mismatch: ${file.path}`);
 }
-for (const path of ["vendor/node/node.exe", "logos-agent/pi-domain/prompts/system.md", "logos-agent/pi-domain/prompts/append.md", "logos-agent/pi-domain/extensions/index.mjs", "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md"]) await access(join(payloadRoot, path));
+for (const path of [
+  "vendor/node/node.exe",
+  "logos-agent/pi-domain/prompts/system.md",
+  "logos-agent/pi-domain/prompts/append.md",
+  "logos-agent/pi-domain/extensions/index.mjs",
+  "logos-agent/pi-domain/skills/logos-simulation-workflow/SKILL.md",
+  "logos-agent/pi-domain/skills/gmsh/SKILL.md",
+  "logos-agent/pi-domain/skills/kicad/SKILL.md",
+]) await access(join(payloadRoot, path));
 console.log(`Verified complete LOGOS payload: ${payload.files.length} files, Node ${payload.node}`);
