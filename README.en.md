@@ -2,7 +2,7 @@
 
 [中文（主版本）](README.md) · **English**
 
-> Current server version: **[v0.2.0](https://github.com/Chiang030/logos-modified/releases/tag/v0.2.0)** · VS Code extension: **v0.1.7** (not yet tracking v0.2.0)
+> Current server version: **[v0.2.0](https://github.com/Chiang030/logos-modified/releases/tag/v0.2.0)** · VS Code extension: **v0.2.0** (tracking v0.2.0, with in-extension self-update)
 
 LOGOS turns a large language model into **an engineer that can actually do the work**: you give tasks in natural language inside a project directory, and it autonomously handles parametric CAD modeling with independent verification, finite-element meshing, aerodynamic CFD and structural FEA solving, high-frequency EM simulation, ECAD (PCB) analysis, and 3D rendering — delivering results backed by verifiable evidence (test output, exported files, screenshots).
 
@@ -38,7 +38,7 @@ The platform drives conversation and task execution on an open-source coding-age
 
 ![CLI usage: waking LOGOS with logos-here in the terminal](docs/images/usage-cli-logos-here.png)
 
-### Option 2: VS Code extension (v0.1.7)
+### Option 2: VS Code extension (v0.2.0)
 
 The LOGOS VS Code extension provides a graphical panel: server connection status, session management, and an agent registry (invoke agents in chat with `@agent-name`, e.g. `@logos` the main agent, `@kicad`, `@freecad`, `@ansys`).
 
@@ -51,7 +51,7 @@ Quick start (from the [plugin manual PPT](docs/manual/LOGOS仿真助手智能体
 3. **New session**: click "new session" in the history panel on the right;
 4. **Ansys invocation guidance**: for visual interactive work use the **"gRPC server"** mode (the agent drives the GUI directly; multiple instances may conflict); for batch solving use the **"MAPDL"** mode (headless APDL script batches; no GUI, weaker observability). Just tell the agent which one to use.
 
-> **Note**: the extension is currently at **v0.1.7** and lags the server's v0.2.0 (recent skills and integrations are not included); prefer Option 1. The extension has only been lightly tested; most known issues are permission-related — please report bugs.
+> **Note**: v0.1.7 and earlier have no updater inside — install v0.2.0 manually once. From v0.2.0 on, the extension silently checks for updates on startup (at most once every 24 hours), and **LOGOS: Check for Updates** offers a manual check with one-click upgrade (the private feed needs GitHub authorization; see the extension README). The extension has only been lightly tested; most known issues are permission-related — please report bugs.
 
 ---
 

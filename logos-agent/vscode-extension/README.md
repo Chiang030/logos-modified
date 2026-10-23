@@ -6,7 +6,7 @@ No separate Pi, Node.js, or LOGOS checkout is needed.
 
 ## Installation and configuration
 
-Install `logos-vscode-0.1.7-win32-x64.vsix`, open a project folder, and run
+Install `logos-vscode-0.2.0-win32-x64.vsix`, open a project folder, and run
 **LOGOS: Open Chat**. Open the gear button to configure the API URL and API key,
 fetch upstream models, select a model, and click **保存并应用**. Model IDs can also
 be entered manually. The panel supports system and appended prompts, bundled
@@ -28,6 +28,39 @@ Logos paths are shown in the settings panel. Updates preserve saved settings.
 Only the configured model API is contacted for inference and model discovery.
 Engineering solver executables and their licenses are not included.
 
+## Updates
+
+From v0.2.0 the extension checks its release channel for newer VSIX builds:
+silently on startup (at most once every 24 hours) and on demand via
+**LOGOS: Check for Updates**. When a newer version is found it offers a
+one-click download and install through the `code` CLI, then asks to reload
+the window. Versions up to and including v0.1.7 have no updater inside;
+install the current VSIX once manually.
+
+The default feed is the private `Lead-Intelligent/logos` GitHub repository, so
+a GitHub sign-in (prompted on the first manual check) or a fine-grained PAT
+with Contents read access (**LOGOS: Set Update Token**) is required. Settings:
+
+- `logos.update.feedUrl` — GitHub API base URL; point it at an internal mirror
+  that serves GitHub-shaped releases JSON to bypass GitHub entirely.
+- `logos.update.autoCheck` — disable the silent startup check.
+
+Note: the check uses direct HTTPS and ignores VS Code's `http.proxy` setting;
+proxied machines should use an internal feed URL instead.
+
+## Publishing a release
+
+```powershell
+npm run package:win32-x64
+$env:GITHUB_TOKEN = "<fine-grained PAT, Contents read+write>"
+npm run publish:release -- --tag v0.2.0 --asset logos-vscode-0.2.0-win32-x64.vsix
+```
+
+The publish script attaches the VSIX to the release of the given tag on
+`Lead-Intelligent/logos` (creating the release if needed, replacing a
+same-named asset). Asset names follow `logos-vscode-<version>-<platform>.vsix`;
+the updater picks the platform-specific asset first, then the universal one.
+
 ## Development
 
 ```powershell
@@ -42,3 +75,7 @@ copies the Windows x64 Node executable used for packaging, verifies payload
 integrity, and runs a network-free smoke test against a local mock model API.
 The smoke test verifies skills, prompts, domain tools, streaming, sessions, and
 isolation from project Pi settings.
+
+To exercise the updater locally, serve a fake feed with
+`node scripts/mock-update-feed.mjs --version <newer> --asset <vsix>` and set
+`logos.update.feedUrl` to `http://127.0.0.1:4890/api`.
