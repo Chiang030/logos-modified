@@ -36,6 +36,13 @@ describe("update checker", () => {
     expect(update?.asset.name).toBe("logos-vscode-0.2.0-win32-x64.vsix");
   });
 
+  it("accepts vsce's default platform-first asset naming", () => {
+    const update = selectUpdate(
+      [release({ tag_name: "v0.2.0", assets: [asset("logos-vscode-win32-x64-0.2.0.vsix")] })],
+      "0.1.7", "win32", "x64");
+    expect(update?.asset.name).toBe("logos-vscode-win32-x64-0.2.0.vsix");
+  });
+
   it("falls back to the universal asset when no platform asset exists", () => {
     const universal = asset("logos-vscode-0.2.0.vsix");
     const update = selectUpdate([release({ tag_name: "v0.2.0", assets: [universal] })], "0.1.7", "linux", "arm64");

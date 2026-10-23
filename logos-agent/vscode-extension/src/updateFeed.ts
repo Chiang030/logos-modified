@@ -56,9 +56,13 @@ export function selectUpdate(releases: ReleaseInfo[], currentVersion: string, pl
 }
 
 function pickAsset(assets: ReleaseAsset[], version: string, platform: string, arch: string): ReleaseAsset | undefined {
-  const platformName = `logos-vscode-${version}-${platform}-${arch}.vsix`;
+  // Accept both `…-<version>-<platform>` and vsce's default `…-<platform>-<version>` naming.
+  const platformNames = [
+    `logos-vscode-${version}-${platform}-${arch}.vsix`,
+    `logos-vscode-${platform}-${arch}-${version}.vsix`,
+  ];
   const universalName = `logos-vscode-${version}.vsix`;
-  return assets.find((asset) => asset.name === platformName) ?? assets.find((asset) => asset.name === universalName);
+  return assets.find((asset) => platformNames.includes(asset.name)) ?? assets.find((asset) => asset.name === universalName);
 }
 
 export interface CodeCliSpec {

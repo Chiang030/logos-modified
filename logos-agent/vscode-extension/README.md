@@ -6,7 +6,7 @@ No separate Pi, Node.js, or LOGOS checkout is needed.
 
 ## Installation and configuration
 
-Install `logos-vscode-0.2.0-win32-x64.vsix`, open a project folder, and run
+Install `logos-vscode-win32-x64-0.2.0.vsix`, open a project folder, and run
 **LOGOS: Open Chat**. Open the gear button to configure the API URL and API key,
 fetch upstream models, select a model, and click **保存并应用**. Model IDs can also
 be entered manually. The panel supports system and appended prompts, bundled
@@ -53,13 +53,14 @@ proxied machines should use an internal feed URL instead.
 ```powershell
 npm run package:win32-x64
 $env:GITHUB_TOKEN = "<fine-grained PAT, Contents read+write>"
-npm run publish:release -- --tag v0.2.0 --asset logos-vscode-0.2.0-win32-x64.vsix
+npm run publish:release -- --tag v0.2.0 --asset logos-vscode-win32-x64-0.2.0.vsix
 ```
 
 The publish script attaches the VSIX to the release of the given tag on
 `Lead-Intelligent/logos` (creating the release if needed, replacing a
-same-named asset). Asset names follow `logos-vscode-<version>-<platform>.vsix`;
-the updater picks the platform-specific asset first, then the universal one.
+same-named asset). `vsce` names the package `logos-vscode-<platform>-<version>.vsix`
+by default; the updater accepts both that and `logos-vscode-<version>-<platform>.vsix`,
+preferring a platform-specific asset over a universal one.
 
 ## Development
 
