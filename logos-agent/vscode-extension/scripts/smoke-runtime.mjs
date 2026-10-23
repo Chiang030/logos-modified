@@ -34,7 +34,7 @@ const server = createServer(async (req, res) => {
 });
 await new Promise((done) => server.listen(0, "127.0.0.1", done));
 const url = `http://127.0.0.1:${server.address().port}/v1`;
-assert.deepEqual(await store.models(url, "openai-completions", "smoke-test-key"), ["logos-smoke-model"]);
+assert.deepEqual(await store.models(url, "openai-completions", "smoke-test-key"), { modelIds: ["logos-smoke-model"], source: "upstream" });
 await store.save({ ...await store.load(), baseUrl: url, modelId: "logos-smoke-model", modelIds: ["logos-smoke-model"] });
 let prepared = await store.prepareRuntime(join(temporaryRoot, "isolated profile"), temporaryRoot);
 const withPilot = process.argv.includes("--with-pilot");
