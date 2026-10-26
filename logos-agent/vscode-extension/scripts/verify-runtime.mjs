@@ -2,13 +2,19 @@ import { createHash } from "node:crypto";
 import { access, readFile, readdir } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { BUILD_TARGETS, parseTargetArgument, targetDefinition } from "./package-targets.mjs";
 
 const expectedCommit = "abe508e1b89912adde45528136c3221eb69acdd7";
 const extensionDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const runtimeDirectory = join(extensionDirectory, "runtime", "vendor", "pi");
 const manifest = JSON.parse(await readFile(join(runtimeDirectory, "runtime-manifest.json"), "utf8"));
 
-if (manifest.platform !== "win32-x64") throw new Error(`Unexpected runtime platform: ${manifest.platform}`);
+const targetArgument = parseTargetArgument(process.argv);
+if (!targetArgument) {
+  throw new Error(`--target is required; expected one of: ${BUILD_TARGETS.join(", ")}`);
+}
+const target = targetDefinition(targetArgument);
+if (manifest.platform !== targetArgument) throw new Error(`Unexpected runtime platform: ${manifest.platform} (expected ${targetArgument})`);
 if (manifest.pi?.commit !== expectedCommit) throw new Error(`Unexpected Pi commit: ${manifest.pi?.commit}`);
 
 const required = [
@@ -21,7 +27,7 @@ const required = [
   "node_modules/jiti/package.json",
   "node_modules/quickjs-wasi/quickjs.wasm",
   "node_modules/esbuild/lib/main.js",
-  "node_modules/@esbuild/win32-x64/esbuild.exe",
+  `node_modules/${target.esbuildPackage}/${target.esbuildBinary}`,
   "THIRD_PARTY_NOTICES.txt",
   "PI_LICENSE",
 ];
@@ -64,13 +70,19 @@ async function walk(directory) {
 
 const payloadRoot = join(extensionDirectory, "runtime");
 const payload = JSON.parse(await readFile(join(payloadRoot, "payload-manifest.json"), "utf8"));
+if (payload.platform !== targetArgument) throw new Error(`Unexpected payload platform: ${payload.platform} (expected ${targetArgument})`);
+const payloadNode = String(payload.node ?? "").replace(/^v/, "");
+const [major, minor] = payloadNode.split(".").map(Number);
+if (!Number.isInteger(major) || !Number.isInteger(minor) || major < 22 || (major === 22 && minor < 19)) {
+  throw new Error(`Payload Node.js ${payload.node} is older than the 22.19.0 minimum`);
+}
 for (const file of payload.files) {
   if (file.path.split("/").some((part) => [".env", ".git", ".venv", "auth.json", "connection.json"].includes(part))) throw new Error(`Private file in payload: ${file.path}`);
   const data = await readFile(join(payloadRoot, file.path));
   if (createHash("sha256").update(data).digest("hex") !== file.sha256) throw new Error(`Payload mismatch: ${file.path}`);
 }
 for (const path of [
-  "vendor/node/node.exe",
+  `vendor/node/${target.nodeBinary}`,
   "logos-agent/pi-domain/prompts/system.md",
   "logos-agent/pi-domain/prompts/append.md",
   "logos-agent/pi-domain/extensions/index.mjs",
@@ -78,4 +90,4 @@ for (const path of [
   "logos-agent/pi-domain/skills/gmsh/SKILL.md",
   "logos-agent/pi-domain/skills/kicad/SKILL.md",
 ]) await access(join(payloadRoot, path));
-console.log(`Verified complete LOGOS payload: ${payload.files.length} files, Node ${payload.node}`);
+console.log(`Verified complete LOGOS payload for ${targetArgument}: ${payload.files.length} files, Node ${payload.node}`);

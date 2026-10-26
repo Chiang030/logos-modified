@@ -6,8 +6,19 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
+import { BUILD_TARGETS, parseTargetArgument } from "./package-targets.mjs";
 
 const extensionDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const targetArgument = parseTargetArgument(process.argv) ?? `${process.platform}-${process.arch}`;
+if (!BUILD_TARGETS.includes(targetArgument) && targetArgument !== `${process.platform}-${process.arch}`) {
+  throw new Error(`Unknown smoke target ${targetArgument}; expected one of: ${BUILD_TARGETS.join(", ")}`);
+}
+const targetPlatform = targetArgument.split("-")[0];
+// Cross-platform smoke cannot execute the target binary on this host; validate the
+// payload with the host Node.js instead.
+if (targetPlatform !== process.platform) {
+  console.log(`Cross-platform smoke for ${targetArgument}: running the payload with the host Node.js; the bundled binary is not executed.`);
+}
 const temporaryRoot = await mkdtemp(join(tmpdir(), "LOGOS smoke 中文 space "));
 const sessionDirectory = join(temporaryRoot, "session data");
 const settingsModule = join(temporaryRoot, "settings.mjs");
@@ -49,7 +60,10 @@ if (withPilot) {
 await mkdir(sessionDirectory, { recursive: true });
 await mkdir(join(temporaryRoot, ".pi"), { recursive: true });
 await writeFile(join(temporaryRoot, ".pi", "settings.json"), JSON.stringify({ defaultProvider: "wrong-pi", extensions: ["does-not-exist"] }));
-const child = spawn(join(installed, "vendor", "node", "node.exe"), [join(installed, "vendor", "pi", "cli.js"), "--mode", "rpc", "--session-dir", sessionDirectory, ...prepared.args], {
+const smokeNode = targetPlatform === process.platform
+  ? join(installed, "vendor", "node", targetPlatform === "win32" ? "node.exe" : "node")
+  : process.execPath;
+const child = spawn(smokeNode, [join(installed, "vendor", "pi", "cli.js"), "--mode", "rpc", "--session-dir", sessionDirectory, ...prepared.args], {
   cwd: temporaryRoot, env: prepared.env, stdio: "pipe", windowsHide: true,
 });
 let sequence = 0, buffer = "", stderr = "";

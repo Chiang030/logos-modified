@@ -1,9 +1,17 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { access, cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  BUILD_TARGETS,
+  NODE_DIST_URL,
+  NODE_RUNTIME_VERSION,
+  parseTargetArgument,
+  targetDefinition,
+} from "./package-targets.mjs";
 
 const PI_COMMIT = "abe508e1b89912adde45528136c3221eb69acdd7";
 const PI_VERSION = "1.1.0";
@@ -16,6 +24,12 @@ const runtimeDirectory = join(payloadDirectory, "vendor", "pi");
 const npmCli = process.env.npm_execpath;
 const skipInstall = process.argv.includes("--skip-install");
 const skipBuild = process.argv.includes("--skip-build");
+
+const targetArgument = parseTargetArgument(process.argv);
+if (!targetArgument) {
+  throw new Error(`--target is required; expected one of: ${BUILD_TARGETS.join(", ")}`);
+}
+const target = targetDefinition(targetArgument);
 
 const head = run("git", ["rev-parse", "HEAD"], piDirectory, true).trim();
 if (head !== PI_COMMIT) {
@@ -34,12 +48,13 @@ await rm(runtimeDirectory, { recursive: true, force: true });
 await rm(join(payloadDirectory, "core"), { recursive: true, force: true });
 await mkdir(runtimeDirectory, { recursive: true });
 await copyPiRuntime();
+await ensureEsbuildPlatformPackage();
 const dependencies = await copyRuntimeDependencies();
 await writeThirdPartyNotices(dependencies);
 await writeRuntimeManifest(dependencies);
 await prepareLogosPayload();
 
-console.log(`Prepared LOGOS core ${PI_VERSION} (${PI_COMMIT.slice(0, 8)}) in ${runtimeDirectory}`);
+console.log(`Prepared LOGOS core ${PI_VERSION} (${PI_COMMIT.slice(0, 8)}) for ${targetArgument} with Node.js ${NODE_RUNTIME_VERSION} in ${runtimeDirectory}`);
 
 async function installFixedModelCatalog() {
   const temporaryDirectory = await mkdtemp(join(tmpdir(), "logos-pi-models-"));
@@ -51,7 +66,7 @@ async function installFixedModelCatalog() {
     );
     const archiveName = archiveOutput.trim().split(/\r?\n/).at(-1);
     if (!archiveName) throw new Error("npm pack did not return an archive name");
-    run("tar", ["-xf", join(temporaryDirectory, archiveName), "-C", temporaryDirectory], piDirectory);
+    run("tar", ["-xf", archiveName], temporaryDirectory);
     const source = join(temporaryDirectory, "package", "dist", "providers", "data");
     const destination = join(piDirectory, "packages", "ai", "src", "providers", "data");
     await rm(destination, { recursive: true, force: true });
@@ -86,7 +101,7 @@ async function copyRuntimeDependencies() {
     { name: "jiti", entries: ["package.json", "LICENSE", "lib", "dist"] },
     { name: "quickjs-wasi", entries: ["package.json", "LICENSE", "quickjs.wasm", "dist", "extensions"] },
     { name: "esbuild", entries: ["package.json", "LICENSE.md", "lib", "bin"] },
-    { name: "@esbuild/win32-x64", entries: ["package.json", "README.md", "esbuild.exe"] },
+    { name: target.esbuildPackage, entries: ["package.json", "README.md", target.esbuildBinary] },
   ];
   const dependencies = [];
   for (const definition of definitions) {
@@ -132,7 +147,7 @@ async function writeRuntimeManifest(dependencies) {
   files.sort((left, right) => left.path.localeCompare(right.path));
   const manifest = {
     schemaVersion: 1,
-    platform: "win32-x64",
+    platform: targetArgument,
     pi: { version: PI_VERSION, commit: PI_COMMIT },
     dependencies,
     files,
@@ -167,11 +182,7 @@ function runNpm(args, cwd, capture = false) {
 
 
 async function prepareLogosPayload() {
-  if (process.platform !== "win32" || process.arch !== "x64") throw new Error("Build this package on Windows x64");
-  await copyPath(process.execPath, join(payloadDirectory, "vendor", "node", "node.exe"));
-  const nodeLicense = await fetch(`https://raw.githubusercontent.com/nodejs/node/${process.version}/LICENSE`, { signal: AbortSignal.timeout(30_000) });
-  if (!nodeLicense.ok) throw new Error(`Cannot fetch Node license: HTTP ${nodeLicense.status}`);
-  await writeFile(join(payloadDirectory, "vendor", "node", "LICENSE"), await nodeLicense.text());
+  await installNodeRuntime();
   const domain = join(payloadDirectory, "logos-agent", "pi-domain");
   await rm(domain, { recursive: true, force: true });
   const excluded = new Set(["node_modules", ".venv", "__pycache__", ".git", ".pytest_cache", ".env"]);
@@ -194,5 +205,111 @@ async function prepareLogosPayload() {
     files.push({ path: relative(payloadDirectory, path).replaceAll("\\", "/"), bytes: data.byteLength,
       sha256: createHash("sha256").update(data).digest("hex") });
   }
-  await writeFile(join(payloadDirectory, "payload-manifest.json"), JSON.stringify({ node: process.version, files }, null, 2));
+  await writeFile(join(payloadDirectory, "payload-manifest.json"), JSON.stringify({ platform: targetArgument, node: NODE_RUNTIME_VERSION, files }, null, 2));
+}
+
+/** Download the pinned official Node.js distribution for the target platform and stage vendor/node. */
+async function installNodeRuntime() {
+  const cacheDirectory = join(extensionDirectory, ".node-dist-cache");
+  await mkdir(cacheDirectory, { recursive: true });
+  const archivePath = join(cacheDirectory, target.archive);
+  const expected = (await fetchText(`${NODE_DIST_URL}/v${NODE_RUNTIME_VERSION}/SHASUMS256.txt`))
+    .split(/\r?\n/)
+    .find((line) => line.trim().endsWith(` ${target.archive}`))
+    ?.trim()
+    .split(/\s+/)[0];
+  if (!expected) throw new Error(`SHASUMS256.txt does not list ${target.archive}`);
+  let archive;
+  try {
+    archive = await readFile(archivePath);
+  } catch {
+    console.log(`Downloading ${NODE_DIST_URL}/v${NODE_RUNTIME_VERSION}/${target.archive} …`);
+    const response = await fetch(`${NODE_DIST_URL}/v${NODE_RUNTIME_VERSION}/${target.archive}`, { signal: AbortSignal.timeout(600_000) });
+    if (!response.ok) throw new Error(`Cannot download Node.js distribution: HTTP ${response.status}`);
+    archive = Buffer.from(await response.arrayBuffer());
+    await writeFile(archivePath, archive);
+  }
+  const actual = createHash("sha256").update(archive).digest("hex");
+  if (actual !== expected) {
+    await rm(archivePath, { force: true });
+    throw new Error(`Node.js distribution checksum mismatch for ${target.archive}: expected ${expected}, got ${actual}`);
+  }
+  // Extract with a basename operand from the cache directory: GNU tar treats
+  // absolute Windows paths (`C:\…`) as remote-host specs, and it cannot read
+  // zip archives at all, so zips go through PowerShell's built-in expander.
+  const extractionRoot = join(cacheDirectory, target.archive.replace(/\.(tar\.xz|zip)$/, ""));
+  const extractedBinary = join(extractionRoot, ...target.nodeEntry.split("/").slice(1));
+  try {
+    await access(extractedBinary);
+  } catch {
+    extractArchive(target.archive, cacheDirectory, [target.nodeEntry, `${target.archive.replace(/\.(tar\.xz|zip)$/, "")}/${target.nodeLicense}`]);
+    try {
+      await access(extractedBinary);
+    } catch {
+      throw new Error(`Extraction did not produce ${target.nodeEntry}`);
+    }
+  }
+  const nodeDirectory = join(payloadDirectory, "vendor", "node");
+  await rm(nodeDirectory, { recursive: true, force: true });
+  await mkdir(nodeDirectory, { recursive: true });
+  await copyPath(extractedBinary, join(nodeDirectory, target.nodeBinary));
+  await copyPath(join(extractionRoot, target.nodeLicense), join(nodeDirectory, "LICENSE"), true);
+}
+
+/** Make the esbuild platform package for the build target available in Pi's node_modules. */
+async function ensureEsbuildPlatformPackage() {
+  const packageDirectory = join(piDirectory, "node_modules", ...target.esbuildPackage.split("/"));
+  try {
+    await access(join(packageDirectory, "package.json"));
+    return;
+  } catch {
+    // The host usually only has its own platform's package; fetch the target's below.
+  }
+  let version;
+  try {
+    version = JSON.parse(await readFile(join(piDirectory, "node_modules", "esbuild", "package.json"), "utf8")).version;
+  } catch {
+    throw new Error("Cannot read Pi's esbuild version; run prepare:runtime without --skip-install first");
+  }
+  console.log(`Fetching ${target.esbuildPackage}@${version} for ${targetArgument} …`);
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), "logos-esbuild-"));
+  try {
+    const archiveOutput = runNpm(
+      ["pack", `${target.esbuildPackage}@${version}`, "--pack-destination", temporaryDirectory, "--silent"],
+      piDirectory,
+      true,
+    );
+    const archiveName = archiveOutput.trim().split(/\r?\n/).at(-1);
+    if (!archiveName) throw new Error("npm pack did not return an archive name");
+    run("tar", ["-xf", archiveName], temporaryDirectory);
+    await cp(join(temporaryDirectory, "package"), packageDirectory, { recursive: true });
+  } finally {
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+}
+
+async function fetchText(url) {
+  const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+  if (!response.ok) throw new Error(`Cannot fetch ${url}: HTTP ${response.status}`);
+  return response.text();
+}
+
+/** Extract an archive by basename into the directory that contains it. */
+function extractArchive(archiveName, directory, includes = []) {
+  if (process.platform === "win32") {
+    // Git Bash's GNU tar cannot exec xz and treats absolute paths as remote
+    // hosts; the Windows bundled bsdtar reads zip, tar, and tar.xz alike.
+    // Linux Node tarballs carry symlinks (bin/npm …) that Windows cannot
+    // materialize, so extract only the entries we stage.
+    const bsdtar = "C:\\Windows\\System32\\tar.exe";
+    const args = ["-xf", archiveName];
+    for (const pattern of includes) args.push("--include", pattern);
+    run(existsSync(bsdtar) ? bsdtar : "tar", args, directory);
+    return;
+  }
+  if (archiveName.endsWith(".zip")) {
+    run("unzip", ["-o", archiveName], directory);
+    return;
+  }
+  run("tar", ["-xf", archiveName], directory);
 }
