@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { ConnectionSettingsStore, LOCAL_PROVIDER } from "./connectionSettings";
 import * as vscode from "vscode";
 import { RpcClient, type RpcExit, type RpcRecord } from "./rpcClient";
-import { NodeRuntimeError, resolveLaunchSpec, verifyNodeRuntime } from "./runtimeLaunch";
+import { NodeRuntimeError, resolveLaunchSpec, selectNodeRuntime } from "./runtimeLaunch";
 import { SessionStore } from "./sessionStore";
 import { preparePilotTelemetry } from "./pilotTelemetry";
 import { isRecord, type ContextUsage, type ModelOption, type RuntimeConfig, type RuntimeStatus } from "./shared/protocol";
@@ -73,15 +73,18 @@ export class LocalRuntime implements vscode.Disposable {
     try {
       const settings = await this.options.settings.load();
       if (!settings.baseUrl || !settings.modelId) throw new Error("请在 LOGOS 设置中填写 API URL、选择模型并保存。");
+      const configuration = vscode.workspace.getConfiguration("logos");
       const spec = resolveLaunchSpec({
         extensionRoot: this.options.extensionRoot,
         workspaceRoot: this.options.workspaceRoot,
       });
-      const node = await verifyNodeRuntime(spec.command);
-      this.emit({ type: "log", text: `Node.js ${node.version} detected via ${node.command}` });
+      const node = await selectNodeRuntime({
+        extensionRoot: this.options.extensionRoot,
+        configuredExecutable: configuration.get<string>("nodeExecutable", ""),
+      });
+      this.emit({ type: "log", text: `Node.js ${node.version} via ${nodeSourceLabel(node.source)} (${node.command})` });
       this.emit({ type: "log", text: `Starting ${spec.bundled ? "bundled" : "configured"} LOGOS core: ${spec.scriptPath}` });
       await mkdir(this.options.sessionDirectory, { recursive: true });
-      const configuration = vscode.workspace.getConfiguration("logos");
       const prepared = await preparePilotTelemetry(
         await this.options.settings.prepareRuntime(this.options.profileDirectory, this.options.workspaceRoot),
         { enabled: configuration.get<boolean>("observability.enabled", false), dataDirectory: configuration.get<string>("observability.pilotDataDirectory", "") },
@@ -96,7 +99,7 @@ export class LocalRuntime implements vscode.Disposable {
         ...prepared.args,
       ];
 
-      const child = spawn(spec.command, args, {
+      const child = spawn(node.command, args, {
         cwd: this.options.workspaceRoot,
         env: prepared.env,
         stdio: "pipe",
@@ -268,6 +271,12 @@ export class LocalRuntime implements vscode.Disposable {
     }
     this.eventEmitter.fire(event);
   }
+}
+
+function nodeSourceLabel(source: "setting" | "path" | "bundled"): string {
+  if (source === "setting") return "logos.nodeExecutable";
+  if (source === "path") return "PATH";
+  return "bundled runtime";
 }
 
 function toModelOption(value: unknown): ModelOption | undefined {

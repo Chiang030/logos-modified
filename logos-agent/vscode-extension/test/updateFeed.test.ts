@@ -43,6 +43,14 @@ describe("update checker", () => {
     expect(update?.asset.name).toBe("logos-vscode-win32-x64-0.2.0.vsix");
   });
 
+  it("selects the matching Linux build and ignores Windows-only releases on Linux", () => {
+    const linux = asset("logos-vscode-linux-x64-0.3.0.vsix");
+    const windows = asset("logos-vscode-win32-x64-0.3.0.vsix");
+    const update = selectUpdate([release({ tag_name: "v0.3.0", assets: [windows, linux] })], "0.2.2", "linux", "x64");
+    expect(update?.asset.name).toBe("logos-vscode-linux-x64-0.3.0.vsix");
+    expect(selectUpdate([release({ tag_name: "v0.3.0", assets: [windows] })], "0.2.2", "linux", "arm64")).toBeUndefined();
+  });
+
   it("falls back to the universal asset when no platform asset exists", () => {
     const universal = asset("logos-vscode-0.2.0.vsix");
     const update = selectUpdate([release({ tag_name: "v0.2.0", assets: [universal] })], "0.1.7", "linux", "arm64");

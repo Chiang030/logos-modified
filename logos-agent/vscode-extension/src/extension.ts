@@ -7,6 +7,7 @@ import { installBundledRuntime } from "./bundledInstallation";
 import { ConnectionSettingsStore } from "./connectionSettings";
 import { OpenAiAuthStore } from "./auth/openAiAuthStore";
 import { registerUpdateChecks } from "./updateChecker";
+import { NodeRuntimeError } from "./runtimeLaunch";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   // 更新检查不依赖工作区，需在无工作区的提前返回之前注册。
@@ -42,7 +43,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     if (event.type === "protocol_error" && event.error) output.appendLine(`[protocol] ${event.error.message}`);
     if (event.type === "node_error" && event.error) {
       output.appendLine(`[runtime] ${event.error.message}`);
-      void showNodeRuntimeActions(event.error.message, runtime, output);
+      const reason = event.error instanceof NodeRuntimeError ? event.error.reason : undefined;
+      void showNodeRuntimeActions(event.error.message, reason, runtime, output);
     }
   });
 
@@ -61,10 +63,18 @@ export function deactivate(): void {}
 
 let nodeRuntimePrompt: Promise<void> | undefined;
 
-function showNodeRuntimeActions(message: string, runtime: LocalRuntime, output: vscode.OutputChannel): Promise<void> {
+function showNodeRuntimeActions(
+  message: string,
+  reason: NodeRuntimeError["reason"] | undefined,
+  runtime: LocalRuntime,
+  output: vscode.OutputChannel,
+): Promise<void> {
   if (nodeRuntimePrompt) return nodeRuntimePrompt;
+  const actions = ["Retry"];
+  if (reason === "missing" || reason === "unsupported") actions.push("Download Node.js");
+  if (reason === "missing" || reason === "unexecutable" || reason === "platform") actions.push("Configure Node Path");
   nodeRuntimePrompt = (async () => {
-    const action = await vscode.window.showErrorMessage(message, "Retry", "Download Node.js");
+    const action = await vscode.window.showErrorMessage(message, ...actions);
     if (action === "Retry") {
       try {
         await runtime.restart();
@@ -73,6 +83,8 @@ function showNodeRuntimeActions(message: string, runtime: LocalRuntime, output: 
       }
     } else if (action === "Download Node.js") {
       await vscode.env.openExternal(vscode.Uri.parse("https://nodejs.org/en/download"));
+    } else if (action === "Configure Node Path") {
+      void vscode.commands.executeCommand("workbench.action.openSettings", "logos.nodeExecutable");
     }
   })().finally(() => { nodeRuntimePrompt = undefined; });
   return nodeRuntimePrompt;
