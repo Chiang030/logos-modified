@@ -30,13 +30,15 @@ export function registerUpdateChecks(context: vscode.ExtensionContext): vscode.D
 async function runAutomaticCheck(context: vscode.ExtensionContext): Promise<void> {
   try {
     if (!vscode.workspace.getConfiguration("logos").get<boolean>("update.autoCheck", true)) return;
-    if (shouldAutoCheck(context.globalState.get<number>(LAST_CHECK_KEY), Date.now())) {
+    const lastCheck = context.globalState.get<number>(LAST_CHECK_KEY);
+    if (shouldAutoCheck(lastCheck, Date.now())) {
       await checkForUpdates(context, false);
+      // Only advance the throttle after a real check; refreshing it on every
+      // activation would starve daily users of checks entirely.
+      void context.globalState.update(LAST_CHECK_KEY, Date.now());
     }
   } catch {
     // 启动静默检查失败不打扰用户。
-  } finally {
-    void context.globalState.update(LAST_CHECK_KEY, Date.now());
   }
 }
 
