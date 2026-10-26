@@ -1,7 +1,10 @@
 import { dirname, join } from "node:path";
 import { compareVersions } from "./runtimeLaunch";
 
-export const DEFAULT_FEED_URL = "https://api.github.com/repos/Lead-Intelligent/logos";
+// Public mirror feed: anonymous release checks and downloads, no GitHub auth needed.
+// The private Lead-Intelligent/logos repository keeps the source releases; flip
+// this constant back to it when private distribution is required again.
+export const DEFAULT_FEED_URL = "https://api.github.com/repos/Chiang030/logos-modified";
 
 const AUTO_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 

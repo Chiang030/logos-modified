@@ -46,9 +46,12 @@ one-click download and install through the `code` CLI, then asks to reload
 the window. Versions up to and including v0.1.7 have no updater inside;
 install the current VSIX once manually.
 
-The default feed is the private `Lead-Intelligent/logos` GitHub repository, so
-a GitHub sign-in (prompted on the first manual check) or a fine-grained PAT
-with Contents read access (**LOGOS: Set Update Token**) is required. Settings:
+The default feed is the public `Chiang030/logos-modified` mirror, so update
+checks and downloads work without any GitHub authorization. Point
+`logos.update.feedUrl` at another repository (for example the private
+`Lead-Intelligent/logos` source releases) to switch channels; a private feed
+needs a GitHub sign-in (prompted on the first manual check) or a fine-grained
+PAT with Contents read access (**LOGOS: Set Update Token**). Settings:
 
 - `logos.update.feedUrl` — GitHub API base URL; point it at an internal mirror
   that serves GitHub-shaped releases JSON to bypass GitHub entirely.
