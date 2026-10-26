@@ -22,7 +22,7 @@ export function targetDefinition(target) {
     archive: `${root}.${windows ? "zip" : "tar.xz"}`,
     nodeBinary: windows ? "node.exe" : "node",
     nodeEntry: windows ? `${root}/node.exe` : `${root}/bin/node`,
-    nodeLicense: windows ? "LICENSE.md" : "LICENSE",
+    nodeLicense: "LICENSE",
     esbuildPackage: `@esbuild/${target}`,
     // esbuild ships the binary at the package root on Windows, under bin/ on POSIX.
     esbuildBinary: windows ? "esbuild.exe" : "bin/esbuild",
