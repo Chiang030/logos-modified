@@ -38,7 +38,7 @@ The platform drives conversation and task execution on an open-source coding-age
 
 ![CLI usage: waking LOGOS with logos-here in the terminal](docs/images/usage-cli-logos-here.png)
 
-### Option 2: VS Code extension (v0.2.0)
+### Option 2: VS Code extension (v0.3.0)
 
 The LOGOS VS Code extension provides a graphical panel: server connection status, session management, and an agent registry (invoke agents in chat with `@agent-name`, e.g. `@logos` the main agent, `@kicad`, `@freecad`, `@ansys`).
 
@@ -46,12 +46,12 @@ The LOGOS VS Code extension provides a graphical panel: server connection status
 
 Quick start (from the [plugin manual PPT](docs/manual/LOGOS仿真助手智能体插件手册.pptx), in Chinese):
 
-1. **Install**: "Install from VSIX" in VS Code and pick the extension package; installation takes a few minutes, after which the LOGOS icon appears in the sidebar — click it to enter the agent;
+1. **Install**: "Install from VSIX" in VS Code and pick the build matching your platform — `logos-vscode-win32-x64-*.vsix` for local Windows, `logos-vscode-linux-x64-*.vsix` or `logos-vscode-linux-arm64-*.vsix` for Linux servers / Remote-SSH remotes; installation takes a few minutes, after which the LOGOS icon appears in the sidebar — click it to enter the agent;
 2. **First-time API setup**: open the gear settings panel, enter the URL and API key → "fetch upstream models" → pick a model → save and apply, then return to chat;
 3. **New session**: click "new session" in the history panel on the right;
 4. **Ansys invocation guidance**: for visual interactive work use the **"gRPC server"** mode (the agent drives the GUI directly; multiple instances may conflict); for batch solving use the **"MAPDL"** mode (headless APDL script batches; no GUI, weaker observability). Just tell the agent which one to use.
 
-> **Note**: v0.1.7 and earlier have no updater inside — install v0.2.0 manually once. From v0.2.0 on, the extension silently checks for updates on startup (at most once every 24 hours), and **LOGOS: Check for Updates** offers a manual check with one-click upgrade (the private feed needs GitHub authorization; see the extension README). The extension has only been lightly tested; most known issues are permission-related — please report bugs.
+> **Note**: v0.1.7 and earlier have no updater inside — install v0.2.0 manually once. From v0.2.0 on, the extension silently checks for updates on startup (at most once every 24 hours), and **LOGOS: Check for Updates** offers a manual check with one-click upgrade (the private feed needs GitHub authorization; see the extension README). The extension has only been lightly tested; most known issues are permission-related — please report bugs. Builds up to v0.2.2 bundle a Windows-only Node runtime and fail on Linux SSH remotes — use Option 1 there; v0.3.0 ships Linux builds and the updater picks the asset for the running platform automatically.
 
 ---
 

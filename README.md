@@ -38,7 +38,7 @@ LOGOS 是把大语言模型变成**能动手的工程师**的智能体平台:你
 
 ![CLI 方式:终端里 logos-here 唤醒 LOGOS](docs/images/usage-cli-logos-here.png)
 
-### 方式二:VS Code 插件(v0.2.0)
+### 方式二:VS Code 插件(v0.3.0)
 
 LOGOS VS Code 扩展提供图形化面板:服务器连接状态、会话管理、Agent 注册表(聊天中用 `@智能体名` 唤起,如 `@logos` 主智能体、`@kicad`、`@freecad`、`@ansys`)。
 
@@ -46,12 +46,12 @@ LOGOS VS Code 扩展提供图形化面板:服务器连接状态、会话管理�
 
 上手四步(摘自[《LOGOS 仿真助手智能体插件手册》](docs/manual/LOGOS仿真助手智能体插件手册.pptx)):
 
-1. **安装**:VS Code 里"从 VSIX 安装",选中插件安装包;安装需几分钟,完成后侧边栏出现 LOGOS 图标,点开即进入智能体;
+1. **安装**:VS Code 里"从 VSIX 安装",选中与平台匹配的安装包——Windows 本机用 `logos-vscode-win32-x64-*.vsix`,Linux 服务器/Remote-SSH 远端用 `logos-vscode-linux-x64-*.vsix` 或 `logos-vscode-linux-arm64-*.vsix`;安装需几分钟,完成后侧边栏出现 LOGOS 图标,点开即进入智能体;
 2. **首次配置 API**:点齿轮进入设置面板,填入 URL 与 API key → "获取上游模型" → 选择模型 → 保存并应用,返回聊天;
 3. **开新会话**:右侧历史记录里点 new session;
 4. **Ansys 调用建议**:需要可视化交互时用 **"gRPC 服务器"** 方式(智能体直接控制 GUI,缺点是多开可能冲突);需要批量求解时用 **"MAPDL"** 方式(APDL 脚本无头批量,缺点是无 GUI、可观测性差);直接告诉智能体用哪种即可。
 
-> **注意**:v0.1.7 及更早版本体内没有更新器,请手工安装一次 v0.2.0;此后插件会启动时静默检查更新(24 小时至多一次),也可随时运行 **LOGOS: Check for Updates** 手动检查、一键升级(私有更新源需 GitHub 授权,详见插件 README)。插件仅经过少量测试,遇到的问题以权限类居多,发现 bug 请反馈。
+> **注意**:v0.1.7 及更早版本体内没有更新器,请手工安装一次 v0.2.0;此后插件会启动时静默检查更新(24 小时至多一次),也可随时运行 **LOGOS: Check for Updates** 手动检查、一键升级(私有更新源需 GitHub 授权,详见插件 README)。插件仅经过少量测试,遇到的问题以权限类居多,发现 bug 请反馈。v0.2.2 及更早的插件包只内置 Windows 运行时,SSH 到 Linux 远端会因内置 Node 无法执行而报错,请改用方式一;v0.3.0 起提供 Linux 平台包,更新器也会按平台自动选择对应安装包。
 
 ---
 

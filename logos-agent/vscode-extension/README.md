@@ -1,12 +1,15 @@
 # LOGOS VS Code extension
 
-A standalone Windows x64 LOGOS package for VS Code 1.90 or newer. The VSIX
-includes the Pi core, Node.js, LOGOS system prompts, skills, and domain extension.
-No separate Pi, Node.js, or LOGOS checkout is needed.
+A standalone LOGOS package for VS Code 1.90 or newer, built per platform:
+`win32-x64`, `linux-x64`, and `linux-arm64`. The VSIX includes the Pi core,
+Node.js, LOGOS system prompts, skills, and domain extension. No separate Pi,
+Node.js, or LOGOS checkout is needed.
 
 ## Installation and configuration
 
-Install `logos-vscode-win32-x64-0.2.0.vsix`, open a project folder, and run
+Install the VSIX matching your platform (for example
+`logos-vscode-linux-x64-0.3.0.vsix`, or `logos-vscode-win32-x64-0.3.0.vsix`
+on local Windows), open a project folder, and run
 **LOGOS: Open Chat**. Open the gear button to configure the API URL and API key,
 fetch upstream models, select a model, and click **保存并应用**. Model IDs can also
 be entered manually. The panel supports system and appended prompts, bundled
@@ -27,6 +30,12 @@ Logos paths are shown in the settings panel. Updates preserve saved settings.
 
 Only the configured model API is contacted for inference and model discovery.
 Engineering solver executables and their licenses are not included.
+
+The runtime resolves Node.js in this order: the `logos.nodeExecutable` setting
+(absolute path to a Node.js ≥ 22.19.0 executable — use it when the remote
+host's Node, for example one installed via nvm, is not on the extension host
+PATH), then a qualifying `node` found on PATH, then the bundled runtime for
+the package's platform.
 
 ## Updates
 
@@ -50,17 +59,22 @@ proxied machines should use an internal feed URL instead.
 
 ## Publishing a release
 
-```powershell
-npm run package:win32-x64
-$env:GITHUB_TOKEN = "<fine-grained PAT, Contents read+write>"
-npm run publish:release -- --tag v0.2.0 --asset logos-vscode-win32-x64-0.2.0.vsix
-```
-
 The publish script attaches the VSIX to the release of the given tag on
 `Lead-Intelligent/logos` (creating the release if needed, replacing a
 same-named asset). `vsce` names the package `logos-vscode-<platform>-<version>.vsix`
 by default; the updater accepts both that and `logos-vscode-<version>-<platform>.vsix`,
-preferring a platform-specific asset over a universal one.
+preferring a platform-specific asset over a universal one. Publish all three
+platform builds to the same release tag so each remote picks its own:
+
+```powershell
+npm run package:win32-x64
+npm run package:linux-x64
+npm run package:linux-arm64
+$env:GITHUB_TOKEN = "<fine-grained PAT, Contents read+write>"
+npm run publish:release -- --tag v0.3.0 --asset logos-vscode-win32-x64-0.3.0.vsix
+npm run publish:release -- --tag v0.3.0 --asset logos-vscode-linux-x64-0.3.0.vsix
+npm run publish:release -- --tag v0.3.0 --asset logos-vscode-linux-arm64-0.3.0.vsix
+```
 
 ## Development
 
@@ -72,8 +86,12 @@ npm run package:win32-x64
 ```
 
 Packaging builds the pinned Pi revision, bundles the LOGOS domain extension,
-copies the Windows x64 Node executable used for packaging, verifies payload
-integrity, and runs a network-free smoke test against a local mock model API.
+downloads the pinned official Node.js distribution for the target platform
+from nodejs.org (verified against `SHASUMS256.txt`, cached under
+`.node-dist-cache/`), verifies payload integrity, and runs a network-free
+smoke test against a local mock model API. Cross-platform builds (for example
+`package:linux-x64` on a Windows machine) run the smoke test with the host
+Node.js and report that the target binary itself was not executed.
 The smoke test verifies skills, prompts, domain tools, streaming, sessions, and
 isolation from project Pi settings.
 
