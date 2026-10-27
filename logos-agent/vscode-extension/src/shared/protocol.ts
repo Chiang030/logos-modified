@@ -8,6 +8,9 @@ export interface ModelOption {
   name?: string;
   contextWindow?: number;
   reasoning?: boolean;
+  /** 归属的本地 API 配置；运行时返回的每个 provider 都映射回一条连接。 */
+  connectionId?: string;
+  connectionName?: string;
 }
 
 export interface ContextUsage {
@@ -45,19 +48,34 @@ export interface SessionListEntry { sessionId: string; title: string; sessionFil
 export type ApiProtocol = "openai-completions" | "openai-responses" | "anthropic-messages" | "google-generative-ai";
 export type ModelSource = "upstream" | "fallback";
 export type OpenAiLoginPhase = "waiting" | "exchanging" | "done";
-export interface ConnectionSettings {
+
+/** 一条保存到本地的 API 配置；每条拥有独立的 URL、协议和 API Key。 */
+export interface ConnectionEntry {
+  id: string;
+  name: string;
   providerId: ProviderId;
   baseUrl: string;
   api: ApiProtocol;
+  /** 该配置的默认模型，也是新建时必须先选中的一条。 */
   modelId: string;
+  /** 该配置开放给左下角切换器的全部模型。 */
   modelIds: string[];
+}
+
+export interface ConnectionsSettings {
+  connections: ConnectionEntry[];
+  /** 当前对话使用的连接；`activeModelId` 必须属于该连接的模型列表。 */
+  activeConnectionId?: string;
+  activeModelId: string;
   systemPrompt: string;
   appendPrompt: string;
   skillsEnabled: boolean;
   skillPaths: string[];
 }
-export interface SettingsView extends ConnectionSettings {
-  hasApiKey: boolean;
+
+export interface SettingsView extends ConnectionsSettings {
+  /** 连接 id → 是否已有可用凭据（ChatGPT 连接取登录状态）。 */
+  hasApiKeyByConnection: Record<string, boolean>;
   hasOpenAiLogin: boolean;
   bundledSkills: string[];
   configDirectory: string;
@@ -88,7 +106,9 @@ export type ExtensionToWebviewMessage =
 export type WebviewToExtensionMessage =
   | { type: "settings/load" }
   | { type: "settings/models"; baseUrl: string; api: ApiProtocol; apiKey?: string }
-  | { type: "settings/save"; settings: ConnectionSettings; apiKey?: string; deleteApiKey?: boolean }
+  | { type: "settings/save"; systemPrompt: string; appendPrompt: string; skillsEnabled: boolean; skillPaths: string[] }
+  | { type: "connection/save"; entry: ConnectionEntry; apiKey?: string; deleteApiKey?: boolean }
+  | { type: "connection/delete"; connectionId: string }
   | { type: "settings/openaiLogin" }
   | { type: "settings/openaiCancelLogin" }
   | { type: "settings/openaiManualCallback"; url: string }
@@ -109,7 +129,12 @@ export function isWebviewToExtensionMessage(value: unknown): value is WebviewToE
     case "settings/models":
       return typeof value.baseUrl === "string" && isApiProtocol(value.api) && (value.apiKey === undefined || typeof value.apiKey === "string");
     case "settings/save":
-      return isConnectionSettings(value.settings) && (value.apiKey === undefined || typeof value.apiKey === "string") && (value.deleteApiKey === undefined || typeof value.deleteApiKey === "boolean");
+      return typeof value.systemPrompt === "string" && typeof value.appendPrompt === "string"
+        && typeof value.skillsEnabled === "boolean" && Array.isArray(value.skillPaths) && value.skillPaths.every((path) => typeof path === "string");
+    case "connection/save":
+      return isConnectionEntry(value.entry) && (value.apiKey === undefined || typeof value.apiKey === "string") && (value.deleteApiKey === undefined || typeof value.deleteApiKey === "boolean");
+    case "connection/delete":
+      return typeof value.connectionId === "string" && value.connectionId.length > 0;
     case "settings/openaiLogin":
     case "settings/openaiCancelLogin":
     case "settings/openaiLogout":
@@ -138,10 +163,17 @@ export function isApiProtocol(value: unknown): value is ApiProtocol {
   return ["openai-completions", "openai-responses", "anthropic-messages", "google-generative-ai"].includes(String(value));
 }
 
-export function isConnectionSettings(value: unknown): value is ConnectionSettings {
-  return isRecord(value) && typeof value.baseUrl === "string" && isApiProtocol(value.api)
+export function isConnectionEntry(value: unknown): value is ConnectionEntry {
+  return isRecord(value) && typeof value.id === "string" && value.id.length > 0 && typeof value.name === "string"
     && (value.providerId === undefined || isProviderId(value.providerId))
-    && typeof value.modelId === "string" && Array.isArray(value.modelIds) && value.modelIds.every((id) => typeof id === "string")
+    && typeof value.baseUrl === "string" && isApiProtocol(value.api)
+    && typeof value.modelId === "string" && Array.isArray(value.modelIds) && value.modelIds.every((id) => typeof id === "string");
+}
+
+export function isConnectionsSettings(value: unknown): value is ConnectionsSettings {
+  return isRecord(value) && Array.isArray(value.connections) && value.connections.every(isConnectionEntry)
+    && (value.activeConnectionId === undefined || typeof value.activeConnectionId === "string")
+    && typeof value.activeModelId === "string"
     && typeof value.systemPrompt === "string" && typeof value.appendPrompt === "string"
     && typeof value.skillsEnabled === "boolean" && Array.isArray(value.skillPaths) && value.skillPaths.every((path) => typeof path === "string");
 }

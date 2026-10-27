@@ -65,3 +65,11 @@ details > summary::-webkit-details-marker { display: none; }
 .logos-settings .settings-check { display: flex; gap: 8px; align-items: center; }
 .logos-settings .settings-badge { display: inline-block; margin-left: 6px; padding: 1px 7px; border: 1px solid #454545; border-radius: 999px; color: #9aa4b2; font-size: 11px; vertical-align: 1px; }
 .logos-settings .settings-hint { color: #7d8794; font-size: 11px; }
+.settings-list-head { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 8px; }
+.settings-list-head strong { font-size: 13px; }
+.settings-connections { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 !important; list-style: none !important; padding: 0 !important; }
+.settings-connection { display: flex; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid #3a3a40; border-radius: 8px; padding: 10px 12px; background: #1c1c20; }
+.settings-connection-info { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.settings-connection-info strong { color: #f1f5f9; overflow-wrap: anywhere; }
+.settings-connection-info span { color: #9aa4b2; overflow-wrap: anywhere; }
+.settings-connection-actions { display: flex; flex: 0 0 auto; gap: 6px; }

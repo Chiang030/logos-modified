@@ -13,7 +13,7 @@ interface PreparedRuntime {
 }
 
 /** Attach the installed Pilot extension explicitly to LOGOS's isolated Pi process. */
-export async function preparePilotTelemetry(runtime: PreparedRuntime, options: PilotOptions): Promise<PreparedRuntime & { detail: string }> {
+export async function preparePilotTelemetry<T extends PreparedRuntime>(runtime: T, options: PilotOptions): Promise<T & { detail: string }> {
   if (!options.enabled) return { ...runtime, detail: "LoongSuite Pilot tracing is disabled." };
   const directory = options.dataDirectory.trim() || join(homedir(), ".loongsuite-pilot");
   const extension = join(directory, "plugins", "pi-coding-agent", "index.mjs");
@@ -22,6 +22,7 @@ export async function preparePilotTelemetry(runtime: PreparedRuntime, options: P
     return { ...runtime, detail: "LoongSuite Pilot tracing unavailable: install Pilot or correct logos.observability.pilotDataDirectory, then restart LOGOS." };
   }
   return {
+    ...runtime,
     args: [...runtime.args, "-e", extension],
     env: { ...runtime.env, LOONGSUITE_PILOT_DATA_DIR: directory },
     detail: `LoongSuite Pilot extension enabled: ${extension}. Check Pilot status/info for export health.`,

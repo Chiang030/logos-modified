@@ -77,7 +77,7 @@ if (!Number.isInteger(major) || !Number.isInteger(minor) || major < 22 || (major
   throw new Error(`Payload Node.js ${payload.node} is older than the 22.19.0 minimum`);
 }
 for (const file of payload.files) {
-  if (file.path.split("/").some((part) => [".env", ".git", ".venv", "auth.json", "connection.json"].includes(part))) throw new Error(`Private file in payload: ${file.path}`);
+  if (file.path.split("/").some((part) => [".env", ".git", ".venv", "auth.json", "connection.json", "connections.json"].includes(part))) throw new Error(`Private file in payload: ${file.path}`);
   const data = await readFile(join(payloadRoot, file.path));
   if (createHash("sha256").update(data).digest("hex") !== file.sha256) throw new Error(`Payload mismatch: ${file.path}`);
 }

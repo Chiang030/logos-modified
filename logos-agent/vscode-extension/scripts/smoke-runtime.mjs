@@ -51,7 +51,10 @@ const server = createServer(async (req, res) => {
 await new Promise((done) => server.listen(0, "127.0.0.1", done));
 const url = `http://127.0.0.1:${server.address().port}/v1`;
 assert.deepEqual(await store.models(url, "openai-completions", "smoke-test-key"), { modelIds: ["logos-smoke-model"], source: "upstream" });
-await store.save({ ...await store.load(), baseUrl: url, modelId: "logos-smoke-model", modelIds: ["logos-smoke-model"] });
+await store.saveConnection({
+  id: "smoke-conn", name: "Smoke", providerId: "custom", baseUrl: url, api: "openai-completions",
+  modelId: "logos-smoke-model", modelIds: ["logos-smoke-model"],
+}, "smoke-test-key");
 let prepared = await store.prepareRuntime(join(temporaryRoot, "isolated profile"), temporaryRoot);
 const withPilot = process.argv.includes("--with-pilot");
 const pilotDirectory = process.env.LOONGSUITE_PILOT_DATA_DIR || join(homedir(), ".loongsuite-pilot");
@@ -91,7 +94,7 @@ child.stderr.setEncoding("utf8"); child.stderr.on("data", (chunk) => { stderr +=
 try {
   const initial = await request("get_state");
   assert(initial.sessionId);
-  assert.equal(initial.model.provider, "logos-endpoint");
+  assert.equal(initial.model.provider, "logos-endpoint-smokeconn");
   const commands = await request("get_commands");
   assert(commands.commands.some((item) => item.name === "logos"), `LOGOS extension missing: ${stderr}`);
   assert(commands.commands.some((item) => item.name === "skill:logos-simulation-workflow"), "LOGOS skills missing");

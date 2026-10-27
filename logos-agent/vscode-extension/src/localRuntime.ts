@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readdir } from "node:fs/promises";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { join } from "node:path";
-import { ConnectionSettingsStore, LOCAL_PROVIDER } from "./connectionSettings";
+import { ConnectionSettingsStore, localProviderId } from "./connectionSettings";
 import * as vscode from "vscode";
 import { RpcClient, type RpcExit, type RpcRecord } from "./rpcClient";
 import { NodeRuntimeError, resolveLaunchSpec, selectNodeRuntime } from "./runtimeLaunch";
@@ -71,8 +71,6 @@ export class LocalRuntime implements vscode.Disposable {
     this.setStatus("starting");
 
     try {
-      const settings = await this.options.settings.load();
-      if (!settings.baseUrl || !settings.modelId) throw new Error("请在 LOGOS 设置中填写 API URL、选择模型并保存。");
       const configuration = vscode.workspace.getConfiguration("logos");
       const spec = resolveLaunchSpec({
         extensionRoot: this.options.extensionRoot,
@@ -128,7 +126,7 @@ export class LocalRuntime implements vscode.Disposable {
         }
       }
       this.lastState = state;
-      await client.request({ type: "set_model", provider: "logos-endpoint", modelId: settings.modelId });
+      await client.request({ type: "set_model", provider: prepared.provider, modelId: prepared.modelId });
       this.setStatus(state.isStreaming === true ? "running" : "ready");
       const messages = await client.getMessages<Record<string, unknown>>();
       this.emit({ type: "record", record: { type: "logos/session_restore", ...messages, state } });
@@ -155,9 +153,15 @@ export class LocalRuntime implements vscode.Disposable {
       client.requestWithTimeout<{ contextUsage?: unknown }>({ type: "get_session_stats" }, 10_000),
     ]);
     this.lastState = state;
+    // 每条本地连接是一个 provider；只保留属于这些连接的模型，并标注归属供底部切换器分组。
+    const connections = new Map((await this.options.settings.load()).connections.map((entry) => [localProviderId(entry.id), entry] as const));
+    const decorate = (model: ModelOption | undefined): ModelOption | undefined => {
+      const entry = model ? connections.get(model.provider) : undefined;
+      return entry && model ? { ...model, connectionId: entry.id, connectionName: entry.name } : undefined;
+    };
     return {
-      models: (modelData.models ?? []).map(toModelOption).filter((model): model is ModelOption => model?.provider === LOCAL_PROVIDER),
-      activeModel: toModelOption(state.model),
+      models: (modelData.models ?? []).map(toModelOption).map(decorate).filter((model): model is ModelOption => model !== undefined),
+      activeModel: decorate(toModelOption(state.model)),
       thinkingLevel: typeof state.thinkingLevel === "string" ? state.thinkingLevel : undefined,
       thinkingLevels: (thinkingData.levels ?? []).filter((level): level is string => typeof level === "string"),
       contextUsage: toContextUsage(stats.contextUsage),
@@ -165,11 +169,11 @@ export class LocalRuntime implements vscode.Disposable {
   }
 
   async setModel(provider: string, modelId: string): Promise<void> {
-    if (provider !== LOCAL_PROVIDER) throw new Error("请通过 LOGOS 设置配置模型服务。");
+    const entry = (await this.options.settings.load()).connections.find((candidate) => localProviderId(candidate.id) === provider);
+    if (!entry) throw new Error("请通过 LOGOS 设置配置模型服务。");
     const client = await this.ensureClient();
     await client.request({ type: "set_model", provider, modelId });
-    const settings = await this.options.settings.load();
-    await this.options.settings.save({ ...settings, modelId });
+    await this.options.settings.setActiveModel(entry.id, modelId);
   }
 
   async setThinkingLevel(level: string): Promise<void> {

@@ -1,8 +1,11 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { isConnectionSettings, isRecord, type ApiProtocol, type ConnectionSettings, type ModelSource, type SettingsView } from "./shared/protocol";
-import { presetById, presetForBaseUrl, resolveProviderId } from "./shared/providerPresets";
+import {
+  isApiProtocol, isConnectionsSettings, isRecord,
+  type ApiProtocol, type ConnectionEntry, type ConnectionsSettings, type ModelSource, type SettingsView,
+} from "./shared/protocol";
+import { presetById, presetForBaseUrl, resolveProviderId, isProviderId, type ProviderId } from "./shared/providerPresets";
 
 export interface SecretStore {
   get(key: string): PromiseLike<string | undefined>;
@@ -16,8 +19,29 @@ export interface OpenAiTokenSource {
   currentAccessToken(): Promise<string | undefined>;
 }
 
+export interface PreparedRuntime {
+  args: string[];
+  env: NodeJS.ProcessEnv;
+  provider: string;
+  modelId: string;
+}
+
 export const LOCAL_PROVIDER = "logos-endpoint";
+/** 旧单配置迁移出来的连接 id；沿用旧的 provider 名和 Key 槽位，旧会话记录不受影响。 */
+export const LEGACY_CONNECTION_ID = "legacy";
 export const KEY_VARIABLE = "LOGOS_VSCODE_API_KEY";
+
+/** 运行时 provider 名：每条连接一个，迁移配置沿用 `logos-endpoint`。 */
+export function localProviderId(connectionId: string): string {
+  if (connectionId === LEGACY_CONNECTION_ID) return LOCAL_PROVIDER;
+  return `${LOCAL_PROVIDER}-${connectionId.replace(/[^a-zA-Z0-9]/g, "")}`;
+}
+
+/** 连接 Key 的环境变量名：models.json 以 `$VAR` 引用，真实值只进入子进程环境。 */
+export function keyVariableFor(connectionId: string): string {
+  if (connectionId === LEGACY_CONNECTION_ID) return KEY_VARIABLE;
+  return `${KEY_VARIABLE}_${connectionId.replace(/[^a-zA-Z0-9]/g, "").toUpperCase()}`;
+}
 
 export class ConnectionSettingsStore {
   private readonly secretId: string;
@@ -31,50 +55,134 @@ export class ConnectionSettingsStore {
     this.secretId = `logos.apiKey.${createHash("sha256").update(directory).digest("hex")}`;
   }
 
-  async load(): Promise<ConnectionSettings> {
+  async load(): Promise<ConnectionsSettings> {
     try {
-      const settings: unknown = JSON.parse(await readFile(join(this.directory, "connection.json"), "utf8"));
-      if (!isConnectionSettings(settings)) throw new Error("Invalid LOGOS connection settings");
-      // 旧配置按 baseUrl 重新推导 providerId；读时不写盘，推导幂等。
-      return { ...settings, providerId: resolveProviderId(settings.baseUrl, settings.providerId ?? "custom") };
+      const settings: unknown = JSON.parse(await readFile(join(this.directory, "connections.json"), "utf8"));
+      if (!isConnectionsSettings(settings)) throw new Error("Invalid LOGOS connection settings");
+      return this.normalized(settings);
     } catch (error) {
       if (!isMissing(error)) throw error;
+      const migrated = await this.loadLegacy();
+      if (migrated) return this.normalized(migrated);
       return this.defaults();
     }
   }
 
-  private async defaults(): Promise<ConnectionSettings> {
+  /** 旧 `connection.json` 读时迁移为新结构，不写盘；Key 仍在旧槽位，保存新结构后自然切换。 */
+  private async loadLegacy(): Promise<ConnectionsSettings | undefined> {
+    let legacy: unknown;
+    try {
+      legacy = JSON.parse(await readFile(join(this.directory, "connection.json"), "utf8"));
+    } catch {
+      return undefined;
+    }
+    if (!isRecord(legacy) || typeof legacy.baseUrl !== "string" || !legacy.baseUrl.trim()
+      || !isApiProtocol(legacy.api) || typeof legacy.modelId !== "string") return undefined;
+    const entry: ConnectionEntry = {
+      id: LEGACY_CONNECTION_ID,
+      name: legacyConnectionName(legacy),
+      providerId: isProviderId(legacy.providerId) ? legacy.providerId : "custom",
+      baseUrl: legacy.baseUrl,
+      api: legacy.api,
+      modelId: legacy.modelId,
+      // 旧文件可能只填了 modelId，补进列表保证迁移后的连接可用。
+      modelIds: (() => {
+        const ids = Array.isArray(legacy.modelIds) ? legacy.modelIds.filter((id): id is string => typeof id === "string") : [];
+        return ids.includes(legacy.modelId) || !legacy.modelId.trim() ? ids : [legacy.modelId, ...ids];
+      })(),
+    };
+    return {
+      connections: [entry],
+      activeConnectionId: entry.id,
+      activeModelId: entry.modelId,
+      systemPrompt: typeof legacy.systemPrompt === "string" ? legacy.systemPrompt : "",
+      appendPrompt: typeof legacy.appendPrompt === "string" ? legacy.appendPrompt : "",
+      skillsEnabled: legacy.skillsEnabled !== false,
+      skillPaths: Array.isArray(legacy.skillPaths) ? legacy.skillPaths.filter((path): path is string => typeof path === "string") : [],
+    };
+  }
+
+  private async defaults(): Promise<ConnectionsSettings> {
     const [systemPrompt, appendPrompt] = await Promise.all([
       readFile(join(this.domainDirectory, "prompts", "system.md"), "utf8"),
       readFile(join(this.domainDirectory, "prompts", "append.md"), "utf8"),
     ]);
-    return { providerId: "custom", baseUrl: "", api: "openai-completions", modelId: "", modelIds: [], systemPrompt, appendPrompt, skillsEnabled: true, skillPaths: [] };
+    return { connections: [], activeConnectionId: undefined, activeModelId: "", systemPrompt, appendPrompt, skillsEnabled: true, skillPaths: [] };
+  }
+
+  /** 按当前 URL 重新推导 providerId（幂等），并把活动指针修正到真实存在的连接与模型上。 */
+  private normalized(settings: ConnectionsSettings): ConnectionsSettings {
+    const connections = settings.connections.map((entry) => ({ ...entry, providerId: resolveProviderId(entry.baseUrl, entry.providerId) }));
+    const usable = connections.filter((entry) => entry.baseUrl && entry.modelId);
+    const active = usable.find((entry) => entry.id === settings.activeConnectionId) ?? usable[0];
+    const activeModelId = active && active.modelIds.includes(settings.activeModelId) ? settings.activeModelId : active?.modelId ?? "";
+    return { ...settings, connections, activeConnectionId: active?.id, activeModelId };
   }
 
   async view(): Promise<SettingsView> {
-    const [settings, apiKey, entries, hasOpenAiLogin] = await Promise.all([
-      this.load(), this.secrets.get(this.secretId), readdir(join(this.domainDirectory, "skills"), { withFileTypes: true }),
+    const [settings, skillEntries, hasOpenAiLogin] = await Promise.all([
+      this.load(), readdir(join(this.domainDirectory, "skills"), { withFileTypes: true }),
       this.openAi ? this.openAi.hasCredential() : Promise.resolve(false),
     ]);
-    return { ...settings, configDirectory: this.directory, domainDirectory: this.domainDirectory, hasApiKey: Boolean(apiKey),
-      hasOpenAiLogin, bundledSkills: entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort() };
+    const hasApiKeyByConnection: Record<string, boolean> = {};
+    for (const entry of settings.connections) {
+      hasApiKeyByConnection[entry.id] = entry.providerId === "openai-chatgpt"
+        ? Boolean(await this.openAi?.hasCredential())
+        : Boolean(await this.secrets.get(this.keyId(entry.id)));
+    }
+    return { ...settings, hasApiKeyByConnection, hasOpenAiLogin,
+      bundledSkills: skillEntries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort(),
+      configDirectory: this.directory, domainDirectory: this.domainDirectory };
   }
 
-  async save(settings: ConnectionSettings, apiKey?: string, deleteApiKey = false): Promise<void> {
-    const next = validateSettings(settings);
-    const previous = await this.load();
-    // 切换到 ChatGPT 登录预设时，旧的按 URL 保存的 Key 被登录取代，直接清除且不要求重输。
-    const switchedToOpenAi = next.providerId === "openai-chatgpt" && previous.providerId !== "openai-chatgpt";
-    if (previous.baseUrl && previous.baseUrl !== next.baseUrl && !switchedToOpenAi
-      && !apiKey?.trim() && !deleteApiKey && await this.secrets.get(this.secretId)) {
+  async saveGlobal(global: Pick<ConnectionsSettings, "systemPrompt" | "appendPrompt" | "skillsEnabled" | "skillPaths">): Promise<void> {
+    await this.write({ ...(await this.load()), ...global });
+  }
+
+  async saveConnection(input: ConnectionEntry, apiKey?: string, deleteApiKey = false): Promise<void> {
+    const next = validateConnection(input);
+    const settings = await this.load();
+    const previous = settings.connections.find((entry) => entry.id === next.id);
+    // 同一条连接换 URL 时，旧 Key 可能是另一家服务的凭据，不能悄悄带给新地址。
+    if (previous && previous.baseUrl !== next.baseUrl && !apiKey?.trim() && !deleteApiKey && await this.secrets.get(this.keyId(next.id))) {
       throw new Error("URL 已更改，请重新输入该服务的 API Key，或选择删除已保存的 Key。");
     }
-    if (deleteApiKey || switchedToOpenAi) await this.secrets.delete(this.secretId);
-    else if (apiKey?.trim()) await this.secrets.store(this.secretId, apiKey.trim());
-    await mkdir(this.directory, { recursive: true });
-    const temporary = join(this.directory, `connection-${randomUUID()}.tmp`);
-    await writeFile(temporary, `${JSON.stringify(next, null, 2)}\n`, { mode: 0o600 });
-    await rename(temporary, join(this.directory, "connection.json"));
+    if (deleteApiKey) await this.secrets.delete(this.keyId(next.id));
+    else if (apiKey?.trim() && next.providerId !== "openai-chatgpt") await this.secrets.store(this.keyId(next.id), apiKey.trim());
+    const connections = previous
+      ? settings.connections.map((entry) => (entry.id === next.id ? next : entry))
+      : [...settings.connections, next];
+    let { activeConnectionId, activeModelId } = settings;
+    if (activeConnectionId === next.id) {
+      activeModelId = next.modelIds.includes(activeModelId) ? activeModelId : next.modelId;
+    } else if (!activeConnectionId || !connections.some((entry) => entry.id === activeConnectionId)) {
+      activeConnectionId = next.id;
+      activeModelId = next.modelId;
+    }
+    await this.write(this.normalized({ ...settings, connections, activeConnectionId, activeModelId }));
+  }
+
+  async deleteConnection(connectionId: string): Promise<void> {
+    const settings = await this.load();
+    if (!settings.connections.some((entry) => entry.id === connectionId)) return;
+    await this.secrets.delete(this.keyId(connectionId));
+    const connections = settings.connections.filter((entry) => entry.id !== connectionId);
+    const wasActive = settings.activeConnectionId === connectionId;
+    const fallback = connections.find((entry) => entry.baseUrl && entry.modelId);
+    await this.write(this.normalized({
+      ...settings,
+      connections,
+      activeConnectionId: wasActive ? fallback?.id : settings.activeConnectionId,
+      activeModelId: wasActive ? fallback?.modelId ?? "" : settings.activeModelId,
+    }));
+  }
+
+  async setActiveModel(connectionId: string, modelId: string): Promise<void> {
+    const settings = await this.load();
+    const entry = settings.connections.find((candidate) => candidate.id === connectionId);
+    if (!entry) throw new Error("该 API 配置已被删除，请重新打开设置。");
+    if (!entry.modelIds.includes(modelId)) throw new Error("所选模型不在该配置的模型列表中，请更新该配置。");
+    await this.write({ ...settings, activeConnectionId: connectionId, activeModelId: modelId });
   }
 
   async models(baseUrl: string, api: ApiProtocol, apiKey?: string): Promise<{ modelIds: string[]; source: ModelSource }> {
@@ -89,35 +197,60 @@ export class ConnectionSettingsStore {
 
   private async discoveryKey(normalized: string, apiKey?: string): Promise<string | undefined> {
     if (apiKey !== undefined) return apiKey.trim() || undefined;
-    const current = await this.load();
-    const savedKey = normalized === current.baseUrl ? await this.secrets.get(this.secretId) : undefined;
-    if (savedKey) return savedKey;
-    const preset = current.providerId === "openai-chatgpt" ? presetById("openai-chatgpt") : undefined;
-    return preset && normalized === preset.baseUrl ? await this.openAi?.currentAccessToken() : undefined;
+    const entry = (await this.load()).connections.find((candidate) => candidate.baseUrl === normalized);
+    if (!entry) return undefined;
+    if (entry.providerId === "openai-chatgpt") return await this.openAi?.currentAccessToken();
+    return await this.secrets.get(this.keyId(entry.id));
   }
 
-  async prepareRuntime(profile: string, workspaceRoot: string): Promise<{ args: string[]; env: NodeJS.ProcessEnv }> {
+  /** 启动参数、models.json 与子进程环境；每条可用连接注册为一个 provider，ChatGPT 连接走 OAuth 令牌。 */
+  async prepareRuntime(profile: string, workspaceRoot: string): Promise<PreparedRuntime> {
     const settings = await this.load();
-    let credential = await this.secrets.get(this.secretId);
-    if (settings.providerId === "openai-chatgpt") {
-      const token = await this.openAi?.currentAccessToken();
-      if (!token) throw new Error("请先在 LOGOS 设置中登录 ChatGPT，再启动运行时。");
-      credential = token;
-    }
+    const usable = settings.connections.filter((entry) => entry.baseUrl && entry.modelIds.length);
+    const active = usable.find((entry) => entry.id === settings.activeConnectionId && entry.modelIds.includes(settings.activeModelId));
+    if (!active) throw new Error("请在 LOGOS 设置中新建 API 配置并选择模型后保存。");
     await mkdir(profile, { recursive: true });
-    const models = settings.baseUrl && settings.modelId ? buildModelsConfig(settings) : { providers: {} };
-    await writeFile(join(profile, "models.json"), JSON.stringify(models, null, 2));
+    const env = isolatedRuntimeEnvironment(process.env, profile);
+    const providers: Record<string, unknown> = {};
+    for (const entry of usable) {
+      const credential = await this.credentialFor(entry);
+      if (entry.providerId === "openai-chatgpt" && !credential) {
+        if (entry.id === active.id) throw new Error("请先在 LOGOS 设置中登录 ChatGPT，再启动运行时。");
+        continue; // 未登录的 ChatGPT 连接没有可用凭据，不注册进模型列表。
+      }
+      providers[localProviderId(entry.id)] = {
+        baseUrl: normalizeBaseUrl(entry.baseUrl), api: entry.api, apiKey: `$${keyVariableFor(entry.id)}`,
+        models: [...new Set([entry.modelId, ...entry.modelIds])].filter(Boolean).map((id) => ({ id })),
+      };
+      env[keyVariableFor(entry.id)] = credential || "logos-local-no-auth";
+    }
+    await writeFile(join(profile, "models.json"), JSON.stringify({ providers }, null, 2));
     await writeFile(join(profile, "system.md"), settings.systemPrompt);
     await writeFile(join(profile, "append.md"), settings.appendPrompt);
     const args = ["--system-prompt", join(profile, "system.md"), "--append-system-prompt", join(profile, "append.md"), "--no-skills", "--no-extensions", "--no-prompt-templates", "--no-themes", "--no-approve", "--offline"];
     args.push("-e", join(this.domainDirectory, "extensions", "index.mjs"));
     if (settings.skillsEnabled) args.push("--skill", join(this.domainDirectory, "skills"));
     for (const path of settings.skillPaths) args.push("--skill", resolve(workspaceRoot, path));
-    if (settings.modelId && settings.baseUrl) args.push("--provider", LOCAL_PROVIDER, "--model", settings.modelId);
-    const env = isolatedRuntimeEnvironment(process.env, profile);
-    // The key exists only in SecretStorage and the child environment, never models.json.
-    env[KEY_VARIABLE] = credential || "logos-local-no-auth";
-    return { args, env };
+    const provider = localProviderId(active.id);
+    args.push("--provider", provider, "--model", settings.activeModelId);
+    return { args, env, provider, modelId: settings.activeModelId };
+  }
+
+  private async credentialFor(entry: ConnectionEntry): Promise<string | undefined> {
+    if (entry.providerId === "openai-chatgpt") return await this.openAi?.currentAccessToken();
+    return await this.secrets.get(this.keyId(entry.id));
+  }
+
+  /** Key 的凭据槽位：迁移配置沿用旧槽位，新配置各占一个。 */
+  private keyId(connectionId: string): string {
+    return connectionId === LEGACY_CONNECTION_ID ? this.secretId : `${this.secretId}.${connectionId}`;
+  }
+
+  private async write(settings: ConnectionsSettings): Promise<void> {
+    await mkdir(this.directory, { recursive: true });
+    const temporary = join(this.directory, `connections-${randomUUID()}.tmp`);
+    await writeFile(temporary, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600 });
+    await rename(temporary, join(this.directory, "connections.json"));
   }
 }
 
@@ -156,12 +289,27 @@ export async function discoverModels(baseUrl: string, api: ApiProtocol, key?: st
   return [...new Set(ids)].sort();
 }
 
-export function buildModelsConfig(settings: ConnectionSettings): object {
-  const ids = [...new Set([...settings.modelIds, settings.modelId])].filter(Boolean);
-  return { providers: { [LOCAL_PROVIDER]: {
-    baseUrl: normalizeBaseUrl(settings.baseUrl), api: settings.api, apiKey: `$${KEY_VARIABLE}`,
-    models: ids.map((id) => ({ id })),
-  } } };
+function validateConnection(value: ConnectionEntry): ConnectionEntry {
+  if (!value.baseUrl.trim()) throw new Error("请填写 API URL。");
+  if (!value.modelId.trim()) throw new Error("请先选择或输入模型 ID。");
+  const baseUrl = normalizeBaseUrl(value.baseUrl);
+  const modelId = value.modelId.trim();
+  const modelIds = [...new Set([modelId, ...value.modelIds.map((id) => id.trim()).filter(Boolean)])];
+  return {
+    id: value.id,
+    name: value.name.trim() || defaultConnectionName(value.providerId, baseUrl),
+    providerId: resolveProviderId(baseUrl, value.providerId),
+    api: value.api,
+    baseUrl,
+    modelId,
+    modelIds,
+  };
+}
+
+function defaultConnectionName(providerId: ProviderId, baseUrl: string): string {
+  const label = presetById(providerId)?.label.replace(/[（(].*$/, "").trim();
+  if (label) return label;
+  try { return new URL(baseUrl).host; } catch { return "自定义服务"; }
 }
 
 export function isolatedRuntimeEnvironment(source: NodeJS.ProcessEnv, profile: string): NodeJS.ProcessEnv {
@@ -175,12 +323,8 @@ export function isolatedRuntimeEnvironment(source: NodeJS.ProcessEnv, profile: s
   return env;
 }
 
-function validateSettings(value: ConnectionSettings): ConnectionSettings {
-  if (value.baseUrl.trim() && !value.modelId.trim()) throw new Error("请先选择或输入模型 ID。");
-  const baseUrl = value.baseUrl.trim() ? normalizeBaseUrl(value.baseUrl) : "";
-  return { providerId: resolveProviderId(baseUrl, value.providerId), api: value.api, systemPrompt: value.systemPrompt, appendPrompt: value.appendPrompt, skillsEnabled: value.skillsEnabled, baseUrl, modelId: value.modelId.trim(),
-    modelIds: [...new Set(value.modelIds.map((id) => id.trim()).filter(Boolean))],
-    skillPaths: value.skillPaths.map((path) => path.trim()).filter(Boolean) };
+function legacyConnectionName(legacy: Record<string, unknown>): string {
+  return typeof legacy.name === "string" && legacy.name.trim() ? legacy.name.trim() : "迁移的配置";
 }
 
 export function fallbackDiscovery(normalized: string, error: unknown): { modelIds: string[]; source: ModelSource } {

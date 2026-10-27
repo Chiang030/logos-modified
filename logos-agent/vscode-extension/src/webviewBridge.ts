@@ -81,15 +81,13 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
           break;
         }
         case "settings/save":
-          if (["starting", "running", "stopping"].includes(this.runtime.currentStatus)) throw new Error("请等待当前任务结束或停止后再保存设置。");
-          await this.settings.save(value.settings, value.apiKey, value.deleteApiKey);
-          await this.runtime.stop();
-          this.post({ type: "settings/loaded", settings: await this.settings.view() });
-          this.post({ type: "settings/saved" });
-          if (value.settings.baseUrl && value.settings.modelId) {
-            await this.runtime.start();
-            await this.publishRuntimeConfig();
-          }
+          await this.guardBusyThenApply(async () => { await this.settings.saveGlobal(value); });
+          break;
+        case "connection/save":
+          await this.guardBusyThenApply(async () => { await this.settings.saveConnection(value.entry, value.apiKey, value.deleteApiKey); });
+          break;
+        case "connection/delete":
+          await this.guardBusyThenApply(async () => { await this.settings.deleteConnection(value.connectionId); });
           break;
         case "settings/openaiLogin":
           await this.beginOpenAiLogin();
@@ -108,7 +106,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
           this.post({ type: "settings/loaded", settings: await this.settings.view() });
           this.post({ type: "runtime/status", status: this.runtime.currentStatus });
           this.post({ type: "session/list", sessions: (await this.sessions.list()).filter((item) => item.sessionId).map((item) => ({ sessionId: item.sessionId!, title: item.title, sessionFile: item.sessionFile })) });
-          if ((await this.settings.load()).baseUrl && vscode.workspace.getConfiguration("logos").get<boolean>("autoStart", true)) {
+          if ((await this.settings.load()).activeConnectionId && vscode.workspace.getConfiguration("logos").get<boolean>("autoStart", true)) {
             await this.runtime.start();
             this.publishRuntimeConfigInBackground();
           }
@@ -161,7 +159,9 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
           break;
       }
     } catch (error) {
-      this.post({ type: value.type.startsWith("settings/") ? "settings/error" : "runtime/error", message: error instanceof Error ? error.message : String(error) });
+      // 设置与连接的保存错误显示在设置面板里；其余走运行时错误横幅。
+      const fromSettings = value.type.startsWith("settings/") || value.type.startsWith("connection/");
+      this.post({ type: fromSettings ? "settings/error" : "runtime/error", message: error instanceof Error ? error.message : String(error) });
     }
   }
 
@@ -197,8 +197,24 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     pending.manual?.reject(new Error("登录已取消。"));
   }
 
-  private async sendPrompt(text: string): Promise<void> {
-    const trimmed = text.trim();
+  /** 设置类保存的统一流程：忙时拒绝 → 停止运行时 → 落盘 → 刷新视图 → 有可用配置就带新配置重启。 */
+  private async guardBusyThenApply(apply: () => Promise<void>): Promise<void> {
+    if (["starting", "running", "stopping"].includes(this.runtime.currentStatus)) throw new Error("请等待当前任务结束或停止后再保存设置。");
+    await apply();
+    await this.runtime.stop();
+    this.post({ type: "settings/loaded", settings: await this.settings.view() });
+    this.post({ type: "settings/saved" });
+    const settings = await this.settings.load();
+    if (settings.activeConnectionId && settings.activeModelId) {
+      await this.runtime.start();
+      await this.publishRuntimeConfig();
+      return;
+    }
+    // 没有可用配置时清空底部选择器，等用户在设置里新建。
+    this.post({ type: "runtime/config", config: { models: [], thinkingLevels: [] } });
+  }
+
+  private async sendPrompt(text: string): Promise<void> {    const trimmed = text.trim();
     if (!trimmed) return;
     await this.runtime.start();
     this.publishRuntimeConfigInBackground();

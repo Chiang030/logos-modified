@@ -1,5 +1,5 @@
 import { SettingsPanel } from "./components/SettingsPanel";
-import { memo, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import { Fragment, memo, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import {
   ArrowUp,
   BrainCircuit,
@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import fullLogo from "../../resources/logos_full_restored_transparent.png";
 import iconLogo from "../../resources/logos_vscode_icon_512x512.png";
-import type { ExtensionToWebviewMessage, RuntimeConfig, RuntimeStatus, SessionListEntry, ToolCallView } from "./protocol";
+import type { ExtensionToWebviewMessage, ModelOption, RuntimeConfig, RuntimeStatus, SessionListEntry, ToolCallView } from "./protocol";
 import { renderMarkdown } from "./markdown";
 import {
   appendMessage,
@@ -59,6 +59,22 @@ export function App(): ReactElement {
   const busy = status === "starting" || status === "running" || status === "stopping";
   const running = status === "running";
   const hasConversation = timeline.some((item) => item.kind === "tool" || item.value.text.trim().length > 0 || (item.kind === "message" && item.value.status === "streaming"));
+  // 底部切换器按 API 配置分组展示全部已保存连接的模型。
+  const modelGroups = useMemo(() => {
+    const groups: Array<{ key: string; name: string; models: ModelOption[] }> = [];
+    const byKey = new Map<string, { name: string; models: ModelOption[] }>();
+    for (const model of runtimeConfig.models) {
+      const key = model.connectionId ?? model.provider;
+      let group = byKey.get(key);
+      if (!group) {
+        group = { name: model.connectionName || model.provider, models: [] };
+        byKey.set(key, group);
+        groups.push({ key, name: group.name, models: group.models });
+      }
+      group.models.push(model);
+    }
+    return groups;
+  }, [runtimeConfig.models]);
 
   useEffect(() => {
     const onMessage = (event: MessageEvent<ExtensionToWebviewMessage>): void => {
@@ -129,7 +145,12 @@ export function App(): ReactElement {
       <footer hidden={settingsOpen} className="control-footer shrink-0 space-y-2 border-t border-[#262626] bg-[#131313] px-0 py-2">
         <div className="relative rounded-lg border border-[#2b2b2b] bg-[#1a1a1a] transition-all focus-within:border-sky-500/70 focus-within:ring-1 focus-within:ring-sky-500/30"><textarea value={inputValue} onChange={(event) => setInputValue(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }} placeholder="Type /simulate or design query..." rows={2} className="w-full resize-none bg-transparent px-2.5 py-2 font-sans text-xs text-white outline-none placeholder-[#555]" aria-label="Message LOGOS" /></div>
         <div className="control-dock flex items-center justify-between gap-2"><div className="control-meta flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-          <div className="control-picker relative min-w-0 max-w-full"><PickerButton label={runtimeConfig.activeModel?.name || runtimeConfig.activeModel?.id || "Model unavailable"} icon={<Cpu className="h-3 w-3 shrink-0 text-sky-400" />} open={modelOpen} disabled={busy || runtimeConfig.models.length === 0} onClick={() => { setModelOpen((open) => !open); setThinkingOpen(false); }} />{modelOpen ? <div className="absolute bottom-8 left-0 z-50 w-52 max-w-[calc(100vw-16px)] rounded-lg border border-[#2e2e32] bg-[#1c1c1e] py-1 font-mono text-[11px] shadow-2xl">{runtimeConfig.models.map((model) => { const selected = model.provider === runtimeConfig.activeModel?.provider && model.id === runtimeConfig.activeModel?.id; return <button type="button" key={`${model.provider}/${model.id}`} className={`flex w-full items-center justify-between px-2.5 py-1.5 text-left hover:bg-[#2a2a2e] ${selected ? "bg-[#222226] font-bold text-sky-400" : "text-[#a1a1aa]"}`} onClick={() => { vscode.postMessage({ type: "model/select", provider: model.provider, modelId: model.id }); setModelOpen(false); }}>{model.name || model.id}{selected ? <CheckCircle2 className="h-3 w-3" /> : null}</button>; })}</div> : null}</div>
+          <div className="control-picker relative min-w-0 max-w-full"><PickerButton label={runtimeConfig.activeModel?.name || runtimeConfig.activeModel?.id || "选择模型"} icon={<Cpu className="h-3 w-3 shrink-0 text-sky-400" />} open={modelOpen} disabled={busy} onClick={() => { setModelOpen((open) => !open); setThinkingOpen(false); }} />{modelOpen ? <div className="absolute bottom-8 left-0 z-50 max-h-72 w-56 max-w-[calc(100vw-16px)] overflow-y-auto rounded-lg border border-[#2e2e32] bg-[#1c1c1e] py-1 font-mono text-[11px] shadow-2xl">{runtimeConfig.models.length === 0
+            ? <button type="button" className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-sky-400 hover:bg-[#2a2a2e]" onClick={() => { setModelOpen(false); setSettingsOpen(true); }}><span aria-hidden="true">＋</span> 尚未配置 API，点击新建</button>
+            : modelGroups.map((group) => <Fragment key={group.key}>
+              <div className="px-2.5 pb-0.5 pt-1.5 text-[9px] uppercase tracking-wider text-[#636366]">{group.name}</div>
+              {group.models.map((model) => { const selected = model.provider === runtimeConfig.activeModel?.provider && model.id === runtimeConfig.activeModel?.id; return <button type="button" key={`${model.provider}/${model.id}`} className={`flex w-full items-center justify-between px-2.5 py-1.5 text-left hover:bg-[#2a2a2e] ${selected ? "bg-[#222226] font-bold text-sky-400" : "text-[#a1a1aa]"}`} onClick={() => { vscode.postMessage({ type: "model/select", provider: model.provider, modelId: model.id }); setModelOpen(false); }}>{model.name || model.id}{selected ? <CheckCircle2 className="h-3 w-3" /> : null}</button>; })}
+            </Fragment>)}</div> : null}</div>
           <div className="control-picker relative min-w-0 max-w-full"><PickerButton label={formatThinking(runtimeConfig.thinkingLevel)} icon={<BrainCircuit className="h-3 w-3 shrink-0 text-sky-400" />} open={thinkingOpen} disabled={busy || runtimeConfig.thinkingLevels.length === 0} onClick={() => { setThinkingOpen((open) => !open); setModelOpen(false); }} />{thinkingOpen ? <div className="absolute bottom-8 left-0 z-50 w-36 max-w-[calc(100vw-16px)] rounded-lg border border-[#2e2e32] bg-[#1c1c1e] py-1 font-mono text-[11px] shadow-2xl">{runtimeConfig.thinkingLevels.map((level) => <button type="button" key={level} className={`flex w-full items-center justify-between px-2.5 py-1.5 text-left hover:bg-[#2a2a2e] ${level === runtimeConfig.thinkingLevel ? "bg-[#222226] font-bold text-sky-400" : "text-[#a1a1aa]"}`} onClick={() => { vscode.postMessage({ type: "thinking/select", level }); setThinkingOpen(false); }}>{formatThinking(level)}{level === runtimeConfig.thinkingLevel ? <CheckCircle2 className="h-3 w-3" /> : null}</button>)}</div> : null}</div>
           <div className="control-context flex min-w-0 items-center gap-1.5 font-mono text-[10px] text-[#737373]"><span>Context:</span><span className="min-w-0 truncate font-semibold text-[#a1a1aa]">{formatContext(runtimeConfig.contextUsage)}</span><div className="h-1.5 w-10 shrink-0 overflow-hidden rounded-full bg-[#262626]"><div className="h-full rounded-full bg-sky-400 transition-all duration-500" style={{ width: `${clampPercent(runtimeConfig.contextUsage?.percent)}%` }} /></div><span className="shrink-0 text-[9px] text-[#636366]">{formatPercent(runtimeConfig.contextUsage?.percent)}</span></div>
         </div><button type="button" onClick={inputValue.trim() ? send : () => vscode.postMessage({ type: "chat/abort" })} disabled={!inputValue.trim() && !running} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sky-500 font-bold text-black shadow-[0_0_10px_rgba(56,189,248,0.3)] transition-all hover:bg-sky-400 active:scale-95" title={inputValue.trim() ? "Send" : running ? "Stop" : "Send"} aria-label={inputValue.trim() ? "Send" : running ? "Stop" : "Send"}>{running && !inputValue.trim() ? <span className="text-sm">■</span> : <ArrowUp className="h-4 w-4 stroke-[2.5]" />}</button></div>
