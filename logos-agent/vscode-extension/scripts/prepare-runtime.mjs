@@ -14,7 +14,7 @@ import {
 } from "./package-targets.mjs";
 import { prepareSimRuntime } from "./prepare-sim-runtime.mjs";
 
-const PI_COMMIT = "abe508e1b89912adde45528136c3221eb69acdd7";
+const PI_COMMIT = "8d652a47859964ca7d71f40d6f8262a6cf4e03cd";
 const PI_VERSION = "1.1.0";
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const extensionDirectory = resolve(scriptDirectory, "..");

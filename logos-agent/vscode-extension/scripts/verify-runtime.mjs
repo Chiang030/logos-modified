@@ -4,7 +4,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { BUILD_TARGETS, parseTargetArgument, targetDefinition } from "./package-targets.mjs";
 
-const expectedCommit = "abe508e1b89912adde45528136c3221eb69acdd7";
+const expectedCommit = "8d652a47859964ca7d71f40d6f8262a6cf4e03cd";
 const extensionDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const runtimeDirectory = join(extensionDirectory, "runtime", "vendor", "pi");
 const manifest = JSON.parse(await readFile(join(runtimeDirectory, "runtime-manifest.json"), "utf8"));
