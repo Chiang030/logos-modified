@@ -2,7 +2,7 @@
   "name": "logos-vscode",
   "displayName": "LOGOS",
   "description": "A local VS Code workbench with the LOGOS agent core included.",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "publisher": "logos",
   "license": "MIT",
   "repository": {
@@ -88,9 +88,9 @@
         },
         "logos.update.feedUrl": {
           "type": "string",
-          "default": "https://api.github.com/repos/Lead-Intelligent/logos",
+          "default": "https://api.github.com/repos/Chiang030/logos-modified",
           "scope": "application",
-          "description": "GitHub API base URL used to check for LOGOS extension updates. It must serve GitHub-shaped releases JSON; point it at an internal mirror to bypass GitHub."
+          "description": "GitHub API base URL used to check for LOGOS extension updates. The public mirror is used by default; point it at another GitHub-shaped feed to switch channels."
         },
         "logos.update.autoCheck": {
           "type": "boolean",

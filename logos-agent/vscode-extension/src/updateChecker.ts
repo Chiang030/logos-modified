@@ -7,6 +7,7 @@ import {
   UpdateFeedError,
   buildAuthHeaders,
   resolveCodeCli,
+  resolveFeedUrl,
   selectUpdate,
   shouldAutoCheck,
   type ReleaseAsset,
@@ -43,7 +44,8 @@ async function runAutomaticCheck(context: vscode.ExtensionContext): Promise<void
 }
 
 async function checkForUpdates(context: vscode.ExtensionContext, manual: boolean): Promise<void> {
-  const feedUrl = vscode.workspace.getConfiguration("logos").get<string>("update.feedUrl", DEFAULT_FEED_URL);
+  const configuredFeedUrl = vscode.workspace.getConfiguration("logos").get<string>("update.feedUrl");
+  const feedUrl = resolveFeedUrl(configuredFeedUrl ?? DEFAULT_FEED_URL);
   const token = await resolveToken(context, manual);
   let releases: ReleaseInfo[];
   try {

@@ -5,6 +5,7 @@ import { compareVersions } from "./runtimeLaunch";
 // The private Lead-Intelligent/logos repository keeps the source releases; flip
 // this constant back to it when private distribution is required again.
 export const DEFAULT_FEED_URL = "https://api.github.com/repos/Chiang030/logos-modified";
+const LEGACY_FEED_URL = "https://api.github.com/repos/Lead-Intelligent/logos";
 
 const AUTO_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
@@ -86,6 +87,11 @@ export function resolveCodeCli(execPath: string, platform: string = process.plat
 
 export function shouldAutoCheck(lastCheckMs: number | undefined, nowMs: number): boolean {
   return lastCheckMs === undefined || nowMs - lastCheckMs >= AUTO_CHECK_INTERVAL_MS;
+}
+
+export function resolveFeedUrl(configuredUrl: string | undefined): string {
+  const feedUrl = configuredUrl?.trim();
+  return !feedUrl || feedUrl === LEGACY_FEED_URL ? DEFAULT_FEED_URL : feedUrl;
 }
 
 export function buildAuthHeaders(token: string | undefined, accept = "application/vnd.github+json"): Record<string, string> {

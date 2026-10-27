@@ -4,6 +4,7 @@ import {
   buildAuthHeaders,
   parseTagVersion,
   resolveCodeCli,
+  resolveFeedUrl,
   selectUpdate,
   shouldAutoCheck,
   type ReleaseInfo,
@@ -95,6 +96,14 @@ describe("update checker", () => {
     expect(shouldAutoCheck(undefined, now)).toBe(true);
     expect(shouldAutoCheck(now - 23 * 60 * 60 * 1000, now)).toBe(false);
     expect(shouldAutoCheck(now - 24 * 60 * 60 * 1000, now)).toBe(true);
+  });
+
+  it("uses the public mirror for empty and legacy feed settings", () => {
+    expect(resolveFeedUrl(undefined)).toBe("https://api.github.com/repos/Chiang030/logos-modified");
+    expect(resolveFeedUrl("  ")).toBe("https://api.github.com/repos/Chiang030/logos-modified");
+    expect(resolveFeedUrl("https://api.github.com/repos/Lead-Intelligent/logos"))
+      .toBe("https://api.github.com/repos/Chiang030/logos-modified");
+    expect(resolveFeedUrl("https://mirror.example/api")).toBe("https://mirror.example/api");
   });
 
   it("builds auth headers with token and accept type", () => {
