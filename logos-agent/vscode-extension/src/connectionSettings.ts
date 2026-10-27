@@ -6,6 +6,7 @@ import {
   type ApiProtocol, type ConnectionEntry, type ConnectionsSettings, type ModelSource, type SettingsView,
 } from "./shared/protocol";
 import { presetById, presetForBaseUrl, resolveProviderId, isProviderId, type ProviderId } from "./shared/providerPresets";
+import { prepareMcpProfile } from "./mcpProfile";
 
 export interface SecretStore {
   get(key: string): PromiseLike<string | undefined>;
@@ -211,6 +212,7 @@ export class ConnectionSettingsStore {
     if (!active) throw new Error("请在 LOGOS 设置中新建 API 配置并选择模型后保存。");
     await mkdir(profile, { recursive: true });
     const env = isolatedRuntimeEnvironment(process.env, profile);
+    await prepareMcpProfile(profile, process.env, env);
     const providers: Record<string, unknown> = {};
     for (const entry of usable) {
       const credential = await this.credentialFor(entry);

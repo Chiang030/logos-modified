@@ -8,6 +8,7 @@ import { RpcClient, type RpcExit, type RpcRecord } from "./rpcClient";
 import { NodeRuntimeError, resolveLaunchSpec, selectNodeRuntime } from "./runtimeLaunch";
 import { SessionStore } from "./sessionStore";
 import { preparePilotTelemetry } from "./pilotTelemetry";
+import { readMcpWarnings } from "./mcpProfile";
 import { isRecord, type ContextUsage, type ModelOption, type RuntimeConfig, type RuntimeStatus } from "./shared/protocol";
 
 export interface RuntimeEvent {
@@ -87,6 +88,9 @@ export class LocalRuntime implements vscode.Disposable {
         await this.options.settings.prepareRuntime(this.options.profileDirectory, this.options.workspaceRoot),
         { enabled: configuration.get<boolean>("observability.enabled", false), dataDirectory: configuration.get<string>("observability.pilotDataDirectory", "") },
       );
+      for (const warning of await readMcpWarnings(this.options.profileDirectory)) {
+        this.emit({ type: "log", text: `MCP: ${warning}` });
+      }
       this.emit({ type: "log", text: prepared.detail });
       const args = [
         ...spec.args,
