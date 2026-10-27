@@ -26,5 +26,7 @@ export function targetDefinition(target) {
     esbuildPackage: `@esbuild/${target}`,
     // esbuild ships the binary at the package root on Windows, under bin/ on POSIX.
     esbuildBinary: windows ? "esbuild.exe" : "bin/esbuild",
+    // Where the bundled sim interpreter sits inside the payload venv.
+    simInterpreter: windows ? "Scripts/python.exe" : "bin/python",
   };
 }

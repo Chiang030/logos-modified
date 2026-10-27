@@ -1,12 +1,12 @@
 import { createServer } from "node:http";
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
-import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { execFile, spawn } from "node:child_process";
+import { access, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
-import { BUILD_TARGETS, parseTargetArgument } from "./package-targets.mjs";
+import { BUILD_TARGETS, parseTargetArgument, targetDefinition } from "./package-targets.mjs";
 
 const extensionDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const targetArgument = parseTargetArgument(process.argv) ?? `${process.platform}-${process.arch}`;
@@ -29,6 +29,11 @@ await build({ entryPoints: [join(extensionDirectory, "src", "bundledInstallation
 const { installBundledRuntime } = await import(pathToFileURL(installerModule).href);
 const installed = await installBundledRuntime(extensionDirectory, join(temporaryRoot, "local storage"));
 assert.equal(await installBundledRuntime(extensionDirectory, join(temporaryRoot, "local storage")), installed);
+// `.complete` is a copy of payload-manifest.json; fail fast when the staged
+// payload was built for a different target than this smoke run asserts.
+const payloadManifest = JSON.parse(await readFile(join(installed, ".complete"), "utf8"));
+assert.equal(payloadManifest.platform, targetArgument, `runtime/ holds a ${payloadManifest.platform} payload; re-run prepare:runtime`);
+await verifyBundledSim(installed);
 const store = new ConnectionSettingsStore(join(temporaryRoot, "config"), join(installed, "logos-agent", "pi-domain"), {
   get: async () => "smoke-test-key", store: async () => {}, delete: async () => {},
 });
@@ -133,5 +138,36 @@ function request(type, data = {}) {
     const timer = setTimeout(() => { pending.delete(id); fail(new Error(`${type} timed out: ${stderr}`)); }, 15000);
     pending.set(id, { resolve(value) { clearTimeout(timer); done(value); }, reject(error) { clearTimeout(timer); fail(error); } });
     child.stdin.write(`${JSON.stringify({ id, type, ...data })}\n`);
+  });
+}
+
+/** Bundled sim backends must be present and resolvable; execution runs only on a matching host. */
+async function verifyBundledSim(installed) {
+  // Only these targets ship a backend; anything else (linux-arm64, host
+  // fallbacks like darwin) has nothing to verify.
+  if (targetArgument !== "win32-x64" && targetArgument !== "linux-x64") return;
+  const python = join(installed, "logos-agent", "integrations", ".venv",
+    ...targetDefinition(targetArgument).simInterpreter.split("/"));
+  try { await access(python); } catch { assert.fail("Bundled sim runtime missing"); }
+  if (process.platform !== "win32" || targetArgument !== "win32-x64") return; // Structure-only for foreign targets.
+  const version = await capture(python, ["-m", "sim", "--version"]);
+  assert.match(version.stdout, /version \d+\.\d+/, `Bundled sim CLI broken: ${version.output}`);
+  const discovery = await capture(python, ["-m", "sim", "--json", "--no-interactive", "discover", "mechanical"]);
+  assert.equal(discovery.code, 0, `sim discover failed: ${discovery.output}`);
+  assert.notEqual(JSON.parse(discovery.stdout).ok, false, discovery.output);
+  // Exercise the real tool path: the domain runner must resolve the bundled
+  // interpreter by default instead of falling back to `sim` on PATH.
+  const { runSimulation } = await import(pathToFileURL(join(installed, "logos-agent", "pi-domain", "src", "simulation", "runner.mjs")).href);
+  const result = await runSimulation({ action: "discover", args: ["mechanical"] }, { cwd: temporaryRoot });
+  assert(result.command.endsWith("python.exe"), `simulation tool resolved ${result.command}`);
+  assert.equal(result.transport_ok, true, JSON.stringify(result.error ?? result));
+  assert.equal(result.error, null, JSON.stringify(result.error));
+}
+
+function capture(command, args) {
+  return new Promise((resolve) => {
+    execFile(command, args, { windowsHide: true, timeout: 120_000 }, (error, stdout, stderr) => {
+      resolve({ code: error ? (error.code ?? 1) : 0, stdout, output: `${stdout}${stderr}` });
+    });
   });
 }

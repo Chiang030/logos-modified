@@ -2,8 +2,10 @@
 
 A standalone LOGOS package for VS Code 1.90 or newer, built per platform:
 `win32-x64`, `linux-x64`, and `linux-arm64`. The VSIX includes the Pi core,
-Node.js, LOGOS system prompts, skills, and domain extension. No separate Pi,
-Node.js, or LOGOS checkout is needed.
+Node.js, LOGOS system prompts, skills, and domain extension. The win32-x64 and
+linux-x64 packages additionally bundle the sim simulation backend (relocatable
+Python with the sim packages installed), so the simulation tools need no local
+Python. No separate Pi, Node.js, or LOGOS checkout is needed.
 
 ## Installation and configuration
 
@@ -23,13 +25,18 @@ instructions remain available as project context.
 The installed extension contains `runtime/vendor` and `runtime/logos-agent`.
 On first activation the payload is materialized under VS Code's LOGOS global
 storage `installations/<payload-hash>/`, containing `vendor/pi`, `vendor/node`,
-and `logos-agent/pi-domain`. Persistent connection and prompt configuration is
-in global storage `logos-agent/config/connection.json`. Per-workspace runtime
-profiles and conversations use workspace storage. Actual configuration and
-Logos paths are shown in the settings panel. Updates preserve saved settings.
+and `logos-agent/pi-domain`; win32-x64 and linux-x64 payloads additionally
+contain `logos-agent/integrations/.venv`, the bundled sim backend. Persistent
+connection and prompt configuration is in global storage
+`logos-agent/config/connection.json`. Per-workspace runtime profiles and
+conversations use workspace storage. Actual configuration and Logos paths are
+shown in the settings panel. Updates preserve saved settings.
 
 Only the configured model API is contacted for inference and model discovery.
-Engineering solver executables and their licenses are not included.
+Engineering solver executables and their licenses are not included. On win32-x64
+and linux-x64 the simulation tools run the bundled backend by default; linux-arm64
+payloads bundle no backend (simparse publishes no aarch64 wheel), so those hosts
+need a repository install or `LOGOS_SIM_COMMAND`/`sim` on PATH.
 
 The runtime resolves Node.js in this order: the `logos.nodeExecutable` setting
 (absolute path to a Node.js ≥ 22.19.0 executable — use it when the remote
@@ -92,7 +99,11 @@ Packaging builds the pinned Pi revision, bundles the LOGOS domain extension,
 downloads the pinned official Node.js distribution for the target platform
 from nodejs.org (verified against `SHASUMS256.txt`, cached under
 `.node-dist-cache/`), verifies payload integrity, and runs a network-free
-smoke test against a local mock model API. Cross-platform builds (for example
+smoke test against a local mock model API. For win32-x64 and linux-x64,
+packaging also assembles the bundled sim runtime — the SHA256-pinned python.org
+embeddable distribution on Windows, the astral python-build-standalone archive
+installed cross-platform with pinned uv on Linux (cached under
+`.sim-runtime-cache/`; set `PIP_INDEX_URL` to redirect package downloads). Cross-platform builds (for example
 `package:linux-x64` on a Windows machine) run the smoke test with the host
 Node.js and report that the target binary itself was not executed.
 The smoke test verifies skills, prompts, domain tools, streaming, sessions, and

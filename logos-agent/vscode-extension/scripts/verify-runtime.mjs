@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { access, readFile, readdir } from "node:fs/promises";
+import { access, open, readFile, readdir } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { BUILD_TARGETS, parseTargetArgument, targetDefinition } from "./package-targets.mjs";
@@ -80,6 +80,40 @@ for (const file of payload.files) {
   if (file.path.split("/").some((part) => [".env", ".git", ".venv", "auth.json", "connection.json"].includes(part))) throw new Error(`Private file in payload: ${file.path}`);
   const data = await readFile(join(payloadRoot, file.path));
   if (createHash("sha256").update(data).digest("hex") !== file.sha256) throw new Error(`Payload mismatch: ${file.path}`);
+}
+const venvRoot = join(payloadRoot, "logos-agent", "integrations", ".venv");
+if (targetArgument === "win32-x64" || targetArgument === "linux-x64") {
+  if (!payload.sim) throw new Error(`${targetArgument} payload must bundle the sim runtime`);
+  const manifestBytes = await readFile(join(venvRoot, "sim-manifest.json"));
+  if (createHash("sha256").update(manifestBytes).digest("hex") !== payload.sim.manifestSha256) throw new Error("sim runtime manifest digest mismatch");
+  const simManifest = JSON.parse(manifestBytes);
+  if (simManifest.files.length !== payload.sim.files) throw new Error("sim runtime file count mismatch");
+  for (const file of simManifest.files) {
+    const data = await readFile(join(venvRoot, ...file.path.split("/")));
+    if (createHash("sha256").update(data).digest("hex") !== file.sha256) throw new Error(`sim runtime integrity check failed: ${file.path}`);
+  }
+  // dist-info directory names use PEP 503 normalization (underscores for dashes).
+  const packages = new Set(simManifest.packages.map((entry) => entry.name.replaceAll("_", "-")));
+  for (const name of ["sim-cli-core", "sim-plugin-mechanical", "sim-plugin-workbench"]) {
+    if (!packages.has(name)) throw new Error(`sim runtime is missing ${name}`);
+  }
+  const interpreter = join(venvRoot, ...target.simInterpreter.split("/"));
+  await access(interpreter);
+  if (targetArgument !== "win32-x64") {
+    // The build host cannot execute the target interpreter; structurally
+    // verify it is a Linux ELF binary rather than a mis-staged Windows tree.
+    const handle = await open(interpreter, "r");
+    try {
+      const magic = Buffer.alloc(4);
+      await handle.read(magic, 0, 4, 0);
+      if (magic.toString("hex") !== "7f454c46") throw new Error("bundled linux interpreter is not an ELF binary");
+    } finally {
+      await handle.close();
+    }
+  }
+  console.log(`Verified bundled sim runtime: ${simManifest.files.length} files, Python ${simManifest.python.version}`);
+} else if (payload.sim) {
+  throw new Error(`${targetArgument} payload must not bundle a sim runtime`);
 }
 for (const path of [
   `vendor/node/${target.nodeBinary}`,

@@ -10,6 +10,8 @@ LOGOS_SIM_COMMAND='["C:/path/to/venv/Scripts/python.exe", "-m", "sim"]'
 
 The tool never executes through a shell. The subprocess inherits the current LOGOS workspace and environment. It does not copy API credentials to configuration files.
 
+The VS Code extension bundles a self-contained backend at `logos-agent/integrations/.venv` inside its win32-x64 and linux-x64 payloads: a relocatable CPython (the python.org embeddable distribution on Windows, python-build-standalone on Linux) with non-editable installs of the three packages. Its location matches the default resolution above, so the simulation tools work on machines with no Python and no repository checkout; `LOGOS_SIM_COMMAND` still overrides it. The linux-arm64 package bundles no backend — simparse publishes no aarch64 wheel — so those hosts keep a repository install or the override channel.
+
 Inputs: `action`, optional literal `args`, optional `host`/`port`/`session`, optional `installation` for launch/probe, and `timeout_ms` (100–3600000). First call `help` when using an external CLI; that CLI may lack the LOGOS-added commands.
 
 `simulation_discover` takes `product` (mechanical/workbench), optional explicit `path` and optional `host`. It returns installation IDs and source/version evidence without launching software. Explicit paths are registered on the target machine so subsequent `simulation` calls can select the same ID. Remote discovery runs on the server, not the client. IDs are not executable instructions and stale paths are revalidated before use.

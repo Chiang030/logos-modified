@@ -12,6 +12,7 @@ import {
   parseTargetArgument,
   targetDefinition,
 } from "./package-targets.mjs";
+import { prepareSimRuntime } from "./prepare-sim-runtime.mjs";
 
 const PI_COMMIT = "abe508e1b89912adde45528136c3221eb69acdd7";
 const PI_VERSION = "1.1.0";
@@ -198,14 +199,18 @@ async function prepareLogosPayload() {
     outfile: join(domain, "extensions", "index.mjs"), bundle: true, platform: "node", format: "esm",
     nodePaths: [join(piDirectory, "node_modules"), join(domainSource, "node_modules")],
   });
+  // The bundled sim runtime verifies through its own sim-manifest.json; listing
+  // its tens of thousands of files here would bloat payload-manifest.json.
+  const sim = await prepareSimRuntime({ target: targetArgument, repositoryRoot, payloadDirectory, extensionDirectory });
   const files = [];
   for (const path of await walk(payloadDirectory)) {
     if (path === join(payloadDirectory, "payload-manifest.json")) continue;
+    if (relative(payloadDirectory, path).replaceAll("\\", "/").startsWith("logos-agent/integrations/")) continue;
     const data = await readFile(path);
     files.push({ path: relative(payloadDirectory, path).replaceAll("\\", "/"), bytes: data.byteLength,
       sha256: createHash("sha256").update(data).digest("hex") });
   }
-  await writeFile(join(payloadDirectory, "payload-manifest.json"), JSON.stringify({ platform: targetArgument, node: NODE_RUNTIME_VERSION, files }, null, 2));
+  await writeFile(join(payloadDirectory, "payload-manifest.json"), JSON.stringify({ platform: targetArgument, node: NODE_RUNTIME_VERSION, sim, files }, null, 2));
 }
 
 /** Download the pinned official Node.js distribution for the target platform and stage vendor/node. */

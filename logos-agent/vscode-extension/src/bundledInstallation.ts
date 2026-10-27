@@ -35,7 +35,7 @@ export type ChangeMode = (path: string, mode: number) => Promise<void>;
 
 /**
  * VSIX extraction drops execute permission bits, so restore them on POSIX hosts
- * for the bundled Node.js and esbuild binaries.
+ * for the bundled Node.js, esbuild, and sim runtime binaries.
  */
 export async function ensureExecutableBits(
   root: string,
@@ -45,18 +45,24 @@ export async function ensureExecutableBits(
   if (platform === "win32") return;
   await setModeWhenPresent(changeMode, join(root, "vendor", "node", "node"));
   const esbuildPackages = join(root, "vendor", "pi", "node_modules", "@esbuild");
-  let entries;
   try {
-    entries = await readdir(esbuildPackages, { withFileTypes: true });
+    for (const entry of await readdir(esbuildPackages, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      // esbuild ships its binary at the package root on Windows and under bin/ on POSIX.
+      await setModeWhenPresent(changeMode, join(esbuildPackages, entry.name, "esbuild"));
+      await setModeWhenPresent(changeMode, join(esbuildPackages, entry.name, "bin", "esbuild"));
+    }
   } catch (error) {
     if (!isNotFound(error)) throw error;
-    return;
   }
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    // esbuild ships its binary at the package root on Windows and under bin/ on POSIX.
-    await setModeWhenPresent(changeMode, join(esbuildPackages, entry.name, "esbuild"));
-    await setModeWhenPresent(changeMode, join(esbuildPackages, entry.name, "bin", "esbuild"));
+  // The bundled sim runtime's interpreters lose their bits the same way.
+  const venvBin = join(root, "logos-agent", "integrations", ".venv", "bin");
+  try {
+    for (const entry of await readdir(venvBin, { withFileTypes: true })) {
+      if (entry.isFile()) await setModeWhenPresent(changeMode, join(venvBin, entry.name));
+    }
+  } catch (error) {
+    if (!isNotFound(error)) throw error;
   }
 }
 
