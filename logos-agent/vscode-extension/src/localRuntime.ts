@@ -38,6 +38,8 @@ export class LocalRuntime implements vscode.Disposable {
   private readonly disposables: Array<() => void> = [];
   private disposed = false;
   private startPromise: Promise<void> | undefined;
+  private stderrTail = "";
+  private skipRestore = false;
 
   readonly onDidEvent = this.eventEmitter.event;
 
@@ -62,14 +64,15 @@ export class LocalRuntime implements vscode.Disposable {
   }
 
   async start(): Promise<void> {
-    if (this.client?.isRunning) return;
     if (this.startPromise) return this.startPromise;
+    if (this.client?.isRunning) return;
     this.startPromise = this.startInternal();
     try { await this.startPromise; } finally { this.startPromise = undefined; }
   }
 
   private async startInternal(): Promise<void> {
     this.setStatus("starting");
+    this.stderrTail = "";
 
     try {
       const configuration = vscode.workspace.getConfiguration("logos");
@@ -88,6 +91,9 @@ export class LocalRuntime implements vscode.Disposable {
         await this.options.settings.prepareRuntime(this.options.profileDirectory, this.options.workspaceRoot),
         { enabled: configuration.get<boolean>("observability.enabled", false), dataDirectory: configuration.get<string>("observability.pilotDataDirectory", "") },
       );
+      const proxy = vscode.workspace.getConfiguration("http").get<string>("proxy", "");
+      if (proxy && !prepared.env.HTTPS_PROXY && !prepared.env.https_proxy) prepared.env.HTTPS_PROXY = proxy;
+      if (proxy && !prepared.env.HTTP_PROXY && !prepared.env.http_proxy) prepared.env.HTTP_PROXY = proxy;
       for (const warning of await readMcpWarnings(this.options.profileDirectory)) {
         this.emit({ type: "log", text: `MCP: ${warning}` });
       }
@@ -111,29 +117,31 @@ export class LocalRuntime implements vscode.Disposable {
       this.client = client;
       this.disposables.push(
         client.onRecord((record) => this.emit({ type: "record", record })),
-        client.onStderr((text) => this.emit({ type: "stderr", text })),
+        client.onStderr((text) => { this.stderrTail = (this.stderrTail + text).slice(-12000); this.emit({ type: "stderr", text }); }),
         client.onProtocolError((error) => this.emit({ type: "protocol_error", error })),
         client.onExit((exit) => {
           this.emit({ type: "exit", exit });
-          if (this.status !== "stopping") this.setStatus("error", `LOGOS exited (${exit.code ?? exit.signal ?? "unknown"})`);
+          if (this.status !== "stopping") this.setStatus("error", `LOGOS exited (${exit.code ?? exit.signal ?? "unknown"})\n${this.stderrTail}`);
         }),
       );
 
       let state = await client.getState<Record<string, unknown>>();
-      const previous = await this.options.sessionStore?.load();
-      if (previous?.sessionFile && previous.sessionFile !== state.sessionFile && existsSync(previous.sessionFile)) {
-        try {
-          await client.requestWithTimeout({ type: "switch_session", sessionPath: previous.sessionFile });
-          state = await client.getState<Record<string, unknown>>();
-        } catch {
-          // A stale session should not prevent the workspace from opening.
-        }
+      const previous = this.skipRestore ? undefined : await this.options.sessionStore?.load();
+      if (previous?.sessionFile && previous.sessionFile !== state.sessionFile) {
+        const path = await this.resolveSessionPath(previous.sessionFile);
+        if (!existsSync(path)) throw new Error(`会话文件不存在，已保留历史索引：${path}`);
+        await client.requestWithTimeout({ type: "switch_session", sessionPath: path }, 10_000);
+        state = await client.getState<Record<string, unknown>>();
+        if (previous.sessionId && state.sessionId !== previous.sessionId) throw new Error("恢复会话失败，已保留历史索引。");
       }
       this.lastState = state;
-      await client.request({ type: "set_model", provider: prepared.provider, modelId: prepared.modelId });
+      const model = isRecord(state.model) ? state.model : undefined;
+      const connections = (await this.options.settings.load()).connections;
+      const restoredModelAvailable = previous && model && connections.some((entry) => localProviderId(entry.id) === model.provider && entry.modelIds.includes(String(model.id)));
+      if (!restoredModelAvailable && (model?.provider !== prepared.provider || model?.id !== prepared.modelId)) {
+        await client.requestWithTimeout({ type: "set_model", provider: prepared.provider, modelId: prepared.modelId }, 10_000);
+      }
       this.setStatus(state.isStreaming === true ? "running" : "ready");
-      const messages = await client.getMessages<Record<string, unknown>>();
-      this.emit({ type: "record", record: { type: "logos/session_restore", ...messages, state } });
     } catch (error) {
       if (error instanceof NodeRuntimeError) this.emit({ type: "node_error", error });
       this.setStatus("error", error instanceof Error ? error.message : String(error));
@@ -176,13 +184,17 @@ export class LocalRuntime implements vscode.Disposable {
     const entry = (await this.options.settings.load()).connections.find((candidate) => localProviderId(candidate.id) === provider);
     if (!entry) throw new Error("请通过 LOGOS 设置配置模型服务。");
     const client = await this.ensureClient();
-    await client.request({ type: "set_model", provider, modelId });
+    await client.requestWithTimeout({ type: "set_model", provider, modelId }, 10_000);
     await this.options.settings.setActiveModel(entry.id, modelId);
   }
 
   async setThinkingLevel(level: string): Promise<void> {
     const client = await this.ensureClient();
-    await client.request({ type: "set_thinking_level", level });
+    const available = await client.requestWithTimeout<{ levels: string[] }>({ type: "get_available_thinking_levels" });
+    if (!available.levels.includes(level)) throw new Error("当前模型不支持此思考深度，请检查模型能力设置。");
+    await client.requestWithTimeout({ type: "set_thinking_level", level }, 10_000);
+    const state = await this.refreshState();
+    if (state.thinkingLevel !== level) throw new Error(`模型未接受该思考深度，实际为 ${String(state.thinkingLevel)}。`);
   }
 
   async abort(): Promise<void> {
@@ -191,27 +203,39 @@ export class LocalRuntime implements vscode.Disposable {
   }
 
   async newSession(): Promise<void> {
-    const client = await this.ensureClient();
-    try { await client.newSession(); } catch (error) {
-      if (!(error instanceof Error) || !error.message.includes("new_session timed out")) throw error;
-    }
-    this.lastState = undefined;
-    this.emit({ type: "record", record: { type: "logos/session_reset" } });
+    this.skipRestore = true;
+    let client: RpcClient;
+    try { client = await this.ensureClient(); } finally { this.skipRestore = false; }
+    await client.newSession();
+    this.lastState = await client.getState<Record<string, unknown>>();
   }
 
   async switchSession(sessionPath: string, expectedSessionId?: string): Promise<void> {
-    const client = await this.ensureClient();
+    this.skipRestore = true;
+    let client: RpcClient;
+    try { client = await this.ensureClient(); } finally { this.skipRestore = false; }
     const resolvedPath = await this.resolveSessionPath(sessionPath);
-    try { await client.requestWithTimeout({ type: "switch_session", sessionPath: resolvedPath }); } catch (error) {
-      if (!(error instanceof Error) || !error.message.includes("switch_session timed out")) throw error;
+    if (!existsSync(resolvedPath)) throw new Error(`会话文件不存在：${resolvedPath}`);
+    const previous = this.lastState;
+    try {
+      await client.requestWithTimeout({ type: "switch_session", sessionPath: resolvedPath }, 10_000);
+      const state = await client.getState<Record<string, unknown>>();
+      if (expectedSessionId && state.sessionId !== expectedSessionId) throw new Error(`LOGOS did not switch to session ${expectedSessionId}`);
+      this.lastState = state;
+    } catch (error) {
+      if (typeof previous?.sessionFile === "string" && existsSync(previous.sessionFile)) {
+        await client.requestWithTimeout({ type: "switch_session", sessionPath: previous.sessionFile }, 10_000);
+        this.lastState = await client.getState<Record<string, unknown>>();
+      }
+      throw error;
     }
-    const state = await client.getState<Record<string, unknown>>();
-    if (expectedSessionId && state.sessionId !== expectedSessionId) {
-      throw new Error(`LOGOS did not switch to session ${expectedSessionId}`);
-    }
+  }
+
+  async snapshot(): Promise<RpcRecord> {
+    const client = await this.ensureClient();
+    const state = await this.refreshState();
     const messages = await client.getMessages<Record<string, unknown>>();
-    this.lastState = state;
-    this.emit({ type: "record", record: { type: "logos/session_restore", ...messages, state } });
+    return { type: "logos/session_restore", ...messages, state };
   }
 
   private async resolveSessionPath(sessionPath: string): Promise<string> {
@@ -254,7 +278,7 @@ export class LocalRuntime implements vscode.Disposable {
   }
 
   private async ensureClient(): Promise<RpcClient> {
-    if (!this.client?.isRunning) await this.start();
+    if (this.startPromise || !this.client?.isRunning) await this.start();
     if (!this.client) throw new Error("LOGOS runtime is unavailable");
     return this.client;
   }
@@ -274,8 +298,8 @@ export class LocalRuntime implements vscode.Disposable {
   private emit(event: RuntimeEvent): void {
     if (this.disposed) return;
     if (event.type === "record" && event.record) {
-      if (event.record.type === "agent_start") this.lastState = { ...this.lastState, isStreaming: true };
-      if (event.record.type === "agent_settled") this.lastState = { ...this.lastState, isStreaming: false };
+      if (event.record.type === "agent_start") { this.lastState = { ...this.lastState, isStreaming: true }; this.setStatus("running"); }
+      if (event.record.type === "agent_settled") { this.lastState = { ...this.lastState, isStreaming: false }; this.setStatus("ready"); }
     }
     this.eventEmitter.fire(event);
   }

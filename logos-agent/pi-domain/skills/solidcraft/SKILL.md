@@ -4,6 +4,10 @@ description: 只要需要使用 CAD 进行模型构型的重建，就使用 Soli
 ---
 
 # SolidCraft
+## 当前机器的软件位置
+
+首次使用先读取运行时提供的软件清单；缺失或过期时调用 `software_discover`。使用返回的当前主机绝对路径，不要全盘搜索或把历史部署路径当作本机事实。安装、SDK、许可证和 MCP 连接分别验证；远程任务必须在目标主机探测。
+
 
 ## 工具选择与触发
 
@@ -11,7 +15,7 @@ description: 只要需要使用 CAD 进行模型构型的重建，就使用 Soli
 
 服务名是 `solidcraft`，工具命名空间为 `mcp__solidcraft__*`。通过 Logos 的工具发现机制查找 `inspect_design`、`list_commands`、`execute`、`batch`、`measure`、`screenshot`、`open`、`save` 和 `export`，按实际返回的 schema 调用。优先 MCP 执行；需要可复现脚本时可使用已安装的 `solidcraft-cli`。
 
-本服务器默认是持久的 headless MCP 会话，每个 Logos 连接独立，不依赖桌面，也不会自动修改当前 GUI 中的文件。允许读写 `/home/jiangjincheng/projects`；路径使用绝对路径。产物保存在任务的项目目录中。只有明确需要同步操作桌面时，才按 [MCP 接入说明](references/mcp.md) 使用桥接模式；不要擅自把多个并行任务接到同一桌面文档。
+使用当前主机的软件发现结果和实际 MCP 配置。不要假定已有常驻会话或固定可写目录；产物保存在当前工作区，桌面桥接方式见 references/mcp.md。
 
 大型 CAD 输入要先做导入风险判断。STEP/AP242 文件超过约 10 MB、包含超过 100,000 个实体、多个产品实例或大量曲面时，先记录文件大小、格式、产品/实体数量和单位，再单独调用 `open`，不要把导入和后续编辑放在同一个批次中。此类导入允许较长时间；MCP 连接的请求超时应使用 1800 秒配置。若 `open` 超时，先检查 SolidCraft MCP 进程和会话状态，等待或重新连接一次后再判断是否失败，禁止立即重复导入造成并发解析。若整个装配仍无法完成，按产品/零件拆分为多个输入逐一导入或请求用户提供分件文件，并保留原始 STEP 不变。
 

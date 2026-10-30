@@ -72,7 +72,7 @@ export class RpcClient {
     child.stdout.on("data", (chunk: Buffer) => this.handleChunk(chunk));
     child.stdout.on("end", () => this.handleEnd());
     child.stderr.on("data", (chunk: Buffer) => this.emit(this.stderrListeners, chunk.toString("utf8")));
-    child.on("error", (error) => this.rejectAll(error));
+    child.on("error", (error) => { this.rejectAll(error); this.handleProtocolError(error); });
     child.on("exit", (code, signal) => {
       this.rejectAll(new Error(`LOGOS exited before completing a request (${code ?? signal ?? "unknown"})`));
       this.emit(this.exitListeners, { code, signal });
@@ -149,7 +149,7 @@ export class RpcClient {
     try {
       return await Promise.race([
         this.request<T>(command, controller.signal),
-        new Promise<T>((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error(`${String(command.type)} timed out`)); }, timeoutMs); }),
+        new Promise<T>((_, reject) => { timer = setTimeout(() => { reject(new Error(`${String(command.type)} timed out`)); controller.abort(); }, timeoutMs); }),
       ]);
     } finally { if (timer) clearTimeout(timer); }
   }
@@ -234,6 +234,7 @@ export class RpcClient {
 
   private handleProtocolError(error: unknown): void {
     const protocolError = error instanceof RpcProtocolError ? error : new RpcProtocolError(String(error));
+    this.rejectAll(protocolError);
     this.emit(this.protocolErrorListeners, protocolError);
   }
 

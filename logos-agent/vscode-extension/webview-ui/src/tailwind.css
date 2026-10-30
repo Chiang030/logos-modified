@@ -73,3 +73,14 @@ details > summary::-webkit-details-marker { display: none; }
 .settings-connection-info strong { color: #f1f5f9; overflow-wrap: anywhere; }
 .settings-connection-info span { color: #9aa4b2; overflow-wrap: anywhere; }
 .settings-connection-actions { display: flex; flex: 0 0 auto; gap: 6px; }
+
+.markdown-content, .timeline-entry pre, .error-card { user-select: text; }
+.history-list { position: absolute; right: 0; top: 100%; z-index: 50; width: 300px; max-height: 60vh; overflow: auto; background: #1c1c1e; padding: 8px; border: 1px solid #444; }
+.history-row { display: flex; gap: 6px; padding: 4px 0; }
+.history-row > button:first-child { flex: 1; min-width: 0; text-align: left; overflow-wrap: anywhere; }
+.history-row .active { color: #38bdf8; }
+.history-row form { display: flex; flex-wrap: wrap; gap: 6px; }
+.history-row input { min-width: 0; color: white; background: #222; }
+.error-card { padding: 8px 12px; border-bottom: 1px solid #7f1d1d; color: #fecaca; font-size: 12px; max-height: 35vh; overflow: auto; }
+.error-card pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.error-card button { margin-right: 12px; text-decoration: underline; }

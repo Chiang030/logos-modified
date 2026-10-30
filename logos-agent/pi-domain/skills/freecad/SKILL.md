@@ -4,6 +4,10 @@ description: 用 FreeCAD headless(freecadcmd)做 CAD 几何的独立复核与文
 ---
 
 # FreeCAD
+## 当前机器的软件位置
+
+首次使用先读取运行时提供的软件清单；缺失或过期时调用 `software_discover`。使用返回的当前主机绝对路径，不要全盘搜索或把历史部署路径当作本机事实。安装、SDK、许可证和 MCP 连接分别验证；远程任务必须在目标主机探测。
+
 
 ## Scope
 
@@ -16,21 +20,9 @@ description: 用 FreeCAD headless(freecadcmd)做 CAD 几何的独立复核与文
 
 **不做**:参数化建模与构型重建(`solidcraft`)、网格生成(`gmsh`)、渲染与 3D logo(`blender`)。本技能是几何管线的质检员和搬运工,不是建模工具;与 solidcraft 技能里 checking 参考提到的"独立 oracle"思路一致,这里是落地实现。
 
-## 环境(2026-10-21 在本服务器实测)
+## 环境探测
 
-| 项 | 值 |
-|---|---|
-| FreeCAD 版本 | 1.1.4(build 20260928,git 4fd3bf32),AppImage 解包于 `~/.local/opt/freecad-1.1.4/squashfs-root/` |
-| headless 入口 | `~/.local/bin/freecadcmd`(本技能只用它;`~/.local/bin/freecad` GUI 需桌面会话) |
-| 脚本参数 | `sys.argv[2:]` 透传(`argv[0]`=freecadcmd,`argv[1]`=脚本) |
-| 脚本 | 本目录 `scripts/inspect_cad.py`、`scripts/compare_step.py`、`scripts/heal_convert.py` |
-
-验证命令:
-
-```bash
-command -v freecadcmd && freecadcmd --version
-freecadcmd <技能目录>/scripts/inspect_cad.py <任意.step>
-```
+从 `software_discover` 获取 FreeCAD 命令行路径，并单独验证 Python API。脚本位于本技能的 `scripts/` 中。
 
 ## freecadcmd 的坑(脚本已内置规避,手写脚本时同样适用)
 
@@ -47,12 +39,24 @@ freecadcmd <技能目录>/scripts/inspect_cad.py <任意.step>
 
 ```bash
 # 体检:实体数/体积/面积/包围盒/质心/有效性,多文件可一起
+## 当前机器的软件位置
+
+首次使用先读取运行时提供的软件清单；缺失或过期时调用 `software_discover`。使用返回的当前主机绝对路径，不要全盘搜索或把历史部署路径当作本机事实。安装、SDK、许可证和 MCP 连接分别验证；远程任务必须在目标主机探测。
+
 freecadcmd scripts/inspect_cad.py part.step [another.fcstd ...]
 
 # 独立复核:对称差体积与位置,默认容差 0.1%(第三个参数可改,如 0.0005=0.05%)
+## 当前机器的软件位置
+
+首次使用先读取运行时提供的软件清单；缺失或过期时调用 `software_discover`。使用返回的当前主机绝对路径，不要全盘搜索或把历史部署路径当作本机事实。安装、SDK、许可证和 MCP 连接分别验证；远程任务必须在目标主机探测。
+
 freecadcmd scripts/compare_step.py actual.step expected.step [rel_tol]
 
 # 修复+转换:heal 强制修复(默认仅无效几何时修);norefine 保留面结构(默认合并共面)
+## 当前机器的软件位置
+
+首次使用先读取运行时提供的软件清单；缺失或过期时调用 `software_discover`。使用返回的当前主机绝对路径，不要全盘搜索或把历史部署路径当作本机事实。安装、SDK、许可证和 MCP 连接分别验证；远程任务必须在目标主机探测。
+
 freecadcmd scripts/heal_convert.py input.step output.stl [heal] [norefine]
 ```
 

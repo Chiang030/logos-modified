@@ -7,6 +7,12 @@ import { fileURLToPath } from "node:url";
 
 export const ACTIONS = ["help", "doctor", "discover", "probe", "verify", "check", "launch", "attach", "connect", "exec", "inspect", "detach", "disconnect", "run"];
 
+/** Preserve failures in the tool protocol, not only inside a JSON text block. */
+export function simulationToolResult(result) {
+  return { isError: !result.transport_ok || result.script_ok === false || Boolean(result.error) || result.exit_code !== 0,
+    content: [{ type: "text", text: JSON.stringify(result) }], details: result };
+}
+
 export async function runSimulation(params, { cwd, signal, command, timeoutMs = 60000 } = {}) {
   if (!ACTIONS.includes(params.action)) throw new Error("Unsupported simulation action");
   const python = fileURLToPath(new URL(process.platform === "win32" ? "../../../integrations/.venv/Scripts/python.exe" : "../../../integrations/.venv/bin/python", import.meta.url));

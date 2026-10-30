@@ -2,7 +2,7 @@ import { mkdtemp, rm, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { createServer } from "node:http";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConnectionSettingsStore, LEGACY_CONNECTION_ID, isolatedRuntimeEnvironment, keyVariableFor, localProviderId, discoverModels, fallbackDiscovery, type OpenAiTokenSource } from "../src/connectionSettings";
 import type { ConnectionEntry } from "../src/shared/protocol";
 
@@ -19,6 +19,7 @@ async function fixture(openAi?: Partial<OpenAiTokenSource>) {
   const store = new ConnectionSettingsStore(directory, resolve("runtime/logos-agent/pi-domain"), {
     get: async (key) => secrets.get(key), store: async (key, value) => { secrets.set(key, value); }, delete: async (key) => { secrets.delete(key); },
   }, openAi ? tokenSource : undefined);
+  vi.spyOn(store, "software").mockResolvedValue({ host: "fixture", platform: "win32", checkedAt: "2026-01-01", products: [] });
   return { directory, secrets, store };
 }
 

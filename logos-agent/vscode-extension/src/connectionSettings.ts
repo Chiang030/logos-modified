@@ -7,6 +7,8 @@ import {
 } from "./shared/protocol";
 import { presetById, presetForBaseUrl, resolveProviderId, isProviderId, type ProviderId } from "./shared/providerPresets";
 import { prepareMcpProfile } from "./mcpProfile";
+import { modelDefinitions } from "./modelCapabilities";
+import { discoverSoftware, discoveryEnvironment, SOFTWARE, type SoftwareDiscovery } from "../../pi-domain/src/software-discovery.mjs";
 
 export interface SecretStore {
   get(key: string): PromiseLike<string | undefined>;
@@ -46,6 +48,7 @@ export function keyVariableFor(connectionId: string): string {
 
 export class ConnectionSettingsStore {
   private readonly secretId: string;
+  private discovery: Promise<SoftwareDiscovery> | undefined;
 
   constructor(
     readonly directory: string,
@@ -211,7 +214,9 @@ export class ConnectionSettingsStore {
     const active = usable.find((entry) => entry.id === settings.activeConnectionId && entry.modelIds.includes(settings.activeModelId));
     if (!active) throw new Error("请在 LOGOS 设置中新建 API 配置并选择模型后保存。");
     await mkdir(profile, { recursive: true });
-    const env = isolatedRuntimeEnvironment(process.env, profile);
+    const env = discoveryEnvironment(await this.software(), isolatedRuntimeEnvironment(process.env, profile));
+    env.LOGOS_SOFTWARE_CONFIG = join(this.directory, "software-paths.json");
+    env.LOGOS_SOFTWARE_CACHE = join(this.directory, "software-cache.json");
     await prepareMcpProfile(profile, process.env, env);
     const providers: Record<string, unknown> = {};
     for (const entry of usable) {
@@ -222,7 +227,7 @@ export class ConnectionSettingsStore {
       }
       providers[localProviderId(entry.id)] = {
         baseUrl: normalizeBaseUrl(entry.baseUrl), api: entry.api, apiKey: `$${keyVariableFor(entry.id)}`,
-        models: [...new Set([entry.modelId, ...entry.modelIds])].filter(Boolean).map((id) => ({ id })),
+        models: await modelDefinitions(this.domainDirectory, entry),
       };
       env[keyVariableFor(entry.id)] = credential || "logos-local-no-auth";
     }
@@ -236,6 +241,31 @@ export class ConnectionSettingsStore {
     const provider = localProviderId(active.id);
     args.push("--provider", provider, "--model", settings.activeModelId);
     return { args, env, provider, modelId: settings.activeModelId };
+  }
+
+  software(refresh = false): Promise<SoftwareDiscovery> {
+    if (!this.discovery || refresh) this.discovery = this.discoverSoftware(refresh).catch((error) => { this.discovery = undefined; throw error; });
+    return this.discovery;
+  }
+
+  private async discoverSoftware(refresh: boolean): Promise<SoftwareDiscovery> {
+    let overrides: Record<string, string> = {};
+    try { overrides = JSON.parse(await readFile(join(this.directory, "software-paths.json"), "utf8")); }
+    catch (error) { if (!isMissing(error)) throw error; }
+    return discoverSoftware({ overrides, refresh, cacheFile: join(this.directory, "software-cache.json") });
+  }
+
+  async setSoftwarePath(product: string, path: string): Promise<void> {
+    if (!SOFTWARE.some((item) => item.id === product)) throw new Error("未知的软件类型。");
+    let overrides: Record<string, string> = {};
+    const target = join(this.directory, "software-paths.json");
+    try { overrides = JSON.parse(await readFile(target, "utf8")); } catch (error) { if (!isMissing(error)) throw error; }
+    if (path.trim()) overrides[product] = path.trim(); else delete overrides[product];
+    await mkdir(this.directory, { recursive: true });
+    const temporary = `${target}.${randomUUID()}.tmp`;
+    await writeFile(temporary, JSON.stringify(overrides), { mode: 0o600 });
+    await rename(temporary, target);
+    await this.software(true);
   }
 
   private async credentialFor(entry: ConnectionEntry): Promise<string | undefined> {
@@ -305,6 +335,7 @@ function validateConnection(value: ConnectionEntry): ConnectionEntry {
     baseUrl,
     modelId,
     modelIds,
+    modelCapabilities: value.modelCapabilities,
   };
 }
 

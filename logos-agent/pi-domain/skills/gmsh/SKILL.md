@@ -4,6 +4,10 @@ description: Use when generating, repairing, converting, checking, or scripting 
 ---
 
 # Gmsh
+## 当前机器的软件位置
+
+首次使用先读取运行时提供的软件清单；缺失或过期时调用 `software_discover`。使用返回的当前主机绝对路径，不要全盘搜索或把历史部署路径当作本机事实。安装、SDK、许可证和 MCP 连接分别验证；远程任务必须在目标主机探测。
+
 
 ## Scope
 
@@ -24,21 +28,7 @@ files.
 
 ## Discover the installation
 
-The Linux server deployment was verified on 2026-10-20 with Gmsh 4.15.2:
-
-| Capability | Path |
-|---|---|
-| CLI | `/home/jiangjincheng/.local/bin/gmsh` |
-| Python API | `/home/jiangjincheng/.local/opt/gmsh-venv/bin/python` (`import gmsh`) |
-| Headless GUI | Not available over SSH; do not call `-gui` or `gmsh.fltk.run()` |
-
-On any host, verify before use rather than assuming this layout:
-
-```bash
-command -v gmsh
-gmsh --version
-/home/jiangjincheng/.local/opt/gmsh-venv/bin/python -c "import gmsh; print(gmsh.__version__)"
-```
+Use `software_discover` for the current host's Gmsh executable. Verify the selected Python interpreter can import gmsh separately; installation discovery alone does not establish Python API availability.
 
 If the CLI or Python module is missing, stop and report which capability is
 missing. Do not install or download a different Gmsh without asking the user.
@@ -190,7 +180,7 @@ boundary-layer field does not by itself satisfy a y+ target.
 Use the bundled read-only report script:
 
 ```bash
-/home/jiangjincheng/.local/opt/gmsh-venv/bin/python \
+python \
   scripts/mesh_report.py B-mesh/case.msh
 ```
 

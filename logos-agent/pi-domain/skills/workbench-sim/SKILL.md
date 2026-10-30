@@ -4,6 +4,10 @@ description: "Run Ansys Workbench journals, inspect projects, manage persistent 
 ---
 
 # workbench-sim
+## 当前机器的软件位置
+
+首次使用先读取运行时提供的软件清单；缺失或过期时调用 `software_discover`。使用返回的当前主机绝对路径，不要全盘搜索或把历史部署路径当作本机事实。安装、SDK、许可证和 MCP 连接分别验证；远程任务必须在目标主机探测。
+
 
 You are connected to **Ansys Workbench** via sim-cli. This file is the
 **index**. It tells you where to look for actual content — it does not

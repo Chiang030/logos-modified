@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactElement } from "react";
 import type { SettingsView, ConnectionEntry, ApiProtocol, ExtensionToWebviewMessage } from "../../../src/shared/protocol";
 import { DEFAULT_PROVIDER_ID, PROVIDER_PRESETS, presetById, type ProviderId } from "../../../src/shared/providerPresets";
+import { SoftwarePanel } from "./SoftwarePanel";
 
 type Props = { open: boolean; busy: boolean; onOpen: () => void; onClose: () => void; post: (message: unknown) => void };
 
@@ -133,6 +134,11 @@ export function SettingsPanel({ open, busy, onOpen, onClose, post }: Props): Rea
       <label>手动添加模型 ID<input value={manualModel} placeholder="输入模型 ID 后点击添加" onChange={(e) => setManualModel(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addManualModel(); } }} /></label>
       <button disabled={!manualModel.trim()} onClick={addManualModel}>添加模型</button>
+      <details><summary>模型思考能力（默认读取内置模型目录）</summary>{entry.modelIds.map((id) => <label key={id}>{id}<select
+        value={entry.modelCapabilities?.[id]?.reasoning === undefined ? "auto" : String(entry.modelCapabilities[id].reasoning)}
+        onChange={(event) => update({ modelCapabilities: { ...entry.modelCapabilities, [id]: { reasoning: event.target.value === "auto" ? undefined : event.target.value === "true" } } })}>
+        <option value="auto">自动识别；未知时禁用</option><option value="true">此模型支持思考</option><option value="false">此模型不支持思考</option>
+      </select></label>)}<p>手动启用前，请确认该服务支持所选 API 协议的推理参数。</p></details>
       {entry.modelIds.length ? <p className="settings-hint">该配置共 {entry.modelIds.length} 个模型，保存后全部进入左下角切换器。</p> : null}
       <div className="settings-actions">
         <button className="settings-save" disabled={pending || busy} onClick={() => { setPending(true); setNotice("正在保存…"); post({ type: "connection/save", entry, apiKey, deleteApiKey: deleteKey }); }}>{isNew ? "保存新配置" : "保存修改"}</button>
@@ -146,6 +152,7 @@ export function SettingsPanel({ open, busy, onOpen, onClose, post }: Props): Rea
   const updateGlobal = (value: Partial<SettingsView>): void => { setSettings((current) => current ? { ...current, ...value } : current); setNotice(""); };
   return <section className="logos-settings" aria-label="LOGOS 设置">
     <div className="settings-heading"><strong>LOGOS 设置</strong><button onClick={onClose} aria-label="关闭设置">×</button></div>
+    <SoftwarePanel busy={busy} post={post} />
     <div className="settings-list-head"><strong>已保存的 API 配置</strong><button onClick={() => { setEditing(draftEntry()); setIsNew(true); setNotice(""); }}>＋ 新建</button></div>
     {settings.connections.length
       ? <ul className="settings-connections">{settings.connections.map((entry) => <li key={entry.id} className="settings-connection">

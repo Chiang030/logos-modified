@@ -193,6 +193,15 @@ async function prepareLogosPayload() {
   // Bundle the domain extension's imports so the target needs no npm install.
   // The domain's own dependencies (observability stack) resolve from its lockfile install.
   const domainSource = join(repositoryRoot, "logos-agent", "pi-domain");
+  const catalogDirectory = join(piDirectory, "packages", "ai", "src", "providers", "data");
+  const catalog = [];
+  for (const name of (await readdir(catalogDirectory)).filter((name) => name.endsWith(".json"))) {
+    const groups = JSON.parse(await readFile(join(catalogDirectory, name), "utf8"));
+    for (const models of Object.values(groups)) for (const model of Object.values(models)) {
+      if (model.type === "chat") catalog.push(model);
+    }
+  }
+  await writeFile(join(domain, "references", "model-capabilities.json"), JSON.stringify(catalog));
   runNpm(["ci"], domainSource);
   const { build } = await import("esbuild");
   await build({ entryPoints: [join(domainSource, "extensions", "index.mjs")],

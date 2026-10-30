@@ -4,7 +4,7 @@ export interface TimelineMessage {
   id: string;
   role: "user" | "assistant" | "system" | "tool";
   text: string;
-  status: "streaming" | "complete" | "error";
+  status: "streaming" | "complete" | "error" | "aborted" | "interrupted";
 }
 
 export type TimelineItem =
@@ -46,7 +46,7 @@ export function restoreTimeline(messages: RestoredMessage[], tools: RestoredTool
   const entries: TimelineItem[] = [
     ...messages.map((message, index) => ({
       kind: "message" as const,
-      value: { ...message, status: "complete" as const },
+      value: { ...message, status: message.isError ? "error" as const : "complete" as const },
       order: message.position ?? index,
     })),
     ...tools.map((tool, index) => ({
@@ -56,6 +56,16 @@ export function restoreTimeline(messages: RestoredMessage[], tools: RestoredTool
     })),
   ];
   return entries.sort((left, right) => left.order - right.order);
+}
+
+export function settleTimeline(items: TimelineItem[], outcome: string): TimelineItem[] {
+  return items.map((item) => {
+    if (item.kind === "message" && item.value.status === "streaming") return { ...item, value: { ...item.value,
+      status: outcome === "completed" ? "complete" : outcome === "aborted" ? "aborted" : outcome === "interrupted" ? "interrupted" : "error", text: item.value.text || (outcome === "aborted" ? "已停止" : "运行已结束") } };
+    if (item.kind === "tool" && item.value.status === "running") return { ...item, value: { ...item.value,
+      status: outcome === "aborted" ? "aborted" : "interrupted", output: item.value.output ?? (outcome === "aborted" ? "已停止" : "运行中断，未收到工具结果") } };
+    return item;
+  });
 }
 
 export function maxTimelineOrder(items: TimelineItem[]): number {

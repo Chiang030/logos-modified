@@ -8,6 +8,7 @@ import { ConnectionSettingsStore } from "./connectionSettings";
 import { OpenAiAuthStore } from "./auth/openAiAuthStore";
 import { registerUpdateChecks } from "./updateChecker";
 import { NodeRuntimeError } from "./runtimeLaunch";
+import { redactDiagnostic } from "./diagnostics";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   // 更新检查不依赖工作区，需在无工作区的提前返回之前注册。
@@ -27,6 +28,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     join(installation, "logos-agent", "pi-domain"), context.secrets, openAiAuth,
   );
   const sessions = new SessionStore(join(storageRoot, "sessions"));
+  try { await sessions.reconcile(join(storageRoot, "runtime-sessions")); }
+  catch (error) { sessions.diagnostics.push(`恢复会话索引失败：${redactDiagnostic(error)}`); }
   const runtime = new LocalRuntime({
     extensionRoot: installation,
     workspaceRoot,
@@ -37,10 +40,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   });
   const provider = new LogosWebviewProvider(context, runtime, sessions, settings, openAiAuth);
   const output = vscode.window.createOutputChannel("LOGOS");
+  void settings.software().catch((error) => output.appendLine(`[software] ${redactDiagnostic(error)}`));
   const outputSubscription = runtime.onDidEvent((event) => {
-    if (event.type === "stderr" && event.text) output.append(event.text);
-    if (event.type === "log" && event.text) output.appendLine(`[runtime] ${event.text}`);
-    if (event.type === "protocol_error" && event.error) output.appendLine(`[protocol] ${event.error.message}`);
+    if (event.type === "stderr" && event.text) output.append(redactDiagnostic(event.text));
+    if (event.type === "log" && event.text) output.appendLine(`[runtime] ${redactDiagnostic(event.text)}`);
+    if (event.type === "protocol_error" && event.error) output.appendLine(`[protocol] ${redactDiagnostic(event.error)}`);
     if (event.type === "node_error" && event.error) {
       output.appendLine(`[runtime] ${event.error.message}`);
       const reason = event.error instanceof NodeRuntimeError ? event.error.reason : undefined;
@@ -51,7 +55,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(
     vscode.commands.registerCommand("logos.openChat", () => provider.openPanel()),
     vscode.commands.registerCommand("logos.restartRuntime", () => runtime.restart()),
-    vscode.commands.registerCommand("logos.newSession", () => runtime.newSession()),
+    vscode.commands.registerCommand("logos.newSession", () => provider.newSession()),
+    vscode.commands.registerCommand("logos.showLogs", () => output.show()),
     output,
     outputSubscription,
     runtime,

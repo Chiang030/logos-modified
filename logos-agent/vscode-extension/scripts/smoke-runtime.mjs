@@ -54,6 +54,7 @@ assert.deepEqual(await store.models(url, "openai-completions", "smoke-test-key")
 await store.saveConnection({
   id: "smoke-conn", name: "Smoke", providerId: "custom", baseUrl: url, api: "openai-completions",
   modelId: "logos-smoke-model", modelIds: ["logos-smoke-model"],
+  modelCapabilities: { "logos-smoke-model": { reasoning: true } },
 }, "smoke-test-key");
 let prepared = await store.prepareRuntime(join(temporaryRoot, "isolated profile"), temporaryRoot);
 const withPilot = process.argv.includes("--with-pilot");
@@ -71,11 +72,13 @@ await writeFile(join(temporaryRoot, ".pi", "settings.json"), JSON.stringify({ de
 const smokeNode = targetPlatform === process.platform
   ? join(installed, "vendor", "node", targetPlatform === "win32" ? "node.exe" : "node")
   : process.execPath;
-const child = spawn(smokeNode, [join(installed, "vendor", "pi", "cli.js"), "--mode", "rpc", "--session-dir", sessionDirectory, ...prepared.args], {
+function launchRuntime() { return spawn(smokeNode, [join(installed, "vendor", "pi", "cli.js"), "--mode", "rpc", "--session-dir", sessionDirectory, ...prepared.args], {
   cwd: temporaryRoot, env: prepared.env, stdio: "pipe", windowsHide: true,
-});
+}); }
+let child = launchRuntime();
 let sequence = 0, buffer = "", stderr = "";
 const pending = new Map(), records = [];
+function attachRuntime() {
 child.stdout.setEncoding("utf8");
 child.stdout.on("data", (chunk) => {
   buffer += chunk;
@@ -91,6 +94,8 @@ child.stdout.on("data", (chunk) => {
   }
 });
 child.stderr.setEncoding("utf8"); child.stderr.on("data", (chunk) => { stderr += chunk; });
+}
+attachRuntime();
 try {
   const initial = await request("get_state");
   assert(initial.sessionId);
@@ -100,6 +105,10 @@ try {
   assert(commands.commands.some((item) => item.name === "skill:logos-simulation-workflow"), "LOGOS skills missing");
   assert(commands.commands.some((item) => item.name === "skill:gmsh"), "Gmsh skill missing");
   assert(commands.commands.some((item) => item.name === "skill:kicad"), "KiCad skill missing");
+  const levels = await request("get_available_thinking_levels");
+  assert(levels.levels.includes("high"), "Reasoning capability was lost");
+  await request("set_thinking_level", { level: "high" });
+  assert.equal((await request("get_state")).thinkingLevel, "high");
   await request("prompt", { message: "Reply with OK." });
   const deadline = Date.now() + 15000;
   while (!records.some((record) => record.type === "agent_settled") && Date.now() < deadline) await new Promise((done) => setTimeout(done, 50));
@@ -107,8 +116,11 @@ try {
   assert.equal(captured.authorization, "Bearer smoke-test-key");
   assert.equal(captured.path, "/v1/chat/completions");
   assert.equal(captured.body.model, "logos-smoke-model");
-  assert(captured.body.messages.some((message) => message.role === "system" && message.content.includes("LOGOS Base Role")), "Missing Logos system prompt");
+  assert(captured.body.messages.some((message) => ["system", "developer"].includes(message.role) && message.content.includes("LOGOS Base Role")), "Missing Logos system prompt");
   assert(captured.body.tools.some((tool) => tool.function.name === "simulation"), "Missing Logos simulation tool");
+  assert(captured.body.tools.some((tool) => tool.function.name === "software_discover"), "Missing software discovery tool");
+  assert(captured.body.tools.some((tool) => tool.function.name === "web_search"), "Missing web_search tool");
+  assert.equal(captured.body.reasoning_effort, "high", "Thinking selection did not reach the model request");
   const messages = await request("get_messages");
   assert(JSON.stringify(messages).includes("LOGOS_SMOKE_OK"), `Streaming response missing: ${JSON.stringify(messages)}`);
   if (withPilot) {
@@ -124,16 +136,32 @@ try {
   await request("abort");
   await request("new_session");
   await request("switch_session", { sessionPath: initial.sessionFile });
+  assert.equal((await request("get_state")).sessionId, initial.sessionId);
+  assert(JSON.stringify(await request("get_messages")).includes("LOGOS_SMOKE_OK"), "Session context was lost after switching");
+  assert.equal((await request("get_state")).thinkingLevel, "high", "Session thinking level was not restored");
+  await stopRuntime();
+  records.length = 0; buffer = ""; child = launchRuntime(); attachRuntime();
   await request("get_state");
-  console.log("LOGOS smoke passed: upstream discovery, isolated profile, bundled extension + skills + prompts + simulation tools, streaming, sessions.");
+  await request("switch_session", { sessionPath: initial.sessionFile });
+  assert.equal((await request("get_state")).thinkingLevel, "high", "Thinking level was lost after process restart");
+  await request("prompt", { message: "Continue the previous conversation." });
+  const restartDeadline = Date.now() + 15000;
+  while (!records.some((record) => record.type === "agent_settled") && Date.now() < restartDeadline) await new Promise((done) => setTimeout(done, 50));
+  assert(captured.body.messages.some((message) => message.role === "user" && JSON.stringify(message.content).includes("Reply with OK.")), "Prior user context was not sent after restart");
+  assert(captured.body.messages.some((message) => message.role === "assistant" && JSON.stringify(message.content).includes("LOGOS_SMOKE_OK")), "Prior assistant context was not sent after restart");
+  console.log("LOGOS smoke passed: discovery, bundled tools, reasoning wire parameter, streaming, session switching and full process restart with prior context.");
 } finally {
+  await stopRuntime();
+  await new Promise((done) => server.close(done));
+  await rm(temporaryRoot, { recursive: true, force: true });
+}
+async function stopRuntime() {
+  if (child.exitCode !== null) return;
   child.stdin.end();
   await new Promise((done) => {
     const timer = setTimeout(() => { child.kill(); done(); }, 2000);
     child.once("exit", () => { clearTimeout(timer); done(); });
   });
-  await new Promise((done) => server.close(done));
-  await rm(temporaryRoot, { recursive: true, force: true });
 }
 function request(type, data = {}) {
   const id = `smoke-${++sequence}`;

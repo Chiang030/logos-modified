@@ -15,6 +15,9 @@ import {
 import type { RpcRecord } from "./rpcClient";
 import { ConnectionSettingsStore } from "./connectionSettings";
 import { OpenAiAuthStore } from "./auth/openAiAuthStore";
+import { resolveMessageLink } from "./links";
+import { redactDiagnostic } from "./diagnostics";
+import type { RunOutcome } from "./sessionStore";
 
 interface PendingOpenAiLogin {
   abort: AbortController;
@@ -31,7 +34,16 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
   private sequence = 0;
   private assistantSequence = 0;
   private currentAssistantId: string | undefined;
+  private currentAssistantText = "";
+  private readonly activeTools = new Map<string, ToolCallView>();
   private openAiLogin: PendingOpenAiLogin | undefined;
+  private transition: Promise<void> = Promise.resolve();
+  private runFailed = false;
+  private restoring = false;
+  private sessionReady = false;
+  private pendingEvents: RuntimeEvent[] = [];
+  private replay: ExtensionToWebviewMessage[] = [];
+  private replaying = false;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -72,6 +84,36 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     if (!isWebviewToExtensionMessage(value)) return;
     try {
       switch (value.type) {
+        case "software/load":
+          this.post({ type: "software/result", result: await this.settings.software(value.refresh) });
+          break;
+        case "software/path":
+          this.guardSessionChange();
+          await this.settings.setSoftwarePath(value.product, value.path);
+          this.post({ type: "software/result", result: await this.settings.software() });
+          if (this.runtime.isRunning) await this.synchronize(() => this.runtime.restart());
+          break;
+        case "diagnostics/open":
+          await vscode.commands.executeCommand("logos.showLogs");
+          break;
+        case "link/open": {
+          const target = resolveMessageLink(value.href, vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? "");
+          if (target.kind === "external") await vscode.env.openExternal(vscode.Uri.parse(target.url));
+          else {
+            const document = await vscode.workspace.openTextDocument(vscode.Uri.file(target.path));
+            const editor = await vscode.window.showTextDocument(document, { preview: true });
+            if (target.line) {
+              const position = new vscode.Position(Math.min(target.line - 1, document.lineCount - 1), 0);
+              editor.selection = new vscode.Selection(position, position);
+              editor.revealRange(new vscode.Range(position, position));
+            }
+          }
+          break;
+        }
+        case "session/rename":
+          await this.sessions.rename(value.sessionId, value.title);
+          await this.publishSessionList();
+          break;
         case "settings/load":
           this.post({ type: "settings/loaded", settings: await this.settings.view() });
           break;
@@ -103,13 +145,19 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
           this.post({ type: "settings/loaded", settings: await this.settings.view() });
           break;
         case "webview/ready":
+          this.post({ type: "session/loading", loading: true });
           this.post({ type: "settings/loaded", settings: await this.settings.view() });
           this.post({ type: "runtime/status", status: this.runtime.currentStatus });
-          this.post({ type: "session/list", sessions: (await this.sessions.list()).filter((item) => item.sessionId).map((item) => ({ sessionId: item.sessionId!, title: item.title, sessionFile: item.sessionFile })) });
+          await this.publishSessionList();
           if ((await this.settings.load()).activeConnectionId && vscode.workspace.getConfiguration("logos").get<boolean>("autoStart", true)) {
-            await this.runtime.start();
+            if (this.runtime.isRunning && this.sessionReady && this.replay.length) {
+              this.replaying = true;
+              try { for (const message of this.replay) this.post(message); } finally { this.replaying = false; }
+            } else await this.synchronize();
             this.publishRuntimeConfigInBackground();
           }
+          for (const message of this.sessions.diagnostics.splice(0)) this.post({ type: "runtime/error", message, fatal: false });
+          this.post({ type: "session/loading", loading: false });
           break;
         case "chat/send":
           await this.sendPrompt(value.text);
@@ -118,30 +166,15 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
           await this.runtime.abort();
           break;
         case "session/new":
-          await this.runtime.newSession();
-          await this.sessions.clear();
-          {
-            const state = await this.runtime.refreshState();
-            const sessionId = typeof state.sessionId === "string" ? state.sessionId : undefined;
-            const sessionFile = typeof state.sessionFile === "string" ? state.sessionFile : undefined;
-            if (sessionId) {
-              await this.sessions.save({ sessionId, sessionFile, title: "New session" });
-              const sessions = await this.sessions.list();
-              this.post({
-                type: "session/list",
-                sessions: sessions.filter((item) => item.sessionId).map((item) => ({ sessionId: item.sessionId!, title: item.title, sessionFile: item.sessionFile })),
-                activeSessionId: sessionId,
-              });
-            }
-          }
+          this.guardSessionChange();
+          await this.synchronize(() => this.runtime.newSession());
           await this.publishRuntimeConfig();
           break;
         case "session/select": {
           const session = (await this.sessions.list()).find((item) => item.sessionId === value.sessionId);
           if (!session?.sessionFile) throw new Error("Selected session has no persisted session file");
-          this.currentAssistantId = undefined;
-          this.post({ type: "session/reset" });
-          await this.runtime.switchSession(session.sessionFile, session.sessionId);
+          this.guardSessionChange();
+          await this.synchronize(() => this.runtime.switchSession(session.sessionFile!, session.sessionId));
           await this.publishRuntimeConfig();
           break;
         }
@@ -154,14 +187,51 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
           await this.publishRuntimeConfig();
           break;
         case "runtime/restart":
-          await this.runtime.restart();
+          this.guardSessionChange();
+          await this.synchronize(() => this.runtime.restart());
           await this.publishRuntimeConfig();
           break;
       }
     } catch (error) {
       // 设置与连接的保存错误显示在设置面板里；其余走运行时错误横幅。
       const fromSettings = value.type.startsWith("settings/") || value.type.startsWith("connection/");
-      this.post({ type: fromSettings ? "settings/error" : "runtime/error", message: error instanceof Error ? error.message : String(error) });
+      if (value.type.startsWith("software/")) this.post({ type: "software/error", message: redactDiagnostic(error) });
+      else if (fromSettings) this.post({ type: "settings/error", message: redactDiagnostic(error) });
+      else this.post({ type: "runtime/error", message: redactDiagnostic(error), fatal: false });
+      this.post({ type: "session/loading", loading: false });
+    }
+  }
+
+  newSession(): Promise<void> { return this.enqueue({ type: "session/new" }); }
+
+  private guardSessionChange(): void {
+    if (this.runtime.currentStatus === "running") throw new Error("请先停止当前任务，再切换或新建会话。");
+  }
+
+  private enqueue(value: unknown): Promise<void> {
+    const next = this.transition.then(() => this.handleMessage(value));
+    this.transition = next.catch(() => undefined);
+    return next;
+  }
+
+  private async publishSessionList(): Promise<void> {
+    const active = await this.sessions.load();
+    this.post({ type: "session/list", sessions: (await this.sessions.list()).filter((item) => item.sessionId)
+      .map((item) => ({ sessionId: item.sessionId!, title: item.title, sessionFile: item.sessionFile })), activeSessionId: active?.sessionId });
+  }
+
+  private async synchronize(change?: () => Promise<void>): Promise<void> {
+    this.sessionReady = false;
+    this.restoring = true;
+    this.post({ type: "session/loading", loading: true });
+    try {
+      if (change) await change(); else await this.runtime.start();
+      await this.restoreSession(await this.runtime.snapshot());
+      this.sessionReady = true;
+    } finally {
+      this.restoring = false;
+      for (const event of this.pendingEvents.splice(0)) this.handleRuntimeEvent(event);
+      this.post({ type: "session/loading", loading: false });
     }
   }
 
@@ -206,7 +276,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     this.post({ type: "settings/saved" });
     const settings = await this.settings.load();
     if (settings.activeConnectionId && settings.activeModelId) {
-      await this.runtime.start();
+      await this.synchronize();
       await this.publishRuntimeConfig();
       return;
     }
@@ -216,7 +286,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
 
   private async sendPrompt(text: string): Promise<void> {    const trimmed = text.trim();
     if (!trimmed) return;
-    await this.runtime.start();
+    if (!this.runtime.isRunning || !this.sessionReady) await this.synchronize();
     this.publishRuntimeConfigInBackground();
     if (!this.runtime.state) await this.runtime.refreshState();
     const id = `user-${++this.sequence}`;
@@ -237,18 +307,21 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
       this.post({ type: "session/list", sessions: sessions.filter((item) => item.sessionId).map((item) => ({ sessionId: item.sessionId!, title: item.title, sessionFile: item.sessionFile })), activeSessionId: sessionId });
     }
     this.post({ type: "message/user", id, text: trimmed });
-    await this.runtime.prompt(trimmed);
+    try { await this.runtime.prompt(trimmed); }
+    catch (error) { this.failRun(error); }
   }
 
   private handleRuntimeEvent(event: RuntimeEvent): void {
+    if (this.restoring && event.type === "record") { this.pendingEvents.push(event); return; }
     switch (event.type) {
       case "status":
-        this.post({ type: "runtime/status", status: event.status ?? "idle", detail: event.detail });
+        this.post({ type: "runtime/status", status: event.status ?? "idle", detail: event.detail ? redactDiagnostic(event.detail) : undefined });
+        if (event.status === "error") this.failRun(event.detail ?? "运行时错误", "interrupted");
         return;
       case "stderr":
         return;
       case "protocol_error":
-        this.post({ type: "runtime/error", message: event.error?.message ?? "Invalid LOGOS RPC output" });
+        this.failRun(event.error ?? "Invalid LOGOS RPC output", "interrupted");
         return;
       case "exit":
         return;
@@ -261,7 +334,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
   private handleRecord(record: RpcRecord): void {
     const type = record.type;
     if (type === "logos/session_restore") {
-      void this.restoreSession(record);
+      void this.restoreSession(record).catch((error) => this.failRun(error));
       return;
     }
     if (type === "logos/session_reset") {
@@ -269,11 +342,15 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
       return;
     }
     if (type === "agent_start") {
+      this.runFailed = false;
+      this.saveOutcome("running");
       this.post({ type: "runtime/status", status: "running" });
       return;
     }
     if (type === "agent_settled") {
-      this.post({ type: "run/settled", aborted: record.aborted === true });
+      const outcome = record.aborted === true ? "aborted" : this.runFailed ? "failed" : "completed";
+      this.saveOutcome(outcome);
+      this.post({ type: "run/settled", aborted: record.aborted === true, outcome });
       this.post({ type: "runtime/status", status: "ready" });
       void this.publishRuntimeConfig().catch((error) => {
         this.post({ type: "runtime/error", message: error instanceof Error ? error.message : String(error) });
@@ -284,6 +361,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
       const message = isRecord(record.message) ? record.message : undefined;
       if (message?.role === "assistant") {
         this.currentAssistantId = `assistant-${++this.assistantSequence}`;
+        this.currentAssistantText = "";
         this.post({ type: "message/started", id: this.currentAssistantId });
       }
       return;
@@ -295,27 +373,57 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     if (type === "message_end") {
       const message = isRecord(record.message) ? record.message : undefined;
       if (message?.role === "assistant") {
-        if (this.currentAssistantId) this.post({ type: "message/completed", id: this.currentAssistantId, text: textFromContent(message.content) });
+        const failed = message.stopReason === "error" || message.stopReason === "length" || typeof message.errorMessage === "string";
+        const reason = message.errorMessage ?? (message.stopReason === "length" ? "模型达到输出长度上限，本轮回复未完整结束。可发送继续指令。" : "模型请求失败");
+        const text = textFromContent(message.content);
+        if (this.currentAssistantId) this.post({ type: "message/completed", id: this.currentAssistantId,
+          text: text || (failed ? redactDiagnostic(reason) : ""), isError: failed });
+        if (failed) this.failRun(reason);
         this.currentAssistantId = undefined;
       }
       return;
     }
     if (type === "tool_execution_start") {
       this.currentAssistantId = undefined;
-      this.post({ type: "tool/started", tool: this.toolFromRecord(record, "running") });
+      const tool = this.toolFromRecord(record, "running");
+      this.activeTools.set(tool.id, tool);
+      this.post({ type: "tool/started", tool });
       return;
     }
     if (type === "tool_execution_update") {
-      this.post({ type: "tool/updated", tool: this.toolFromRecord(record, "running") });
+      const tool = this.toolFromRecord(record, "running");
+      const merged = { ...this.activeTools.get(tool.id), ...tool, args: tool.args ?? this.activeTools.get(tool.id)?.args };
+      this.activeTools.set(tool.id, merged);
+      this.post({ type: "tool/updated", tool: merged });
       return;
     }
     if (type === "tool_execution_end") {
-      this.post({ type: "tool/completed", tool: this.toolFromRecord(record, record.isError === true ? "error" : "completed") });
+      const tool = this.toolFromRecord(record, record.isError === true ? "error" : "completed");
+      this.post({ type: "tool/completed", tool: { ...tool, args: tool.args ?? this.activeTools.get(tool.id)?.args } });
+      this.activeTools.delete(tool.id);
+      if (record.isError === true) {
+        this.runFailed = true;
+        this.post({ type: "runtime/error", message: redactDiagnostic(`工具 ${String(record.toolName)} 失败：${JSON.stringify(record.result)}`), fatal: false });
+      }
       return;
     }
     if (type === "extension_error") {
-      this.post({ type: "runtime/error", message: typeof record.error === "string" ? record.error : "LOGOS extension error" });
+      this.failRun(record.error ?? "LOGOS extension error");
     }
+  }
+
+  private saveOutcome(outcome: RunOutcome): void {
+    const id = this.runtime.state?.sessionId;
+    if (typeof id === "string") void this.sessions.setOutcome(id, outcome).catch((error) => {
+      this.post({ type: "runtime/error", message: `保存会话状态失败：${redactDiagnostic(error)}`, fatal: false });
+    });
+  }
+
+  private failRun(error: unknown, outcome: "failed" | "interrupted" = "failed"): void {
+    this.runFailed = true;
+    this.saveOutcome(outcome);
+    this.post({ type: "runtime/error", message: redactDiagnostic(error), fatal: true });
+    this.post({ type: "run/settled", aborted: false, outcome });
   }
 
   private handleMessageUpdate(record: RpcRecord): void {
@@ -327,6 +435,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     }
     const id = this.currentAssistantId;
     if (nested.type === "text_delta" && typeof nested.delta === "string") {
+      this.currentAssistantText += nested.delta;
       this.post({ type: "message/text_delta", id, delta: nested.delta });
     }
   }
@@ -339,7 +448,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
       id,
       name,
       args: record.args,
-      output: result,
+      output: status === "error" ? redactDiagnostic(typeof result === "string" ? result : JSON.stringify(result)) : result,
       status,
       durationMs: typeof record.durationMs === "number" ? record.durationMs : undefined,
     };
@@ -347,36 +456,70 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
 
   private async restoreSession(record: RpcRecord): Promise<void> {
     const messages = Array.isArray(record.messages) ? record.messages : [];
+    const state = isRecord(record.state) ? record.state : undefined;
     const restoredTools: RestoredTool[] = [];
+    const pendingTools = new Map<string, RestoredTool>();
     const restored: RestoredMessage[] = messages.flatMap((value, index) => {
       if (!isRecord(value)) return [];
       const role = value.role;
+      if (role === "assistant" && Array.isArray(value.content)) for (const block of value.content) {
+        if (isRecord(block) && block.type === "toolCall" && typeof block.id === "string" && typeof block.name === "string") {
+          pendingTools.set(block.id, { id: block.id, name: block.name, args: block.arguments, status: state?.isStreaming === true ? "running" : "interrupted", position: index });
+        }
+      }
       if (role === "toolResult") {
         const toolCallId = typeof value.toolCallId === "string" ? value.toolCallId : `restored-tool-${index}`;
-        restoredTools.push({ id: toolCallId, name: typeof value.toolName === "string" ? value.toolName : "tool", output: textFromContent(value.content), status: value.isError === true ? "error" : "completed", durationMs: typeof value.durationMs === "number" ? value.durationMs : undefined, position: index });
+        restoredTools.push({ id: toolCallId, name: typeof value.toolName === "string" ? value.toolName : "tool", args: pendingTools.get(toolCallId)?.args, output: textFromContent(value.content), status: value.isError === true ? "error" : "completed", durationMs: typeof value.durationMs === "number" ? value.durationMs : undefined, position: index });
+        pendingTools.delete(toolCallId);
         return [];
       }
       if (role !== "user" && role !== "assistant" && role !== "system" && role !== "tool") return [];
-      return [{ id: `restored-${index}`, role, text: textFromContent(value.content), position: index }];
+      return [{ id: `restored-${index}`, role, text: textFromContent(value.content) || (typeof value.errorMessage === "string" ? redactDiagnostic(value.errorMessage) : ""), position: index, isError: value.stopReason === "error" }];
     });
-    const state = isRecord(record.state) ? record.state : undefined;
+    restoredTools.push(...pendingTools.values());
     const sessionFile = typeof state?.sessionFile === "string" ? state.sessionFile : undefined;
     const sessionId = typeof state?.sessionId === "string" ? state.sessionId : undefined;
     const previous = sessionId ? (await this.sessions.list()).find((item) => item.sessionId === sessionId) : undefined;
-    await this.sessions.save({ sessionFile, sessionId, title: previous?.title });
+    if (messages.length > 0) await this.sessions.save({ sessionFile, sessionId, title: previous?.title });
+    else await this.sessions.clear();
     this.post({
       type: "session/restore",
       messages: restored,
       tools: restoredTools,
       sessionName: typeof state?.sessionName === "string" ? state.sessionName : undefined,
     });
+    if (state?.isStreaming === true) {
+      if (this.currentAssistantId) {
+        this.post({ type: "message/started", id: this.currentAssistantId });
+        this.post({ type: "message/text_delta", id: this.currentAssistantId, delta: this.currentAssistantText });
+      }
+      for (const tool of this.activeTools.values()) this.post({ type: "tool/started", tool });
+    } else { this.currentAssistantId = undefined; this.currentAssistantText = ""; this.activeTools.clear(); }
+    if (previous?.outcome === "interrupted" || previous?.outcome === "running" && state?.isStreaming !== true) {
+      this.post({ type: "runtime/error", message: "上次运行已中断。已恢复保存的上下文；计算不会自动重跑。", fatal: false });
+      if (sessionId) await this.sessions.setOutcome(sessionId, "interrupted");
+    }
     const sessions = await this.sessions.list();
     this.post({ type: "session/list", sessions: sessions.filter((item) => item.sessionId).map((item) => ({ sessionId: item.sessionId!, title: item.title, sessionFile: item.sessionFile })), activeSessionId: sessionId });
   }
 
   private post(message: ExtensionToWebviewMessage): void {
+    if (!this.replaying) this.cacheForReopen(message);
     void this.view?.webview.postMessage(message);
     void this.panel?.webview.postMessage(message);
+  }
+
+  private cacheForReopen(message: ExtensionToWebviewMessage): void {
+    if (message.type === "session/restore" || message.type === "session/reset") { this.replay = [message]; return; }
+    if (message.type === "message/text_delta") {
+      const previous = this.replay.find((item) => item.type === "message/text_delta" && item.id === message.id);
+      if (previous?.type === "message/text_delta") { previous.delta += message.delta; return; }
+    }
+    if (message.type.startsWith("tool/") && "tool" in message) {
+      const index = this.replay.findIndex((item) => "tool" in item && item.tool.id === message.tool.id);
+      if (index >= 0) { this.replay[index] = message; return; }
+    }
+    if (message.type.startsWith("message/") || message.type.startsWith("tool/") || message.type === "run/settled") this.replay.push({ ...message });
   }
 
   private async publishRuntimeConfig(): Promise<void> {
@@ -385,13 +528,17 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
   }
 
   private publishRuntimeConfigInBackground(): void {
-    void this.publishRuntimeConfig().catch(() => undefined);
+    void this.publishRuntimeConfig().catch((error) => this.post({ type: "runtime/error", message: redactDiagnostic(error), fatal: false }));
   }
 
   private configureWebview(webview: vscode.Webview): vscode.Disposable {
     webview.options = { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, "dist")] };
     webview.html = createWebviewHtml(webview, this.context.extensionUri);
-    return webview.onDidReceiveMessage((message: unknown) => void this.handleMessage(message));
+    return webview.onDidReceiveMessage((message: unknown) => {
+      // Cancellation must remain available while a prompt request is pending.
+      if (isRecord(message) && ["chat/abort", "settings/openaiCancelLogin", "settings/openaiManualCallback", "diagnostics/open", "link/open"].includes(String(message.type))) void this.handleMessage(message);
+      else void this.enqueue(message);
+    });
   }
 }
 

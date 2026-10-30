@@ -1,10 +1,14 @@
 import { createLogoComponent, logoOptions } from "../src/ui/logo.mjs";
 import { registerSimulationTool } from "./simulation.mjs";
 import { registerObservability } from "./observability.mjs";
+import { registerWebSearch } from "./web-search.mjs";
+import { registerSoftwareDiscovery } from "./software.mjs";
 
 /** Replace only Pi's welcome header; print, JSON and RPC output stay untouched. */
 export default async function logosExtension(pi) {
   registerSimulationTool(pi);
+  registerWebSearch(pi);
+  registerSoftwareDiscovery(pi);
   await registerObservability(pi);
   let header;
   const stop = () => { header?.dispose(); header = undefined; };

@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { appendMessage, appendTool, restoreTimeline, updateMessage, updateTool } from "../webview-ui/src/timeline";
+import { appendMessage, appendTool, restoreTimeline, settleTimeline, updateMessage, updateTool } from "../webview-ui/src/timeline";
 
 describe("timeline", () => {
+  it("closes pending tools on interruption and distinguishes user cancellation", () => {
+    const items = appendTool(appendMessage([], { id: "m", role: "assistant", text: "partial", status: "streaming" }, 1), { id: "t", name: "solver", status: "running" }, 2);
+    expect(settleTimeline(items, "aborted").map((item) => item.value.status)).toEqual(["aborted", "aborted"]);
+    expect(settleTimeline(items, "interrupted").map((item) => item.value.status)).toEqual(["interrupted", "interrupted"]);
+  });
   it("keeps live messages and tools in arrival order", () => {
     let items = appendMessage([], { id: "user-1", role: "user", text: "go", status: "complete" }, 1);
     items = appendMessage(items, { id: "assistant-1", role: "assistant", text: "", status: "streaming" }, 2);

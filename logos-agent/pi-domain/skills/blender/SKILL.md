@@ -4,6 +4,10 @@ description: Use for Blender 3D content and rendering - turn text or SVG logos i
 ---
 
 # Blender
+## 当前机器的软件位置
+
+首次使用先读取运行时提供的软件清单；缺失或过期时调用 `software_discover`。使用返回的当前主机绝对路径，不要全盘搜索或把历史部署路径当作本机事实。安装、SDK、许可证和 MCP 连接分别验证；远程任务必须在目标主机探测。
+
 
 ## Scope
 
@@ -19,24 +23,9 @@ Do not use Blender for mechanical CAD, parametric parts, or assemblies - route
 those through the `solidcraft` skill. Do not use it for simulation - use the
 `fluent-sim` / `mechanical-sim` / `hfss` skills.
 
-## 环境事实(verified 2026-10-21)
+## 环境探测
 
-| Capability | Path | Version/State |
-|---|---|---|
-| Blender(headless 主力) | `~/.local/bin/blender` → `~/opt/blender-5.2.2-linux-x64/` | 5.2.2 LTS |
-| MCP 常驻 Blender | systemd --user `blender-mcp.service`(xvfb-run 承载 GUI),监听 `127.0.0.1:9876`,linger 已开 | active |
-| MCP server(LOGOS-owned launcher) | `logos-agent/integrations/blender-mcp/bin/blender-mcp-server` | uvx `mcp-for-blender` |
-| MCP config | `~/.pi/agent/mcp.json`(`exposure: deferred`,由 register-mcp.py 写入) | - |
-| Blender 插件 | `~/.config/blender/5.2/scripts/addons/blender_mcp.py`(已启用,auto-start) | - |
-| 字体 | `/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf`,Noto Sans CJK(中文) | - |
-| CPU | 32 核,无 GPU、无显示器 | - |
-
-Verify before use:
-
-```bash
-~/.local/bin/blender -b --python-expr "import bpy; print(bpy.app.version_string)"  # 5.2.2 LTS
-systemctl --user is-active blender-mcp && ss -ltn | grep 9876                      # active + LISTEN
-```
+使用 `software_discover` 返回的 Blender 路径。渲染前核实版本、GPU 和字体；MCP 连接仅在实际配置并连通后使用。
 
 ## 两条执行路径
 

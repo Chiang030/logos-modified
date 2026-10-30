@@ -1,4 +1,5 @@
 import { isProviderId, type ProviderId } from "./providerPresets";
+import type { SoftwareDiscovery } from "../../../pi-domain/src/software-discovery.mjs";
 
 export type RuntimeStatus = "idle" | "starting" | "ready" | "running" | "stopping" | "error";
 
@@ -32,7 +33,7 @@ export interface ToolCallView {
   name: string;
   args?: unknown;
   output?: unknown;
-  status: "running" | "completed" | "error";
+  status: "running" | "completed" | "error" | "aborted" | "interrupted";
   durationMs?: number;
 }
 
@@ -41,6 +42,7 @@ export interface RestoredMessage {
   role: "user" | "assistant" | "system" | "tool";
   text: string;
   position?: number;
+  isError?: boolean;
 }
 export interface RestoredTool extends ToolCallView { position: number; }
 export interface SessionListEntry { sessionId: string; title: string; sessionFile?: string; }
@@ -60,6 +62,7 @@ export interface ConnectionEntry {
   modelId: string;
   /** 该配置开放给左下角切换器的全部模型。 */
   modelIds: string[];
+  modelCapabilities?: Record<string, { reasoning?: boolean }>;
 }
 
 export interface ConnectionsSettings {
@@ -83,6 +86,8 @@ export interface SettingsView extends ConnectionsSettings {
 }
 
 export type ExtensionToWebviewMessage =
+  | { type: "software/result"; result: SoftwareDiscovery }
+  | { type: "software/error"; message: string }
   | { type: "settings/loaded"; settings: SettingsView }
   | { type: "settings/models"; modelIds: string[]; source: ModelSource }
   | { type: "settings/openaiLoginStatus"; phase: OpenAiLoginPhase; url?: string }
@@ -90,7 +95,8 @@ export type ExtensionToWebviewMessage =
   | { type: "settings/error"; message: string }
   | { type: "runtime/status"; status: RuntimeStatus; detail?: string }
   | { type: "runtime/config"; config: RuntimeConfig }
-  | { type: "runtime/error"; message: string }
+  | { type: "runtime/error"; message: string; fatal?: boolean }
+  | { type: "session/loading"; loading: boolean }
   | { type: "message/user"; id: string; text: string }
   | { type: "message/started"; id: string }
   | { type: "message/text_delta"; id: string; delta: string }
@@ -101,9 +107,11 @@ export type ExtensionToWebviewMessage =
   | { type: "session/restore"; messages: RestoredMessage[]; tools?: RestoredTool[]; sessionName?: string }
   | { type: "session/list"; sessions: SessionListEntry[]; activeSessionId?: string }
   | { type: "session/reset" }
-  | { type: "run/settled"; aborted: boolean };
+  | { type: "run/settled"; aborted: boolean; outcome?: "completed" | "failed" | "aborted" | "interrupted" };
 
 export type WebviewToExtensionMessage =
+  | { type: "software/load"; refresh?: boolean }
+  | { type: "software/path"; product: string; path: string }
   | { type: "settings/load" }
   | { type: "settings/models"; baseUrl: string; api: ApiProtocol; apiKey?: string }
   | { type: "settings/save"; systemPrompt: string; appendPrompt: string; skillsEnabled: boolean; skillPaths: string[] }
@@ -118,6 +126,9 @@ export type WebviewToExtensionMessage =
   | { type: "chat/abort" }
   | { type: "session/new" }
   | { type: "session/select"; sessionId: string }
+  | { type: "session/rename"; sessionId: string; title: string }
+  | { type: "link/open"; href: string }
+  | { type: "diagnostics/open" }
   | { type: "model/select"; provider: string; modelId: string }
   | { type: "thinking/select"; level: string }
   | { type: "runtime/restart" };
@@ -125,6 +136,11 @@ export type WebviewToExtensionMessage =
 export function isWebviewToExtensionMessage(value: unknown): value is WebviewToExtensionMessage {
   if (!isRecord(value) || typeof value.type !== "string") return false;
   switch (value.type) {
+    case "software/load": return value.refresh === undefined || typeof value.refresh === "boolean";
+    case "software/path": return typeof value.product === "string" && typeof value.path === "string";
+    case "diagnostics/open": return true;
+    case "link/open": return typeof value.href === "string" && value.href.length > 0;
+    case "session/rename": return typeof value.sessionId === "string" && typeof value.title === "string";
     case "settings/load": return true;
     case "settings/models":
       return typeof value.baseUrl === "string" && isApiProtocol(value.api) && (value.apiKey === undefined || typeof value.apiKey === "string");
@@ -167,7 +183,8 @@ export function isConnectionEntry(value: unknown): value is ConnectionEntry {
   return isRecord(value) && typeof value.id === "string" && value.id.length > 0 && typeof value.name === "string"
     && (value.providerId === undefined || isProviderId(value.providerId))
     && typeof value.baseUrl === "string" && isApiProtocol(value.api)
-    && typeof value.modelId === "string" && Array.isArray(value.modelIds) && value.modelIds.every((id) => typeof id === "string");
+    && typeof value.modelId === "string" && Array.isArray(value.modelIds) && value.modelIds.every((id) => typeof id === "string")
+    && (value.modelCapabilities === undefined || (isRecord(value.modelCapabilities) && Object.values(value.modelCapabilities).every((capability) => isRecord(capability) && (capability.reasoning === undefined || typeof capability.reasoning === "boolean"))));
 }
 
 export function isConnectionsSettings(value: unknown): value is ConnectionsSettings {

@@ -4,6 +4,10 @@ description: Use for KiCad schematic and PCB projects - inspect components, nets
 ---
 
 # KiCad
+## 当前机器的软件位置
+
+首次使用先读取运行时提供的软件清单；缺失或过期时调用 `software_discover`。使用返回的当前主机绝对路径，不要全盘搜索或把历史部署路径当作本机事实。安装、SDK、许可证和 MCP 连接分别验证；远程任务必须在目标主机探测。
+
 
 ## Scope
 
@@ -23,43 +27,7 @@ mechanical geometry through the `solidcraft` skill and meshing through the
 
 ## Discover the installation
 
-Verified on the Linux server on 2026-10-21. **Two KiCad installations coexist**
-and the toolchain mixes them, so a version claim is only evidence when it
-names the executable:
-
-| Capability | Path | Version |
-|---|---|---|
-| CLI (the one actually used) | `/usr/bin/kicad-cli` (Ubuntu 24.04 package) | 10.0.7 |
-| CLI, user-space alternative | `~/.local/bin/kicad9-cli` | 9.0.9 |
-| Pcbnew / Python API | `/usr/bin/python3 -c "import pcbnew"` | 10.0.7 |
-| Pcbnew, user-space alternative | `~/.local/bin/kicad9-python` | 9.0.9 |
-| GUI (needs a desktop session) | `~/.local/bin/kicad9` | 9.0.9 |
-| MCP server (LOGOS-owned) | `logos-agent/integrations/kicad-mcp-server/bin/kicad-mcp-server` | 47 tools |
-| MCP server source (fork) | `logos-agent/integrations/kicad-mcp-server/src` | patched 2026-10-21 |
-| MCP config | `~/.pi/agent/mcp.json` (`exposure: deferred`, written by `register-mcp.py`) | - |
-| Host install (legacy) | `~/.local/bin/kicad-mcp-server` → `~/.local/opt/kicad-mcp-server/src` | 仅作 fallback / 对照 |
-
-`~/.local/bin/kicad-cli` and `~/.local/bin/kicad-python` from earlier notes **do
-not exist** — do not reference them. Verify before use:
-
-```bash
-command -v kicad-cli && kicad-cli version                      # expect 10.0.7
-/usr/bin/python3 -c "import pcbnew; print(pcbnew.Version())"   # expect 10.0.7
-~/.local/bin/kicad9-cli version                                # 9.0.9, older stack
-python3 logos-agent/integrations/kicad-mcp-server/tests/test_fork_regressions.py
-```
-
-**The KiCad MCP server is part of LOGOS**: the patched source lives in the repo
-(`integrations/kicad-mcp-server/`), is shipped in the release archive, and is
-what `~/.pi/agent/mcp.json` points at. When it must change, edit the fork and
-re-run its two test scripts — do not patch the legacy host install, and do not
-re-point `mcp.json` at a pip-installed copy (two editable installs of the same
-package shadow each other; that is how the "ERC always passes" bug survived a
-local patch on this host).
-
-The launcher keeps the user-space 9.0.9 prefix on `LD_LIBRARY_PATH` /
-`PYTHONPATH` when it exists, so in-process `pcbnew` is 9.0.9 while `kicad-cli`
-children are 10.0.7. The tools tolerate that mix, but say so in reports.
+Use `software_discover` to locate the current host's KiCad CLI. Probe that executable's version and the chosen Python interpreter's pcbnew separately; do not assume matching versions or a configured MCP service.
 
 If KiCad or the MCP server is missing, stop and report it. Do not invent a
 tool result or silently substitute another EDA tool.
@@ -196,18 +164,34 @@ writes ERC reports as JSON whose violations live under `sheets[].violations`.
 
 ```bash
 # ERC and DRC reports
+## 当前机器的软件位置
+
+首次使用先读取运行时提供的软件清单；缺失或过期时调用 `software_discover`。使用返回的当前主机绝对路径，不要全盘搜索或把历史部署路径当作本机事实。安装、SDK、许可证和 MCP 连接分别验证；远程任务必须在目标主机探测。
+
 kicad-cli sch erc --format report --severity-all -o erc.rpt board.kicad_sch
 kicad-cli pcb drc --format report --severity-all -o drc.rpt board.kicad_pcb
 
 # Netlist and BOM
+## 当前机器的软件位置
+
+首次使用先读取运行时提供的软件清单；缺失或过期时调用 `software_discover`。使用返回的当前主机绝对路径，不要全盘搜索或把历史部署路径当作本机事实。安装、SDK、许可证和 MCP 连接分别验证；远程任务必须在目标主机探测。
+
 kicad-cli sch export netlist --format kicadsexpr -o board.net board.kicad_sch
 kicad-cli sch export bom -o bom.csv board.kicad_sch
 
 # Fabrication outputs
+## 当前机器的软件位置
+
+首次使用先读取运行时提供的软件清单；缺失或过期时调用 `software_discover`。使用返回的当前主机绝对路径，不要全盘搜索或把历史部署路径当作本机事实。安装、SDK、许可证和 MCP 连接分别验证；远程任务必须在目标主机探测。
+
 kicad-cli pcb export gerbers -o fabrication/ board.kicad_pcb
 kicad-cli pcb export drill -o fabrication/ board.kicad_pcb
 
 # Drawings and mechanical exchange
+## 当前机器的软件位置
+
+首次使用先读取运行时提供的软件清单；缺失或过期时调用 `software_discover`。使用返回的当前主机绝对路径，不要全盘搜索或把历史部署路径当作本机事实。安装、SDK、许可证和 MCP 连接分别验证；远程任务必须在目标主机探测。
+
 kicad-cli sch export svg -o exports/schematic/ board.kicad_sch
 kicad-cli pcb export svg --layers F.Cu,B.Cu,F.Silkscreen,Edge.Cuts \
   -o exports/board.svg board.kicad_pcb

@@ -1,5 +1,5 @@
 import { Type } from "@earendil-works/pi-ai";
-import { ACTIONS, runSimulation } from "../src/simulation/runner.mjs";
+import { ACTIONS, runSimulation, simulationToolResult } from "../src/simulation/runner.mjs";
 
 export function registerSimulationTool(pi) {
   pi.registerTool({
@@ -15,7 +15,7 @@ export function registerSimulationTool(pi) {
       const args = [params.product];
       if (params.path) args.push("--path", params.path);
       const result = await runSimulation({ action: "discover", args, host: params.host, port: params.port }, { cwd: ctx.cwd, signal });
-      return { content: [{ type: "text", text: JSON.stringify(result) }], details: result };
+      return simulationToolResult(result);
     },
   });
   pi.registerTool({
@@ -38,7 +38,7 @@ export function registerSimulationTool(pi) {
         args.push("--installation", params.installation);
       }
       const result = await runSimulation({ ...params, args }, { cwd: ctx.cwd, signal });
-      return { content: [{ type: "text", text: JSON.stringify(result) }], details: result };
+      return simulationToolResult(result);
     },
   });
 }
