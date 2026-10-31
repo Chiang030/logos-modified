@@ -3,9 +3,11 @@ import { registerSimulationTool } from "./simulation.mjs";
 import { registerObservability } from "./observability.mjs";
 import { registerWebSearch } from "./web-search.mjs";
 import { registerSoftwareDiscovery } from "./software.mjs";
+import registerModelErrorPolicy from "./model-errors.mjs";
 
 /** Replace only Pi's welcome header; print, JSON and RPC output stay untouched. */
 export default async function logosExtension(pi) {
+  registerModelErrorPolicy(pi);
   registerSimulationTool(pi);
   registerWebSearch(pi);
   registerSoftwareDiscovery(pi);

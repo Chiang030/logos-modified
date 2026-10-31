@@ -17,6 +17,7 @@ import { ConnectionSettingsStore } from "./connectionSettings";
 import { OpenAiAuthStore } from "./auth/openAiAuthStore";
 import { resolveMessageLink } from "./links";
 import { redactDiagnostic } from "./diagnostics";
+import { describeModelError } from "./modelErrors";
 import type { RunOutcome } from "./sessionStore";
 
 interface PendingOpenAiLogin {
@@ -381,11 +382,15 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
       const message = isRecord(record.message) ? record.message : undefined;
       if (message?.role === "assistant") {
         const failed = message.stopReason === "error" || message.stopReason === "length" || typeof message.errorMessage === "string";
-        const reason = message.errorMessage ?? (message.stopReason === "length" ? "模型达到输出长度上限，本轮回复未完整结束。可发送继续指令。" : "模型请求失败");
+        const reason = describeModelError(message.errorMessage ?? (message.stopReason === "length" ? "模型达到输出长度上限，本轮回复未完整结束。可发送继续指令。" : "模型请求失败"));
         const text = textFromContent(message.content);
         if (this.currentAssistantId) this.post({ type: "message/completed", id: this.currentAssistantId,
           text: text || (failed ? redactDiagnostic(reason) : ""), isError: failed });
-        if (failed) this.failRun(reason);
+        if (failed) {
+          this.runFailed = true;
+          // Pi may still be retrying. Only agent_settled may re-enable sending.
+          this.post({ type: "runtime/error", message: redactDiagnostic(reason), fatal: false });
+        }
         this.currentAssistantId = undefined;
       }
       return;

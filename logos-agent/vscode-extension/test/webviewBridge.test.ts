@@ -81,4 +81,21 @@ describe("chat lifecycle", () => {
     f.emit({ type: "status", status: "error", detail: "LOGOS exited (1)" });
     expect(f.sent).toContainEqual(expect.objectContaining({ type: "run/settled", outcome: "interrupted" }));
   });
+  it("keeps a billing failure busy until the runtime stops, with one actionable error reply", async () => {
+    const f = await fixture();
+    const errorMessage = '429: {"code":"1113","message":"余额不足或无可用资源包,请充值。"}';
+    f.emit({ type: "record", record: { type: "agent_start" } });
+    f.emit({ type: "record", record: { type: "message_start", message: { role: "assistant" } } });
+    f.emit({ type: "record", record: { type: "message_end", message: { role: "assistant", content: [], stopReason: "error", errorMessage } } });
+    expect(f.sent.filter((message) => message.type === "message/completed")).toEqual([
+      expect.objectContaining({ isError: true, text: expect.stringContaining("已停止自动重试") }),
+    ]);
+    expect(f.sent).toContainEqual(expect.objectContaining({ type: "runtime/error", fatal: false }));
+    expect(f.sent.some((message) => message.type === "run/settled")).toBe(false);
+    f.emit({ type: "record", record: { type: "auto_retry_start", errorMessage } });
+    f.emit({ type: "record", record: { type: "auto_retry_end", success: false, finalError: "Retry cancelled" } });
+    f.emit({ type: "record", record: { type: "agent_settled", aborted: false } });
+    expect(f.sent.filter((message) => message.type === "run/settled")).toEqual([{ type: "run/settled", aborted: false, outcome: "failed" }]);
+    expect(f.sent.filter((message) => message.type === "message/completed")).toHaveLength(1);
+  });
 });
