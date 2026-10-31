@@ -39,4 +39,9 @@ describe("timeline", () => {
     );
     expect(items.map((item) => item.value.id)).toEqual(["m-1", "t-1", "m-2"]);
   });
+  it("keeps the historical user name when restoring and updating messages", () => {
+    const items = restoreTimeline([{ id: "user", role: "user", text: "hello", userName: "Original member" }], []);
+    const updated = updateMessage(items, "user", (message) => ({ ...message, text: "hello again" }), 1);
+    expect(updated[0].kind === "message" && updated[0].value.userName).toBe("Original member");
+  });
 });

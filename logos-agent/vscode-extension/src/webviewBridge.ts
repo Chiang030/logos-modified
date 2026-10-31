@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import * as vscode from "vscode";
 import type { LocalRuntime, RuntimeEvent } from "./localRuntime";
 import { SessionStore } from "./sessionStore";
+import { UsageStore } from "./usageStore";
 import {
   isRecord,
   isWebviewToExtensionMessage,
@@ -45,6 +46,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
   private pendingEvents: RuntimeEvent[] = [];
   private replay: ExtensionToWebviewMessage[] = [];
   private replaying = false;
+  private restoredUserMessages = 0;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -52,6 +54,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     private readonly sessions: SessionStore,
     private readonly settings: ConnectionSettingsStore,
     private readonly openAiAuth: OpenAiAuthStore,
+    private readonly usage: UsageStore,
   ) {
     this.disposables.push(runtime.onDidEvent((event) => this.handleRuntimeEvent(event)));
   }
@@ -85,6 +88,17 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     if (!isWebviewToExtensionMessage(value)) return;
     try {
       switch (value.type) {
+        case "identity/load":
+          await this.publishIdentity();
+          break;
+        case "identity/select":
+          if (["starting", "running", "stopping"].includes(this.runtime.currentStatus)) throw new Error("请等待当前任务结束或停止后再切换使用者。");
+          await this.usage.select(value.memberId);
+          await this.publishIdentity();
+          break;
+        case "identity/openRecords":
+          await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(vscode.Uri.file(this.usage.filePath)), { preview: true });
+          break;
         case "update/check":
           await vscode.commands.executeCommand("logos.checkUpdate");
           break;
@@ -152,6 +166,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
           this.post({ type: "settings/loaded", settings: await this.settings.view() });
           break;
         case "webview/ready":
+          await this.publishIdentity();
           this.post({ type: "extension/info", version: String(this.context.extension.packageJSON.version) });
           this.post({ type: "session/loading", loading: true });
           this.post({ type: "settings/loaded", settings: await this.settings.view() });
@@ -203,7 +218,8 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     } catch (error) {
       // 设置与连接的保存错误显示在设置面板里；其余走运行时错误横幅。
       const fromSettings = value.type.startsWith("settings/") || value.type.startsWith("connection/");
-      if (value.type.startsWith("software/")) this.post({ type: "software/error", message: redactDiagnostic(error) });
+      if (value.type.startsWith("identity/")) this.post({ type: "identity/error", message: redactDiagnostic(error) });
+      else if (value.type.startsWith("software/")) this.post({ type: "software/error", message: redactDiagnostic(error) });
       else if (fromSettings) this.post({ type: "settings/error", message: redactDiagnostic(error) });
       else this.post({ type: "runtime/error", message: redactDiagnostic(error), fatal: false });
       this.post({ type: "session/loading", loading: false });
@@ -211,6 +227,10 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
   }
 
   newSession(): Promise<void> { return this.enqueue({ type: "session/new" }); }
+
+  private async publishIdentity(): Promise<void> {
+    this.post({ type: "identity/loaded", identity: await this.usage.view() });
+  }
 
   private guardSessionChange(): void {
     if (this.runtime.currentStatus === "running") throw new Error("请先停止当前任务，再切换或新建会话。");
@@ -294,6 +314,11 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
 
   private async sendPrompt(text: string): Promise<void> {    const trimmed = text.trim();
     if (!trimmed) return;
+    const member = await this.usage.selected();
+    if (!member) {
+      this.post({ type: "identity/required", message: "请先在 API 配置面板选择使用者，再发送消息。" });
+      return;
+    }
     if (!this.runtime.isRunning || !this.sessionReady) await this.synchronize();
     this.publishRuntimeConfigInBackground();
     if (!this.runtime.state) await this.runtime.refreshState();
@@ -301,6 +326,10 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     const state = this.runtime.state;
     const sessionId = typeof state?.sessionId === "string" ? state.sessionId : undefined;
     const sessionFile = typeof state?.sessionFile === "string" ? state.sessionFile : undefined;
+    if (!sessionId) throw new Error("尚未取得会话 ID，请重启运行时后重试。");
+    const owner = await this.usage.owner(sessionId);
+    if (!owner && this.restoredUserMessages > 0) throw new Error("此历史会话尚未登记使用者，请新建会话后发送，以保留历史记录的原始归属。");
+    await this.usage.bind(sessionId, member);
     if (sessionId) {
       const existing = await this.sessions.list();
       const current = existing.find((item) => item.sessionId === sessionId);
@@ -314,7 +343,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
       const sessions = await this.sessions.list();
       this.post({ type: "session/list", sessions: sessions.filter((item) => item.sessionId).map((item) => ({ sessionId: item.sessionId!, title: item.title, sessionFile: item.sessionFile })), activeSessionId: sessionId });
     }
-    this.post({ type: "message/user", id, text: trimmed });
+    this.post({ type: "message/user", id, text: trimmed, userName: owner?.name ?? member.name });
     try { await this.runtime.prompt(trimmed); }
     catch (error) { this.failRun(error); }
   }
@@ -381,6 +410,8 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     if (type === "message_end") {
       const message = isRecord(record.message) ? record.message : undefined;
       if (message?.role === "assistant") {
+        const sessionId = this.runtime.state?.sessionId;
+        if (typeof sessionId === "string") this.saveUsage(sessionId, [message]);
         const failed = message.stopReason === "error" || message.stopReason === "length" || typeof message.errorMessage === "string";
         const reason = describeModelError(message.errorMessage ?? (message.stopReason === "length" ? "模型达到输出长度上限，本轮回复未完整结束。可发送继续指令。" : "模型请求失败"));
         const text = textFromContent(message.content);
@@ -431,6 +462,12 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     });
   }
 
+  private saveUsage(sessionId: string, messages: Record<string, unknown>[]): void {
+    void this.usage.record(sessionId, messages).then(() => this.publishIdentity()).catch((error) => {
+      this.post({ type: "runtime/error", message: `保存使用统计失败：${redactDiagnostic(error)}`, fatal: false });
+    });
+  }
+
   private failRun(error: unknown, outcome: "failed" | "interrupted" = "failed"): void {
     this.runFailed = true;
     this.saveOutcome(outcome);
@@ -469,6 +506,10 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
   private async restoreSession(record: RpcRecord): Promise<void> {
     const messages = Array.isArray(record.messages) ? record.messages : [];
     const state = isRecord(record.state) ? record.state : undefined;
+    const restoredSessionId = typeof state?.sessionId === "string" ? state.sessionId : undefined;
+    const owner = restoredSessionId ? await this.usage.owner(restoredSessionId) : undefined;
+    this.restoredUserMessages = messages.filter((value) => isRecord(value) && value.role === "user").length;
+    if (owner && restoredSessionId) this.saveUsage(restoredSessionId, messages.filter(isRecord));
     const restoredTools: RestoredTool[] = [];
     const pendingTools = new Map<string, RestoredTool>();
     const restored: RestoredMessage[] = messages.flatMap((value, index) => {
@@ -486,7 +527,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
         return [];
       }
       if (role !== "user" && role !== "assistant" && role !== "system" && role !== "tool") return [];
-      return [{ id: `restored-${index}`, role, text: textFromContent(value.content) || (typeof value.errorMessage === "string" ? redactDiagnostic(value.errorMessage) : ""), position: index, isError: value.stopReason === "error" }];
+      return [{ id: `restored-${index}`, role, userName: role === "user" ? owner?.name : undefined, text: textFromContent(value.content) || (typeof value.errorMessage === "string" ? redactDiagnostic(value.errorMessage) : ""), position: index, isError: value.stopReason === "error" }];
     });
     restoredTools.push(...pendingTools.values());
     const sessionFile = typeof state?.sessionFile === "string" ? state.sessionFile : undefined;

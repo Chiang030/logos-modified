@@ -2,6 +2,7 @@ import { join } from "node:path";
 import * as vscode from "vscode";
 import { LocalRuntime } from "./localRuntime";
 import { SessionStore } from "./sessionStore";
+import { UsageStore } from "./usageStore";
 import { LogosWebviewProvider } from "./webviewBridge";
 import { installBundledRuntime } from "./bundledInstallation";
 import { ConnectionSettingsStore } from "./connectionSettings";
@@ -38,7 +39,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     settings,
     profileDirectory: join(storageRoot, "logos-agent", "profile"),
   });
-  const provider = new LogosWebviewProvider(context, runtime, sessions, settings, openAiAuth);
+  const usage = new UsageStore(join(storageRoot, "sessions"));
+  const provider = new LogosWebviewProvider(context, runtime, sessions, settings, openAiAuth, usage);
   const output = vscode.window.createOutputChannel("LOGOS");
   void settings.software().catch((error) => output.appendLine(`[software] ${redactDiagnostic(error)}`));
   const outputSubscription = runtime.onDidEvent((event) => {

@@ -1,4 +1,5 @@
 import { isProviderId, type ProviderId } from "./providerPresets";
+import { memberById, type IdentityView } from "./members";
 import type { SoftwareDiscovery } from "../../../pi-domain/src/software-discovery.mjs";
 
 export type RuntimeStatus = "idle" | "starting" | "ready" | "running" | "stopping" | "error";
@@ -43,6 +44,7 @@ export interface RestoredMessage {
   text: string;
   position?: number;
   isError?: boolean;
+  userName?: string;
 }
 export interface RestoredTool extends ToolCallView { position: number; }
 export interface SessionListEntry { sessionId: string; title: string; sessionFile?: string; }
@@ -86,6 +88,9 @@ export interface SettingsView extends ConnectionsSettings {
 }
 
 export type ExtensionToWebviewMessage =
+  | { type: "identity/loaded"; identity: IdentityView }
+  | { type: "identity/error"; message: string }
+  | { type: "identity/required"; message: string }
   | { type: "software/result"; result: SoftwareDiscovery }
   | { type: "software/error"; message: string }
   | { type: "settings/loaded"; settings: SettingsView }
@@ -98,7 +103,7 @@ export type ExtensionToWebviewMessage =
   | { type: "extension/info"; version: string }
   | { type: "runtime/error"; message: string; fatal?: boolean }
   | { type: "session/loading"; loading: boolean }
-  | { type: "message/user"; id: string; text: string }
+  | { type: "message/user"; id: string; text: string; userName?: string }
   | { type: "message/started"; id: string }
   | { type: "message/text_delta"; id: string; delta: string }
   | { type: "message/completed"; id: string; text: string; isError?: boolean }
@@ -111,6 +116,9 @@ export type ExtensionToWebviewMessage =
   | { type: "run/settled"; aborted: boolean; outcome?: "completed" | "failed" | "aborted" | "interrupted" };
 
 export type WebviewToExtensionMessage =
+  | { type: "identity/load" }
+  | { type: "identity/select"; memberId: string }
+  | { type: "identity/openRecords" }
   | { type: "software/load"; refresh?: boolean }
   | { type: "software/path"; product: string; path: string }
   | { type: "settings/load" }
@@ -139,6 +147,9 @@ export type WebviewToExtensionMessage =
 export function isWebviewToExtensionMessage(value: unknown): value is WebviewToExtensionMessage {
   if (!isRecord(value) || typeof value.type !== "string") return false;
   switch (value.type) {
+    case "identity/load":
+    case "identity/openRecords": return true;
+    case "identity/select": return !!memberById(value.memberId);
     case "software/load": return value.refresh === undefined || typeof value.refresh === "boolean";
     case "software/path": return typeof value.product === "string" && typeof value.path === "string";
     case "diagnostics/open": return true;

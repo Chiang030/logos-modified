@@ -1,4 +1,5 @@
 import { SettingsPanel } from "./components/SettingsPanel";
+import type { MemberIdentity } from "../../src/shared/members";
 import { HistoryMenu } from "./components/HistoryMenu";
 import { Fragment, memo, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import {
@@ -61,6 +62,8 @@ export function App(): ReactElement {
   const [diagnostics, setDiagnostics] = useState<string[]>([]);
   const [diagnosticsVisible, setDiagnosticsVisible] = useState(true);
   const [waiting, setWaiting] = useState(false);
+  const [member, setMember] = useState<MemberIdentity>();
+  const [sending, setSending] = useState(false);
   const lastActivity = useRef(Date.now());
   const followScroll = useRef(true);
   const orderRef = useRef(0);
@@ -92,11 +95,14 @@ export function App(): ReactElement {
       const message = event.data;
       lastActivity.current = Date.now(); setWaiting(false);
       switch (message.type) {
+        case "identity/loaded": setMember(message.identity.selected); break;
+        case "identity/required": setSending(false); setSettingsOpen(true); break;
+        case "identity/error": setSending(false); break;
         case "extension/info": setExtensionVersion(message.version); break;
         case "session/loading": setLoading(message.loading); break;
         case "runtime/status": setStatus(message.status); setStatusDetail(message.detail); break;
         case "runtime/config": setRuntimeConfig(message.config); break;
-        case "runtime/error": setError(message.message); setDiagnostics((current) => current.includes(message.message) ? current : [...current, message.message]); setDiagnosticsVisible(true); if (message.fatal !== false) setStatus("error"); break;
+        case "runtime/error": setSending(false); setError(message.message); setDiagnostics((current) => current.includes(message.message) ? current : [...current, message.message]); setDiagnosticsVisible(true); if (message.fatal !== false) setStatus("error"); break;
         case "session/list": setSessions(message.sessions); setActiveSessionId(message.activeSessionId); break;
         case "session/reset": setTimeline([]); setError(undefined); break;
         case "session/restore": {
@@ -105,7 +111,7 @@ export function App(): ReactElement {
           setTimeline(restored);
           break;
         }
-        case "message/user": setTimeline((current) => appendMessage(current, { id: message.id, role: "user", text: message.text, status: "complete" }, nextOrder(orderRef))); break;
+        case "message/user": setSending(false); setInputValue((value) => value.trim() === message.text ? "" : value); setTimeline((current) => appendMessage(current, { id: message.id, role: "user", text: message.text, userName: message.userName, status: "complete" }, nextOrder(orderRef))); break;
         case "message/started": setTimeline((current) => current.some((item) => item.kind === "message" && item.value.id === message.id) ? current : appendMessage(current, { id: message.id, role: "assistant", text: "", status: "streaming" }, nextOrder(orderRef))); break;
         case "message/text_delta": setTimeline((current) => updateMessage(current, message.id, (item) => ({ ...item, text: item.text + message.delta }), nextOrder(orderRef))); break;
         case "message/completed": setTimeline((current) => updateMessage(current, message.id, (item) => ({ ...item, text: message.text, status: message.isError ? "error" : "complete" }), nextOrder(orderRef))); break;
@@ -139,9 +145,10 @@ export function App(): ReactElement {
 
   const send = (): void => {
     const text = inputValue.trim();
-    if (!text || loading || status === "starting" || status === "stopping") return;
+    if (!text || sending || loading || status === "starting" || status === "stopping") return;
+    if (!member) { setSettingsOpen(true); return; }
     followScroll.current = true;
-    setInputValue("");
+    setSending(true);
     setError(undefined);
     vscode.postMessage({ type: "chat/send", text });
   };
@@ -170,6 +177,7 @@ export function App(): ReactElement {
       <main hidden={settingsOpen} className="custom-scrollbar flex-1 overflow-y-auto px-3 py-3" ref={scrollRef} onScroll={(event) => { const node = event.currentTarget; followScroll.current = node.scrollHeight - node.scrollTop - node.clientHeight < 48; }}>{!hasConversation ? <EmptyState onPrompt={setInputValue} version={extensionVersion} /> : <div className="space-y-3 font-sans" aria-live="polite">{timeline.map((item) => item.kind === "message" ? <MessageItem key={`message-${item.value.id}`} message={item.value} /> : <ToolItem key={`tool-${item.value.id}`} tool={item.value} />)}</div>}</main>
 
       <footer hidden={settingsOpen} className="control-footer shrink-0 space-y-2 border-t border-[#262626] bg-[#131313] px-0 py-2">
+        <button type="button" className="px-2.5 text-[11px] text-[#9ca3af]" onClick={() => setSettingsOpen(true)}>使用者：{member?.name ?? "请选择姓名"}</button>
         <div className="relative rounded-lg border border-[#2b2b2b] bg-[#1a1a1a] transition-all focus-within:border-sky-500/70 focus-within:ring-1 focus-within:ring-sky-500/30"><textarea value={inputValue} onChange={(event) => setInputValue(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }} placeholder="Type /simulate or design query..." rows={2} className="w-full resize-none bg-transparent px-2.5 py-2 font-sans text-xs text-white outline-none placeholder-[#555]" aria-label="Message LOGOS" /></div>
         <div className="control-dock flex items-center justify-between gap-2"><div className="control-meta flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           <div className="control-picker relative min-w-0 max-w-full"><PickerButton label={runtimeConfig.activeModel?.name || runtimeConfig.activeModel?.id || "选择模型"} icon={<Cpu className="h-3 w-3 shrink-0 text-sky-400" />} open={modelOpen} disabled={busy} onClick={() => { setModelOpen((open) => !open); setThinkingOpen(false); }} />{modelOpen ? <div className="absolute bottom-8 left-0 z-50 max-h-72 w-56 max-w-[calc(100vw-16px)] overflow-y-auto rounded-lg border border-[#2e2e32] bg-[#1c1c1e] py-1 font-mono text-[11px] shadow-2xl">{runtimeConfig.models.length === 0
@@ -180,7 +188,7 @@ export function App(): ReactElement {
             </Fragment>)}</div> : null}</div>
           <div className="control-picker relative min-w-0 max-w-full"><PickerButton label={thinkingLabel} icon={<BrainCircuit className="h-3 w-3 shrink-0 text-sky-400" />} open={thinkingOpen} disabled={busy || runtimeConfig.thinkingLevels.length === 0} onClick={() => { setThinkingOpen((open) => !open); setModelOpen(false); }} />{thinkingOpen ? <div className="absolute bottom-8 left-0 z-50 w-36 max-w-[calc(100vw-16px)] rounded-lg border border-[#2e2e32] bg-[#1c1c1e] py-1 font-mono text-[11px] shadow-2xl">{runtimeConfig.thinkingLevels.map((level) => <button type="button" key={level} className={`flex w-full items-center justify-between px-2.5 py-1.5 text-left hover:bg-[#2a2a2e] ${level === runtimeConfig.thinkingLevel ? "bg-[#222226] font-bold text-sky-400" : "text-[#a1a1aa]"}`} onClick={() => { vscode.postMessage({ type: "thinking/select", level }); setThinkingOpen(false); }}>{formatThinking(level)}{level === runtimeConfig.thinkingLevel ? <CheckCircle2 className="h-3 w-3" /> : null}</button>)}</div> : null}</div>
           <div className="control-context flex min-w-0 items-center gap-1.5 font-mono text-[10px] text-[#737373]"><span>Context:</span><span className="min-w-0 truncate font-semibold text-[#a1a1aa]">{formatContext(runtimeConfig.contextUsage)}</span><div className="h-1.5 w-10 shrink-0 overflow-hidden rounded-full bg-[#262626]"><div className="h-full rounded-full bg-sky-400 transition-all duration-500" style={{ width: `${clampPercent(runtimeConfig.contextUsage?.percent)}%` }} /></div><span className="shrink-0 text-[9px] text-[#636366]">{formatPercent(runtimeConfig.contextUsage?.percent)}</span></div>
-        </div><button type="button" onClick={inputValue.trim() ? send : () => vscode.postMessage({ type: "chat/abort" })} disabled={loading || status === "starting" || status === "stopping" || (!inputValue.trim() && !running)} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sky-500 font-bold text-black shadow-[0_0_10px_rgba(56,189,248,0.3)] transition-all hover:bg-sky-400 active:scale-95" title={inputValue.trim() ? "Send" : running ? "Stop" : "Send"} aria-label={inputValue.trim() ? "Send" : running ? "Stop" : "Send"}>{running && !inputValue.trim() ? <span className="text-sm">■</span> : <ArrowUp className="h-4 w-4 stroke-[2.5]" />}</button></div>
+        </div><button type="button" onClick={inputValue.trim() ? send : () => vscode.postMessage({ type: "chat/abort" })} disabled={sending || loading || status === "starting" || status === "stopping" || (!inputValue.trim() && !running)} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sky-500 font-bold text-black shadow-[0_0_10px_rgba(56,189,248,0.3)] transition-all hover:bg-sky-400 active:scale-95" title={inputValue.trim() ? "Send" : running ? "Stop" : "Send"} aria-label={inputValue.trim() ? "Send" : running ? "Stop" : "Send"}>{running && !inputValue.trim() ? <span className="text-sm">■</span> : <ArrowUp className="h-4 w-4 stroke-[2.5]" />}</button></div>
       </footer>
     </div>
   );
@@ -194,7 +202,7 @@ const MessageItem = memo(function MessageItem({ message }: { message: TimelineMe
   const rendered = useMemo(() => message.text ? renderMarkdown(message.text) : "", [message.text]);
   if (message.role === "system" || message.role === "tool") return null;
   if (!message.text && message.status !== "streaming") return null;
-  return <article className="timeline-entry space-y-1"><div className="flex items-center gap-2 font-mono text-[11px] text-[#737373]"><span className="font-semibold text-white">{message.role === "user" ? "You" : "LOGOS"}</span><span>•</span><span>{message.status}</span></div><div className="rounded-lg border border-[#242426] bg-[#141416] p-3 text-xs leading-relaxed text-[#e5e7eb] markdown-content">{message.text ? <div dangerouslySetInnerHTML={{ __html: rendered }} /> : <span className="animate-pulse text-sky-400">▋</span>}</div></article>;
+  return <article className="timeline-entry space-y-1"><div className="flex items-center gap-2 font-mono text-[11px] text-[#737373]"><span className="font-semibold text-white">{message.role === "user" ? message.userName || "未登记用户" : "LOGOS"}</span><span>•</span><span>{message.status}</span></div><div className="rounded-lg border border-[#242426] bg-[#141416] p-3 text-xs leading-relaxed text-[#e5e7eb] markdown-content">{message.text ? <div dangerouslySetInnerHTML={{ __html: rendered }} /> : <span className="animate-pulse text-sky-400">▋</span>}</div></article>;
 });
 
 const ToolItem = memo(function ToolItem({ tool }: { tool: ToolCallView }): ReactElement {

@@ -82,6 +82,11 @@ details > summary::-webkit-details-marker { display: none; }
 .settings-connection-info strong { color: #f1f5f9; overflow-wrap: anywhere; }
 .settings-connection-info span { color: #9aa4b2; overflow-wrap: anywhere; }
 .settings-connection-actions { display: flex; flex: 0 0 auto; gap: 6px; }
+.identity-panel { margin: 12px 0; padding: 0 12px 12px; border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; }
+.usage-table-wrap { max-width: 100%; overflow-x: auto; }
+.usage-table { width: 100%; border-collapse: collapse; font-size: 11px; font-variant-numeric: tabular-nums; }
+.usage-table th, .usage-table td { padding: 7px 8px; border-bottom: 1px solid #333; text-align: right; white-space: nowrap; }
+.usage-table th:first-child { text-align: left; }
 
 .markdown-content, .timeline-entry pre, .error-card { user-select: text; }
 .history-list { position: absolute; right: 0; top: 100%; z-index: 50; width: 300px; max-height: 60vh; overflow: auto; background: #1c1c1e; padding: 8px; border: 1px solid #444; }

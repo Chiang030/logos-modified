@@ -4,6 +4,7 @@ export interface TimelineMessage {
   id: string;
   role: "user" | "assistant" | "system" | "tool";
   text: string;
+  userName?: string;
   status: "streaming" | "complete" | "error" | "aborted" | "interrupted";
 }
 

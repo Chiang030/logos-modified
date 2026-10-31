@@ -5,6 +5,7 @@ export interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "system" | "tool";
   text: string;
+  userName?: string;
   status: "streaming" | "complete" | "error";
 }
 
@@ -22,7 +23,7 @@ export function MessageBubble({ message }: Props): ReactElement | null {
 
   return (
     <article className={`message message-${message.role} message-${message.status}`}>
-      <div className="message-label">{labelForRole(message.role)}</div>
+      <div className="message-label">{message.role === "user" ? message.userName || "未登记用户" : labelForRole(message.role)}</div>
       <div className="message-content">
         {message.text ? <div dangerouslySetInnerHTML={{ __html: renderMarkdown(message.text) }} /> : (message.role === "assistant" && message.status === "streaming" ? <span className="typing">▋</span> : null)}
       </div>
@@ -33,7 +34,7 @@ export function MessageBubble({ message }: Props): ReactElement | null {
 function labelForRole(role: ChatMessage["role"]): string {
   switch (role) {
     case "user":
-      return "You";
+      return "未登记用户";
     case "assistant":
       return "LOGOS";
     case "tool":

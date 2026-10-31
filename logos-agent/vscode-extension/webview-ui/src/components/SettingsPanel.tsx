@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactElement } from "react";
 import type { SettingsView, ConnectionEntry, ApiProtocol, ExtensionToWebviewMessage } from "../../../src/shared/protocol";
 import { DEFAULT_PROVIDER_ID, PROVIDER_PRESETS, presetById, type ProviderId } from "../../../src/shared/providerPresets";
 import { SoftwarePanel } from "./SoftwarePanel";
+import { IdentityPanel } from "./IdentityPanel";
 
 type Props = { open: boolean; busy: boolean; onOpen: () => void; onClose: () => void; post: (message: unknown) => void };
 
@@ -91,6 +92,7 @@ export function SettingsPanel({ open, busy, onOpen, onClose, post }: Props): Rea
     };
     return <section className="logos-settings" aria-label="LOGOS API 配置">
       <div className="settings-heading"><strong>{isNew ? "新建 API 配置" : "编辑 API 配置"}</strong><button onClick={onClose} aria-label="关闭设置">×</button></div>
+      <IdentityPanel busy={busy} post={post} />
       <p>保存后，该配置的全部模型会出现在左下角模型切换器里。</p>
       <label>配置名称（留空自动取名）<input value={entry.name} placeholder="例如：DeepSeek 官方" onChange={(e) => update({ name: e.target.value })} /></label>
       <label>模型服务
@@ -153,6 +155,7 @@ export function SettingsPanel({ open, busy, onOpen, onClose, post }: Props): Rea
   const updateGlobal = (value: Partial<SettingsView>): void => { setSettings((current) => current ? { ...current, ...value } : current); setNotice(""); };
   return <section className="logos-settings" aria-label="LOGOS 设置">
     <div className="settings-heading"><strong>LOGOS 设置</strong><button onClick={onClose} aria-label="关闭设置">×</button></div>
+    <IdentityPanel busy={busy} post={post} />
     <div className="settings-actions"><button type="button" onClick={() => post({ type: "update/check" })}>检查更新</button><button type="button" onClick={() => post({ type: "update/logs" })}>更新日志</button></div>
     <SoftwarePanel busy={busy} post={post} />
     <div className="settings-list-head"><strong>已保存的 API 配置</strong><button onClick={() => { setEditing(draftEntry()); setIsNew(true); setNotice(""); }}>＋ 新建</button></div>
