@@ -72,6 +72,7 @@ export function SettingsPanel({ open, busy, onOpen, onClose, post }: Props): Rea
   if (!open) return null;
   if (!settings) return <section className="logos-settings" aria-label="LOGOS 设置">
     <div className="settings-heading"><strong>LOGOS 设置</strong><button onClick={onClose} aria-label="关闭设置">×</button></div>
+    <div className="settings-actions"><button type="button" onClick={() => post({ type: "update/check" })}>检查更新</button><button type="button" onClick={() => post({ type: "update/logs" })}>更新日志</button></div>
     <p>正在加载本地配置…</p>
   </section>;
 
@@ -152,6 +153,7 @@ export function SettingsPanel({ open, busy, onOpen, onClose, post }: Props): Rea
   const updateGlobal = (value: Partial<SettingsView>): void => { setSettings((current) => current ? { ...current, ...value } : current); setNotice(""); };
   return <section className="logos-settings" aria-label="LOGOS 设置">
     <div className="settings-heading"><strong>LOGOS 设置</strong><button onClick={onClose} aria-label="关闭设置">×</button></div>
+    <div className="settings-actions"><button type="button" onClick={() => post({ type: "update/check" })}>检查更新</button><button type="button" onClick={() => post({ type: "update/logs" })}>更新日志</button></div>
     <SoftwarePanel busy={busy} post={post} />
     <div className="settings-list-head"><strong>已保存的 API 配置</strong><button onClick={() => { setEditing(draftEntry()); setIsNew(true); setNotice(""); }}>＋ 新建</button></div>
     {settings.connections.length

@@ -91,11 +91,11 @@ describe("update checker", () => {
     expect(linux.command).toBe(resolve("/usr/share/code/bin/code"));
   });
 
-  it("throttles automatic checks to one per day", () => {
+  it("checks hourly and retries when no successful check was recorded", () => {
     const now = 1_000_000_000_000;
     expect(shouldAutoCheck(undefined, now)).toBe(true);
-    expect(shouldAutoCheck(now - 23 * 60 * 60 * 1000, now)).toBe(false);
-    expect(shouldAutoCheck(now - 24 * 60 * 60 * 1000, now)).toBe(true);
+    expect(shouldAutoCheck(now - 30 * 60 * 1000, now)).toBe(false);
+    expect(shouldAutoCheck(now - 60 * 60 * 1000, now)).toBe(true);
   });
 
   it("uses the public mirror for empty and legacy feed settings", () => {

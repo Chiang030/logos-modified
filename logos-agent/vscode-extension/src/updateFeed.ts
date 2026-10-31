@@ -7,18 +7,22 @@ import { compareVersions } from "./runtimeLaunch";
 export const DEFAULT_FEED_URL = "https://api.github.com/repos/Chiang030/logos-modified";
 const LEGACY_FEED_URL = "https://api.github.com/repos/Lead-Intelligent/logos";
 
-const AUTO_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const AUTO_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 
 export interface ReleaseAsset {
   id: number;
   name: string;
   url: string;
+  browser_download_url?: string;
+  size?: number;
+  digest?: string;
 }
 
 export interface ReleaseInfo {
   tag_name: string;
   html_url?: string;
   draft?: boolean;
+  prerelease?: boolean;
   assets?: ReleaseAsset[];
 }
 
@@ -47,7 +51,7 @@ export function parseTagVersion(tag: string): string | undefined {
 export function selectUpdate(releases: ReleaseInfo[], currentVersion: string, platform: string, arch: string): UpdateInfo | undefined {
   let best: UpdateInfo | undefined;
   for (const release of releases) {
-    if (release.draft) continue;
+    if (release.draft || release.prerelease) continue;
     const version = parseTagVersion(release.tag_name);
     if (!version || compareVersions(version, currentVersion) <= 0) continue;
     const asset = pickAsset(release.assets ?? [], version, platform, arch);

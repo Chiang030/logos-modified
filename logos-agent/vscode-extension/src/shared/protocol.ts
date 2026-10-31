@@ -130,6 +130,8 @@ export type WebviewToExtensionMessage =
   | { type: "session/rename"; sessionId: string; title: string }
   | { type: "link/open"; href: string }
   | { type: "diagnostics/open" }
+  | { type: "update/check" }
+  | { type: "update/logs" }
   | { type: "model/select"; provider: string; modelId: string }
   | { type: "thinking/select"; level: string }
   | { type: "runtime/restart" };
@@ -140,6 +142,8 @@ export function isWebviewToExtensionMessage(value: unknown): value is WebviewToE
     case "software/load": return value.refresh === undefined || typeof value.refresh === "boolean";
     case "software/path": return typeof value.product === "string" && typeof value.path === "string";
     case "diagnostics/open": return true;
+    case "update/check":
+    case "update/logs": return true;
     case "link/open": return typeof value.href === "string" && value.href.length > 0;
     case "session/rename": return typeof value.sessionId === "string" && typeof value.title === "string";
     case "settings/load": return true;

@@ -84,6 +84,12 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     if (!isWebviewToExtensionMessage(value)) return;
     try {
       switch (value.type) {
+        case "update/check":
+          await vscode.commands.executeCommand("logos.checkUpdate");
+          break;
+        case "update/logs":
+          await vscode.commands.executeCommand("logos.update.showLogs");
+          break;
         case "software/load":
           this.post({ type: "software/result", result: await this.settings.software(value.refresh) });
           break;
@@ -537,7 +543,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
     webview.html = createWebviewHtml(webview, this.context.extensionUri);
     return webview.onDidReceiveMessage((message: unknown) => {
       // Cancellation must remain available while a prompt request is pending.
-      if (isRecord(message) && ["chat/abort", "settings/openaiCancelLogin", "settings/openaiManualCallback", "diagnostics/open", "link/open"].includes(String(message.type))) void this.handleMessage(message);
+      if (isRecord(message) && ["chat/abort", "settings/openaiCancelLogin", "settings/openaiManualCallback", "diagnostics/open", "update/check", "update/logs", "link/open"].includes(String(message.type))) void this.handleMessage(message);
       else void this.enqueue(message);
     });
   }

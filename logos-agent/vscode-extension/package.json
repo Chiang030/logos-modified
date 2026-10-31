@@ -2,7 +2,7 @@
   "name": "logos-vscode",
   "displayName": "LOGOS",
   "description": "A local VS Code workbench with the LOGOS agent core included.",
-  "version": "0.3.9",
+  "version": "0.3.10",
   "publisher": "logos",
   "license": "MIT",
   "repository": {
@@ -47,6 +47,10 @@
       {
         "command": "logos.checkUpdate",
         "title": "LOGOS: Check for Updates"
+      },
+      {
+        "command": "logos.update.showLogs",
+        "title": "LOGOS: Show Update Logs"
       },
       {
         "command": "logos.update.setToken",
@@ -96,7 +100,7 @@
           "type": "boolean",
           "default": true,
           "scope": "application",
-          "description": "Silently check for LOGOS extension updates on startup (at most once every 24 hours)."
+          "description": "Check for LOGOS updates on startup and hourly while VS Code stays open. Failed checks retry after five minutes; progress and errors appear in LOGOS Updates and the status bar."
         },
         "logos.update.autoInstall": {
           "type": "boolean",
