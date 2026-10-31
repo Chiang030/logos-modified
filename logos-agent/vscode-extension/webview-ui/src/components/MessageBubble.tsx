@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { marked } from "marked";
+import { renderMarkdown } from "../markdown";
 
 export interface ChatMessage {
   id: string;
@@ -24,17 +24,10 @@ export function MessageBubble({ message }: Props): ReactElement | null {
     <article className={`message message-${message.role} message-${message.status}`}>
       <div className="message-label">{labelForRole(message.role)}</div>
       <div className="message-content">
-        {message.text ? <div dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(marked.parse(message.text, { async: false }) as string) }} /> : (message.role === "assistant" && message.status === "streaming" ? <span className="typing">▋</span> : null)}
+        {message.text ? <div dangerouslySetInnerHTML={{ __html: renderMarkdown(message.text) }} /> : (message.role === "assistant" && message.status === "streaming" ? <span className="typing">▋</span> : null)}
       </div>
     </article>
   );
-}
-
-function sanitizeMarkdown(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-    .replace(/javascript\s*:/gi, "");
 }
 
 function labelForRole(role: ChatMessage["role"]): string {

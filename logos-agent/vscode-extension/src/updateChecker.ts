@@ -17,6 +17,7 @@ import {
 
 const LAST_CHECK_KEY = "logos.update.lastCheck";
 const TOKEN_SECRET_KEY = "logos.update.githubToken";
+const AUTO_CHECK_DELAY_MS = 2_000;
 
 export function registerUpdateChecks(context: vscode.ExtensionContext): vscode.Disposable {
   const commands = [
@@ -24,7 +25,10 @@ export function registerUpdateChecks(context: vscode.ExtensionContext): vscode.D
     vscode.commands.registerCommand("logos.update.setToken", () => void promptForToken(context)),
     vscode.commands.registerCommand("logos.update.clearToken", () => void clearToken(context)),
   ];
-  void runAutomaticCheck(context);
+  // Let the extension host finish activation before doing network or VSIX work.
+  // A delayed task also avoids racing VS Code's authentication and proxy setup.
+  const timer = setTimeout(() => void runAutomaticCheck(context), AUTO_CHECK_DELAY_MS);
+  commands.push({ dispose: () => clearTimeout(timer) });
   return vscode.Disposable.from(...commands);
 }
 
@@ -38,8 +42,10 @@ async function runAutomaticCheck(context: vscode.ExtensionContext): Promise<void
       // activation would starve daily users of checks entirely.
       void context.globalState.update(LAST_CHECK_KEY, Date.now());
     }
-  } catch {
-    // 启动静默检查失败不打扰用户。
+  } catch (error) {
+    // Keep startup quiet, but leave a trace for extension-host diagnostics. A
+    // failed check must never be recorded as successful or suppress retries.
+    console.warn(`[LOGOS] automatic update check failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -58,6 +64,11 @@ async function checkForUpdates(context: vscode.ExtensionContext, manual: boolean
   const update = selectUpdate(releases, currentVersion, process.platform, process.arch);
   if (!update) {
     if (manual) void vscode.window.showInformationMessage(`LOGOS 已是最新版本（v${currentVersion}）。`);
+    return;
+  }
+  const autoInstall = !manual && vscode.workspace.getConfiguration("logos").get<boolean>("update.autoInstall", true);
+  if (autoInstall) {
+    await installUpdate(context, update, token);
     return;
   }
   const action = await vscode.window.showInformationMessage(

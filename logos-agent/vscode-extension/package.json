@@ -2,7 +2,7 @@
   "name": "logos-vscode",
   "displayName": "LOGOS",
   "description": "A local VS Code workbench with the LOGOS agent core included.",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "publisher": "logos",
   "license": "MIT",
   "repository": {
@@ -97,6 +97,12 @@
           "default": true,
           "scope": "application",
           "description": "Silently check for LOGOS extension updates on startup (at most once every 24 hours)."
+        },
+        "logos.update.autoInstall": {
+          "type": "boolean",
+          "default": true,
+          "scope": "application",
+          "description": "Automatically download and install a newer LOGOS VSIX found by the startup update check, then ask to reload the window. Manual checks always ask before installing."
         },
         "logos.nodeExecutable": {
           "type": "string",

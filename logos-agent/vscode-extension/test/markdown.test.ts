@@ -18,4 +18,11 @@ describe("renderMarkdown", () => {
     expect(html).toContain('href="https://example.com"');
     expect(html).not.toMatch(/javascript|onerror|<script|alert\(1\)/i);
   });
+
+  it("turns plain HTTP URLs in model and tool output into clickable links", () => {
+    const html = renderMarkdown("参考 https://example.com/docs 和 [API 文档](https://example.com/api)。");
+
+    expect(html).toContain('href="https://example.com/docs"');
+    expect(html).toContain('href="https://example.com/api"');
+  });
 });
