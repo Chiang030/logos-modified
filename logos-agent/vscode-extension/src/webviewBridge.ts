@@ -145,6 +145,7 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
           this.post({ type: "settings/loaded", settings: await this.settings.view() });
           break;
         case "webview/ready":
+          this.post({ type: "extension/info", version: String(this.context.extension.packageJSON.version) });
           this.post({ type: "session/loading", loading: true });
           this.post({ type: "settings/loaded", settings: await this.settings.view() });
           this.post({ type: "runtime/status", status: this.runtime.currentStatus });

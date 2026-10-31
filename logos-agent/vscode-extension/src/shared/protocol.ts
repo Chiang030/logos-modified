@@ -95,6 +95,7 @@ export type ExtensionToWebviewMessage =
   | { type: "settings/error"; message: string }
   | { type: "runtime/status"; status: RuntimeStatus; detail?: string }
   | { type: "runtime/config"; config: RuntimeConfig }
+  | { type: "extension/info"; version: string }
   | { type: "runtime/error"; message: string; fatal?: boolean }
   | { type: "session/loading"; loading: boolean }
   | { type: "message/user"; id: string; text: string }

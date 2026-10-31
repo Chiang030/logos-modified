@@ -31,7 +31,7 @@ async function fixture() {
     getRuntimeConfig: vi.fn(async () => ({ models: [], thinkingLevels: [] })),
     snapshot: vi.fn(async () => ({ type: "logos/session_restore", messages: [{ role: "user", content: "Remember project A" }], state: runtime.state })),
   };
-  const provider = new LogosWebviewProvider({ extensionUri: "test" } as unknown as vscode.ExtensionContext,
+  const provider = new LogosWebviewProvider({ extensionUri: "test", extension: { packageJSON: { version: "1.2.3" } } } as unknown as vscode.ExtensionContext,
     runtime as unknown as LocalRuntime, store,
     { view: async () => ({}), load: async () => ({ activeConnectionId: "connection" }) } as unknown as ConnectionSettingsStore, {} as OpenAiAuthStore);
   const view = { webview: { cspSource: "vscode-resource:", asWebviewUri: (value: string) => value,
@@ -47,6 +47,7 @@ describe("chat lifecycle", () => {
   it("replays persisted context every time an already running runtime gets a new view", async () => {
     const f = await fixture(); f.receive({ type: "webview/ready" });
     await vi.waitFor(() => expect(f.sent.some((message) => message.type === "session/restore")).toBe(true));
+    expect(f.sent).toContainEqual({ type: "extension/info", version: "1.2.3" });
     f.sent.length = 0; f.receive({ type: "webview/ready" });
     await vi.waitFor(() => expect(f.sent.some((message) => message.type === "session/restore")).toBe(true));
     expect(f.sent).toContainEqual(expect.objectContaining({ type: "session/restore", messages: [expect.objectContaining({ text: "Remember project A" })] }));
