@@ -15,7 +15,6 @@ import {
   Search,
   Sparkles,
   Terminal,
-  Wrench,
 } from "lucide-react";
 import fullLogo from "../../resources/logos_full_restored_transparent.png";
 import iconLogo from "../../resources/logos_vscode_icon_512x512.png";
@@ -38,10 +37,10 @@ declare function acquireVsCodeApi(): { postMessage(message: unknown): void };
 const vscode = acquireVsCodeApi();
 
 const quickPrompts = [
-  { icon: <FileCode className="h-4 w-4 text-amber-400" />, command: "/optimize", desc: "delta wing sweep angle for cruise Mach 2.2", detail: "CFD boundary condition & wave drag minimization" },
-  { icon: <Flame className="h-4 w-4 text-yellow-400" />, command: "/simulate", desc: "run CFD mesh solver on active file", detail: "Executes local mesh_analyzer on aero_dynamics/" },
-  { icon: <Search className="h-4 w-4 text-sky-400" />, command: "Explain", desc: "shockwave dissipation in aero_dynamics/", detail: "Analyze supersonic compression & bow shock behavior" },
-  { icon: <Wrench className="h-4 w-4 text-teal-400" />, command: "Refactor", desc: "lift-to-drag telemetry calculation", detail: "Optimize transonic pitch-up and polar stability curves" },
+  { icon: <FileCode className="h-4 w-4 text-amber-400" />, title: "优化设计", desc: "探索更好的气动方案", detail: "分析设计参数、边界条件与减阻方向", prompt: "/optimize 请分析当前飞行器设计的气动性能，并给出优化建议。" },
+  { icon: <Flame className="h-4 w-4 text-yellow-400" />, title: "运行仿真", desc: "检查网格与求解设置", detail: "根据当前项目准备仿真并检查运行条件", prompt: "/simulate 请检查当前项目的网格和求解设置，帮助我准备仿真。" },
+  { icon: <Search className="h-4 w-4 text-sky-400" />, title: "分析原理", desc: "理解流动与计算结果", detail: "解释激波、流场变化及其对性能的影响", prompt: "请结合当前项目解释流场、激波变化及其对气动性能的影响。" },
+  { icon: <Search className="h-4 w-4 text-teal-400" />, title: "全局扫描软件", desc: "查找本机已安装的软件", detail: "扫描各磁盘，自动更新设置中的软件路径", action: "scan" },
 ];
 
 export function App(): ReactElement {
@@ -53,6 +52,8 @@ export function App(): ReactElement {
   const [sessions, setSessions] = useState<SessionListEntry[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [softwareRequested, setSoftwareRequested] = useState(0);
+  const [scanning, setScanning] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
   const [thinkingOpen, setThinkingOpen] = useState(false);
@@ -68,7 +69,7 @@ export function App(): ReactElement {
   const followScroll = useRef(true);
   const orderRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const busy = loading || status === "starting" || status === "running" || status === "stopping";
+  const busy = scanning || loading || status === "starting" || status === "running" || status === "stopping";
   const running = status === "running";
   const thinkingLabel = runtimeConfig.thinkingLevels.length <= 1 && runtimeConfig.activeModel?.reasoning !== true
     ? "思考能力未启用（模型设置）" : formatThinking(runtimeConfig.thinkingLevel);
@@ -95,6 +96,9 @@ export function App(): ReactElement {
       const message = event.data;
       lastActivity.current = Date.now(); setWaiting(false);
       switch (message.type) {
+        case "software/scanning": setScanning(true); break;
+        case "software/result":
+        case "software/error": setScanning(false); break;
         case "identity/loaded": setMember(message.identity.selected); break;
         case "identity/required": setSending(false); setSettingsOpen(true); break;
         case "identity/error": setSending(false); break;
@@ -145,7 +149,7 @@ export function App(): ReactElement {
 
   const send = (): void => {
     const text = inputValue.trim();
-    if (!text || sending || loading || status === "starting" || status === "stopping") return;
+    if (!text || scanning || sending || loading || status === "starting" || status === "stopping") return;
     if (!member) { setSettingsOpen(true); return; }
     followScroll.current = true;
     setSending(true);
@@ -173,12 +177,12 @@ export function App(): ReactElement {
       </details> : null}
       {loading ? <p role="status">正在恢复会话…</p> : waiting ? <p role="status">仍在等待模型或工具输出，可随时停止。</p> : null}
 
-      <SettingsPanel open={settingsOpen} busy={busy} onOpen={() => setSettingsOpen(true)} onClose={() => setSettingsOpen(false)} post={(message) => vscode.postMessage(message)} />
-      <main hidden={settingsOpen} className="custom-scrollbar flex-1 overflow-y-auto px-3 py-3" ref={scrollRef} onScroll={(event) => { const node = event.currentTarget; followScroll.current = node.scrollHeight - node.scrollTop - node.clientHeight < 48; }}>{!hasConversation ? <EmptyState onPrompt={setInputValue} version={extensionVersion} /> : <div className="space-y-3 font-sans" aria-live="polite">{timeline.map((item) => item.kind === "message" ? <MessageItem key={`message-${item.value.id}`} message={item.value} /> : <ToolItem key={`tool-${item.value.id}`} tool={item.value} />)}</div>}</main>
+      <SettingsPanel softwareRequested={softwareRequested} open={settingsOpen} busy={busy} onOpen={() => setSettingsOpen(true)} onClose={() => setSettingsOpen(false)} post={(message) => vscode.postMessage(message)} />
+      <main hidden={settingsOpen} className="custom-scrollbar flex-1 overflow-x-hidden overflow-y-auto px-3 py-3" ref={scrollRef} onScroll={(event) => { const node = event.currentTarget; followScroll.current = node.scrollHeight - node.scrollTop - node.clientHeight < 48; }}>{!hasConversation ? <EmptyState onPrompt={setInputValue} version={extensionVersion} busy={busy} onScan={() => { setScanning(true); setSoftwareRequested((value) => value + 1); setSettingsOpen(true); vscode.postMessage({ type: "software/scan" }); }} /> : <div className="space-y-3 font-sans" aria-live="polite">{timeline.map((item) => item.kind === "message" ? <MessageItem key={`message-${item.value.id}`} message={item.value} /> : <ToolItem key={`tool-${item.value.id}`} tool={item.value} />)}</div>}</main>
 
       <footer hidden={settingsOpen} className="control-footer shrink-0 space-y-2 border-t border-[#262626] bg-[#131313] px-0 py-2">
-        <button type="button" className="px-2.5 text-[11px] text-[#9ca3af]" onClick={() => setSettingsOpen(true)}>使用者：{member?.name ?? "请选择姓名"}</button>
-        <div className="relative rounded-lg border border-[#2b2b2b] bg-[#1a1a1a] transition-all focus-within:border-sky-500/70 focus-within:ring-1 focus-within:ring-sky-500/30"><textarea value={inputValue} onChange={(event) => setInputValue(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }} placeholder="Type /simulate or design query..." rows={2} className="w-full resize-none bg-transparent px-2.5 py-2 font-sans text-xs text-white outline-none placeholder-[#555]" aria-label="Message LOGOS" /></div>
+        <button type="button" className="px-2.5 text-[11px] text-[#9ca3af]" onClick={() => setSettingsOpen(true)}>使用者：{member?.name ?? "添加或选择姓名"}</button>
+        <div className="relative rounded-lg border border-[#2b2b2b] bg-[#1a1a1a] transition-all focus-within:border-sky-500/70 focus-within:ring-1 focus-within:ring-sky-500/30"><textarea value={inputValue} onChange={(event) => setInputValue(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }} placeholder="输入设计问题或仿真需求…" rows={2} className="w-full resize-none bg-transparent px-2.5 py-2 font-sans text-xs text-white outline-none placeholder-[#555]" aria-label="Message LOGOS" /></div>
         <div className="control-dock flex items-center justify-between gap-2"><div className="control-meta flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           <div className="control-picker relative min-w-0 max-w-full"><PickerButton label={runtimeConfig.activeModel?.name || runtimeConfig.activeModel?.id || "选择模型"} icon={<Cpu className="h-3 w-3 shrink-0 text-sky-400" />} open={modelOpen} disabled={busy} onClick={() => { setModelOpen((open) => !open); setThinkingOpen(false); }} />{modelOpen ? <div className="absolute bottom-8 left-0 z-50 max-h-72 w-56 max-w-[calc(100vw-16px)] overflow-y-auto rounded-lg border border-[#2e2e32] bg-[#1c1c1e] py-1 font-mono text-[11px] shadow-2xl">{runtimeConfig.models.length === 0
             ? <button type="button" className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-sky-400 hover:bg-[#2a2a2e]" onClick={() => { setModelOpen(false); setSettingsOpen(true); }}><span aria-hidden="true">＋</span> 尚未配置 API，点击新建</button>
@@ -188,14 +192,44 @@ export function App(): ReactElement {
             </Fragment>)}</div> : null}</div>
           <div className="control-picker relative min-w-0 max-w-full"><PickerButton label={thinkingLabel} icon={<BrainCircuit className="h-3 w-3 shrink-0 text-sky-400" />} open={thinkingOpen} disabled={busy || runtimeConfig.thinkingLevels.length === 0} onClick={() => { setThinkingOpen((open) => !open); setModelOpen(false); }} />{thinkingOpen ? <div className="absolute bottom-8 left-0 z-50 w-36 max-w-[calc(100vw-16px)] rounded-lg border border-[#2e2e32] bg-[#1c1c1e] py-1 font-mono text-[11px] shadow-2xl">{runtimeConfig.thinkingLevels.map((level) => <button type="button" key={level} className={`flex w-full items-center justify-between px-2.5 py-1.5 text-left hover:bg-[#2a2a2e] ${level === runtimeConfig.thinkingLevel ? "bg-[#222226] font-bold text-sky-400" : "text-[#a1a1aa]"}`} onClick={() => { vscode.postMessage({ type: "thinking/select", level }); setThinkingOpen(false); }}>{formatThinking(level)}{level === runtimeConfig.thinkingLevel ? <CheckCircle2 className="h-3 w-3" /> : null}</button>)}</div> : null}</div>
           <div className="control-context flex min-w-0 items-center gap-1.5 font-mono text-[10px] text-[#737373]"><span>Context:</span><span className="min-w-0 truncate font-semibold text-[#a1a1aa]">{formatContext(runtimeConfig.contextUsage)}</span><div className="h-1.5 w-10 shrink-0 overflow-hidden rounded-full bg-[#262626]"><div className="h-full rounded-full bg-sky-400 transition-all duration-500" style={{ width: `${clampPercent(runtimeConfig.contextUsage?.percent)}%` }} /></div><span className="shrink-0 text-[9px] text-[#636366]">{formatPercent(runtimeConfig.contextUsage?.percent)}</span></div>
-        </div><button type="button" onClick={inputValue.trim() ? send : () => vscode.postMessage({ type: "chat/abort" })} disabled={sending || loading || status === "starting" || status === "stopping" || (!inputValue.trim() && !running)} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sky-500 font-bold text-black shadow-[0_0_10px_rgba(56,189,248,0.3)] transition-all hover:bg-sky-400 active:scale-95" title={inputValue.trim() ? "Send" : running ? "Stop" : "Send"} aria-label={inputValue.trim() ? "Send" : running ? "Stop" : "Send"}>{running && !inputValue.trim() ? <span className="text-sm">■</span> : <ArrowUp className="h-4 w-4 stroke-[2.5]" />}</button></div>
+        </div><button type="button" onClick={inputValue.trim() ? send : () => vscode.postMessage({ type: "chat/abort" })} disabled={scanning || sending || loading || status === "starting" || status === "stopping" || (!inputValue.trim() && !running)} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sky-500 font-bold text-black shadow-[0_0_10px_rgba(56,189,248,0.3)] transition-all hover:bg-sky-400 active:scale-95" title={inputValue.trim() ? "Send" : running ? "Stop" : "Send"} aria-label={inputValue.trim() ? "Send" : running ? "Stop" : "Send"}>{running && !inputValue.trim() ? <span className="text-sm">■</span> : <ArrowUp className="h-4 w-4 stroke-[2.5]" />}</button></div>
       </footer>
     </div>
   );
 }
 
-function EmptyState({ onPrompt, version }: { onPrompt: (value: string) => void; version?: string }): ReactElement {
-  return <div className="logos-empty-state relative flex h-full flex-col justify-between py-2"><div className="logos-background-orbit" aria-hidden="true" /><div className="relative z-10 mt-6 flex flex-col items-center text-center"><div className="logos-empty-mark relative mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-[#2a2a2c] bg-[#1b1b1c] p-0.5 shadow-inner shadow-black/50"><img className="h-9 w-9 object-contain" src={iconLogo} alt="" /></div><div className="mb-1 flex items-center gap-2"><h1 className="font-mono text-sm font-bold tracking-tight text-white">LOGOS Coding Agent</h1>{version ? <span aria-label="插件版本" className="rounded border border-sky-800/60 bg-sky-950/70 px-1.5 py-0.5 font-mono text-[10px] text-sky-400">v{version}</span> : null}</div><p className="mb-1 text-[11px] font-medium text-[#a0a7b4]">Aircraft Design &amp; Simulation Copilot for VS Code</p><p className="max-w-[280px] font-mono text-[11px] text-[#687386]">Ready to inspect code, run CFD meshes, or optimize aero geometry.</p></div><div className="relative z-10 my-4 space-y-1.5"><div className="mb-1 flex items-center justify-between px-1"><span className="font-mono text-[9px] uppercase tracking-wider text-[#76839a]">Quick Prompt Suggestions</span><span className="flex items-center gap-1 font-mono text-[9px] text-sky-400"><Sparkles className="h-2.5 w-2.5" /> AERO</span></div>{quickPrompts.map((item) => <button type="button" key={item.command} onClick={() => onPrompt(`${item.command} ${item.desc}`)} className="group flex w-full cursor-pointer items-start gap-2.5 rounded-lg border border-[#273044] bg-[#151b29]/90 p-2 text-left shadow-[0_8px_24px_rgba(0,0,0,.18)] transition-all hover:border-sky-400/60 hover:bg-[#1c2940]"><span className="mt-0.5 shrink-0 rounded bg-[#202c42] p-1 group-hover:bg-[#263b5a]">{item.icon}</span><span className="min-w-0 flex-1"><span className="block truncate font-mono text-xs text-[#dbe6f6]"><span className="font-semibold text-sky-400">{item.command}</span> {item.desc}</span><span className="mt-0.5 block truncate font-sans text-[10px] text-[#8492a8]">{item.detail}</span></span></button>)}</div><div className="relative z-10 flex items-center justify-center gap-3 rounded-lg border border-[#273044] bg-[#101827]/85 p-2 font-mono text-[10px] text-[#8190a7] shadow-[0_8px_24px_rgba(0,0,0,.16)]"><span>Press <kbd className="rounded bg-[#26344c] px-1.5 py-0.5 text-[9px] text-white">Tab</kbd> to accept</span><span><kbd className="rounded bg-[#26344c] px-1 py-0.5 text-[9px] text-white">@</kbd> symbols</span><span><kbd className="rounded bg-[#26344c] px-1 py-0.5 text-[9px] text-white">/</kbd> aero cmd</span></div></div>;
+function EmptyState({ onPrompt, version, busy, onScan }: { onPrompt: (value: string) => void; version?: string; busy: boolean; onScan: () => void }): ReactElement {
+  return <div className="logos-empty-state relative flex h-full flex-col justify-between py-2 font-sans">
+    <div className="logos-background-orbit" aria-hidden="true" />
+    <div className="relative z-10 mt-6 flex flex-col items-center text-center">
+      <div className="logos-empty-mark relative mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-[#2a2a2c] bg-[#1b1b1c] p-0.5 shadow-inner shadow-black/50"><img className="h-9 w-9 object-contain" src={iconLogo} alt="" /></div>
+      <div className="mb-1 flex items-center gap-2">
+        <h1 className="text-sm font-semibold text-white">LOGOS 设计与仿真助手</h1>
+        {version ? <span aria-label="插件版本" className="rounded border border-sky-800/60 bg-sky-950/70 px-1.5 py-0.5 text-[10px] text-sky-400">v{version}</span> : null}
+      </div>
+      <p className="mb-1 text-[11px] font-medium text-[#a0a7b4]">飞行器设计 · 工程仿真 · 智能协作</p>
+      <p className="max-w-[280px] text-[11px] text-[#687386]">从设计分析、仿真准备或软件扫描开始。</p>
+    </div>
+    <div className="relative z-10 my-4 space-y-1.5">
+      <div className="mb-1 flex items-center justify-between px-1">
+        <span className="text-[10px] text-[#76839a]">快捷开始</span>
+        <span className="flex items-center gap-1 text-[10px] text-sky-400"><Sparkles className="h-2.5 w-2.5" /> 设计与仿真</span>
+      </div>
+      {quickPrompts.map((item) => <button type="button" key={item.title} disabled={item.action === "scan" && busy}
+        onClick={() => item.action === "scan" ? onScan() : onPrompt(item.prompt!)}
+        className="group flex w-full cursor-pointer items-start gap-2.5 rounded-lg border border-[#273044] bg-[#151b29]/90 p-2 text-left shadow-[0_8px_24px_rgba(0,0,0,.18)] transition-all hover:border-sky-400/60 hover:bg-[#1c2940]">
+        <span className="mt-0.5 shrink-0 rounded bg-[#202c42] p-1 group-hover:bg-[#263b5a]">{item.icon}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-xs leading-relaxed text-[#dbe6f6]"><span className="font-semibold text-sky-400">{item.title}</span><span className="ml-2 text-[11px]">{item.desc}</span></span>
+          <span className="mt-0.5 block text-[10px] leading-relaxed text-[#8492a8]">{item.detail}</span>
+        </span>
+      </button>)}
+    </div>
+    <div className="relative z-10 flex flex-wrap items-center justify-center gap-3 rounded-lg border border-[#273044] bg-[#101827]/85 p-2 text-[10px] text-[#8190a7]">
+      <span><kbd className="rounded bg-[#26344c] px-1.5 py-0.5 text-[9px] text-white">Enter</kbd> 发送</span>
+      <span><kbd className="rounded bg-[#26344c] px-1.5 py-0.5 text-[9px] text-white">Shift + Enter</kbd> 换行</span>
+    </div>
+  </div>;
 }
 
 const MessageItem = memo(function MessageItem({ message }: { message: TimelineMessage }): ReactElement | null {

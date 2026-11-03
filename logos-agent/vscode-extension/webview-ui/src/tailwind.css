@@ -7,7 +7,8 @@ body { margin: 0; min-width: 280px; background: #0b1220; }
 .logos-shell { position: relative; isolation: isolate; background: radial-gradient(circle at 50% -15%, rgba(28, 109, 161, .25), transparent 42%), linear-gradient(145deg, #0b1220 0%, #101827 48%, #0a0f1b 100%); }
 .logos-shell::before { position: absolute; inset: 36px 0 0; z-index: -2; pointer-events: none; content: ""; opacity: .3; background-image: linear-gradient(rgba(93, 145, 190, .16) 1px, transparent 1px), linear-gradient(90deg, rgba(93, 145, 190, .16) 1px, transparent 1px); background-size: 28px 28px; mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 80%, transparent); }
 .logos-shell::after { position: absolute; top: 35%; right: -18%; z-index: -2; width: 72%; height: 42%; pointer-events: none; content: ""; border: 1px solid rgba(56, 189, 248, .12); border-radius: 50%; transform: rotate(-19deg); box-shadow: 0 0 70px rgba(14, 165, 233, .08), inset 0 0 40px rgba(14, 165, 233, .05); }
-.logos-empty-state { min-height: 100%; }
+.logos-empty-state { min-height: 100%; font-family: var(--vscode-font-family, "Segoe UI"), "Microsoft YaHei", "PingFang SC", sans-serif; }
+.logos-empty-state kbd { font-family: inherit; }
 .logos-background-orbit { position: absolute; top: 7%; left: 50%; width: min(520px, 130%); aspect-ratio: 1.8; pointer-events: none; border: 1px solid rgba(125, 211, 252, .16); border-radius: 50%; transform: translateX(-50%) rotate(-12deg); box-shadow: 0 0 60px rgba(14, 165, 233, .08), inset 0 0 30px rgba(14, 165, 233, .05); }
 .logos-background-orbit::before, .logos-background-orbit::after { position: absolute; content: ""; border-radius: 50%; }
 .logos-background-orbit::before { top: 8%; right: 17%; width: 5px; height: 5px; background: #67e8f9; box-shadow: 0 0 12px #38bdf8; }
@@ -83,10 +84,8 @@ details > summary::-webkit-details-marker { display: none; }
 .settings-connection-info span { color: #9aa4b2; overflow-wrap: anywhere; }
 .settings-connection-actions { display: flex; flex: 0 0 auto; gap: 6px; }
 .identity-panel { margin: 12px 0; padding: 0 12px 12px; border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; }
-.usage-table-wrap { max-width: 100%; overflow-x: auto; }
-.usage-table { width: 100%; border-collapse: collapse; font-size: 11px; font-variant-numeric: tabular-nums; }
-.usage-table th, .usage-table td { padding: 7px 8px; border-bottom: 1px solid #333; text-align: right; white-space: nowrap; }
-.usage-table th:first-child { text-align: left; }
+.software-entry { border-top: 1px solid #333; padding: 12px 0; }
+.software-path { overflow-wrap: anywhere; }
 
 .markdown-content, .timeline-entry pre, .error-card { user-select: text; }
 .history-list { position: absolute; right: 0; top: 100%; z-index: 50; width: 300px; max-height: 60vh; overflow: auto; background: #1c1c1e; padding: 8px; border: 1px solid #444; }

@@ -248,11 +248,16 @@ export class ConnectionSettingsStore {
     return this.discovery;
   }
 
-  private async discoverSoftware(refresh: boolean): Promise<SoftwareDiscovery> {
+  scanSoftware(): Promise<SoftwareDiscovery> {
+    this.discovery = this.discoverSoftware(true, true).catch((error) => { this.discovery = undefined; throw error; });
+    return this.discovery;
+  }
+
+  private async discoverSoftware(refresh: boolean, global = false): Promise<SoftwareDiscovery> {
     let overrides: Record<string, string> = {};
     try { overrides = JSON.parse(await readFile(join(this.directory, "software-paths.json"), "utf8")); }
     catch (error) { if (!isMissing(error)) throw error; }
-    return discoverSoftware({ overrides, refresh, cacheFile: join(this.directory, "software-cache.json") });
+    return discoverSoftware({ overrides, refresh, global, cacheFile: join(this.directory, "software-cache.json") });
   }
 
   async setSoftwarePath(product: string, path: string): Promise<void> {

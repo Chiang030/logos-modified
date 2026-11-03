@@ -1,41 +1,42 @@
-# Member selection and local usage
+# Local names and session attribution
 
-The API settings panel includes a member dropdown and a usage table. Select a
-member before sending a prompt. The roster and stable IDs live in
-`src/shared/members.ts`. Names are self-selected; this is usage registration,
-not authentication or access control.
+The settings panel lets users type a name and choose **添加并使用**, or select a
+previously added name. Names are trimmed, limited to 80 characters, and saved
+in the current workspace on this machine. Adding the same name again selects
+its existing entry. There is no built-in roster and no API usage display.
+Names are self-selected registration, not authentication or access control.
 
-The extension writes `sessions/session-identities.json` under its VS Code
-workspace storage directory. The settings panel shows its full path and can open
-it. The versioned file contains the selected member, immutable session owners,
-and deduplicated model response usage. It does not contain prompts, responses,
-API keys, access tokens, or application secrets.
+The extension stores names, the selected member ID, immutable session owners,
+and observed response usage in `sessions/session-identities.json` under VS Code
+workspace storage. Usage remains local and is not shown in the settings panel.
+The file does not store prompts, responses, API keys, or access tokens.
 
-Each new session is bound on its first accepted prompt. Switching members does
-not rewrite old ownership; start a new conversation to send as another member.
-Older conversations without a recorded owner remain labeled “未登记用户” and are
-readable, but require a new conversation for further prompts. No historical
-identity or consumption is inferred from the current selection.
+Upgrading a legacy ledger clears its preset selection and starts with an empty
+custom name list. Historical session owners and response records remain intact.
+Each new session is bound on its first accepted prompt. Switching names does not
+rewrite old ownership; start a new conversation to send as another member.
+Older conversations without a recorded owner remain readable but require a new
+conversation for further prompts. No historical identity is inferred from the
+current selection. A corrupt ledger is reported and is never silently replaced.
 
-Usage counts observed final assistant responses, including tool-calling model
-responses and failed/aborted responses. One user prompt can cause several model
-responses. Transport requests, retries that do not produce a final message,
-and independent background calls such as compaction are not guaranteed to be
-included. These numbers are not a provider billing ledger.
+# Software discovery
 
-Pi normalizes input, output, cache-read, and cache-write tokens into disjoint
-categories. Their sum is the displayed total; reasoning tokens are already
-included in output and are not added again. Missing, invalid, and all-zero usage
-is unknown rather than verified zero. Totals with `+` include only the known
-portion. Costs are not estimated in this version; use the provider's bill.
+The fourth home-screen shortcut, **全局扫描软件**, opens **软件发现与路径配置**
+in settings and starts a scan without requiring a user name or API connection.
+The same section offers another global scan, quick revalidation, version
+selection, manual executable paths, and restoring automatic discovery.
 
-Live events and recovered transcripts share response fingerprints, so reopening
-a bound session does not count the same response twice. Saved transcript usage
-can repair records missed during a crash when that session is reopened. A
-corrupt ledger is surfaced as an error and is never silently replaced.
+On Windows, global scans enumerate fixed local disks and search arbitrary
+installation directories for the supported executable names. On Linux/macOS,
+they search common installation roots, the home directory, and mount locations.
+Scans do not launch programs. System internals, dependency trees, and symbolic
+links are skipped. A scan stops after 120 seconds or 150,000 directories; the
+settings panel explicitly reports limited coverage and unreadable directories.
 
-Statistics cover this workspace on this machine since registration. They are
-not synchronized across computers or workspaces. For company-wide totals, a
-future shared collector or imported ledgers must merge response IDs rather than
-sum snapshots. The local roster and files can be edited by their owner and should
-not be used as proof of identity or payment obligations.
+Results are saved automatically in `software-cache.json`. Cached executable
+paths are revalidated on later loads, including quick refresh and manual path
+updates. Explicit paths take precedence; an invalid explicit path stays visible
+as an error until corrected or reset. The panel shows the host, discovery time,
+last global scan coverage, and detected paths. An idle running agent is restarted
+after a global scan so its environment uses the new paths. Scanning is disabled
+while a task is running. Finding a binary does not verify SDKs or licenses.

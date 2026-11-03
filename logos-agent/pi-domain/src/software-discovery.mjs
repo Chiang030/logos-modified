@@ -5,6 +5,7 @@ import { promisify } from "node:util";
 import { hostname, homedir } from "node:os";
 import { basename, delimiter, dirname, join } from "node:path";
 import { randomUUID } from "node:crypto";
+import { scanSoftware } from "./software-scan.mjs";
 
 const execute = promisify(execFile);
 export const SOFTWARE = [
@@ -51,9 +52,11 @@ function versionOf(path) {
 
 /** Bounded, read-only discovery. Never launches an application or claims a license. */
 export async function discoverSoftware({ overrides = {}, cacheFile, refresh = false, platform = process.platform, env = process.env,
-  roots, registry = installedRoots, host = hostname() } = {}) {
-  let cached = [];
-  try { cached = JSON.parse(await readFile(cacheFile, "utf8")).products ?? []; } catch { /* First run or stale cache. */ }
+  roots, registry = installedRoots, host = hostname(), global = false, scanOptions = {} } = {}) {
+  let cache = {};
+  try { cache = JSON.parse(await readFile(cacheFile, "utf8")); } catch { /* First run or stale cache. */ }
+  const cached = Array.isArray(cache?.products) ? cache.products : [];
+  const scanned = global ? await scanSoftware(SOFTWARE, { ...scanOptions, platform, env }) : undefined;
   const registryRoots = await registry(platform);
   const standard = roots ?? (platform === "win32"
     ? [env.ProgramFiles, env["ProgramFiles(x86)"], env.LOCALAPPDATA && join(env.LOCALAPPDATA, "Programs"), "C:/ANSYS Inc", "D:/Program Files", "D:/ANSYS Inc"].filter(Boolean)
@@ -75,7 +78,9 @@ export async function discoverSoftware({ overrides = {}, cacheFile, refresh = fa
     };
     await inspect(overrides[product.id], "configured");
     const old = cached.find((item) => item.product === product.id && item.host === host && item.platform === platform);
-    if (!refresh) for (const item of old?.candidates ?? []) await inspect(item.path, "cache");
+    // Revalidate cached custom locations even on refresh, so global findings survive startup and path edits.
+    for (const item of old?.candidates ?? []) await inspect(item.path, "cache");
+    for (const path of scanned?.candidates.get(product.id) ?? []) await add(path, "global-scan");
     for (const key of product.env) await inspect(env[key], `environment:${key}`);
     if (["fluent", "mechanical", "workbench", "hfss", "spaceclaim"].includes(product.id)) {
       for (const [key, path] of Object.entries(env)) if (/^(AWP_ROOT\d+|ANSYSEM_ROOT\d+|ANSYS_ROOT)$/.test(key)) await inspect(path, `environment:${key}`);
@@ -101,7 +106,8 @@ export async function discoverSoftware({ overrides = {}, cacheFile, refresh = fa
     products.push({ product: product.id, host, platform, status: overrides[product.id] && !explicit ? "invalid-path" : selected ? "installed" : "missing",
       selected: selected?.path, candidates: found, dependency: "unknown", connection: "not-checked" });
   }
-  const result = { host, platform, checkedAt: new Date().toISOString(), products };
+  const globalScan = scanned?.scan ?? (cache?.host === host && cache?.platform === platform ? cache.globalScan : undefined);
+  const result = { host, platform, checkedAt: new Date().toISOString(), products, globalScan };
   if (cacheFile) {
     const next = (queue.get(cacheFile) ?? Promise.resolve()).then(async () => {
       await mkdir(dirname(cacheFile), { recursive: true });

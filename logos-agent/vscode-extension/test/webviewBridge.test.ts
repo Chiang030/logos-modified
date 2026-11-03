@@ -6,7 +6,6 @@ import type * as vscode from "vscode";
 import { LogosWebviewProvider } from "../src/webviewBridge";
 import { SessionStore } from "../src/sessionStore";
 import { UsageStore } from "../src/usageStore";
-import { MEMBERS } from "../src/shared/members";
 import type { LocalRuntime, RuntimeEvent } from "../src/localRuntime";
 import type { ConnectionSettingsStore } from "../src/connectionSettings";
 import type { OpenAiAuthStore } from "../src/auth/openAiAuthStore";
@@ -17,61 +16,110 @@ vi.mock("vscode", () => ({
   workspace: { getConfiguration: () => ({ get: () => true }) },
 }));
 const directories: string[] = [];
-afterEach(async () => { await Promise.all(directories.splice(0).map((path) => rm(path, { recursive: true, force: true }))); });
+const cleanups: Array<() => Promise<void>> = [];
+afterEach(async () => {
+  await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
+  await Promise.all(directories.splice(0).map((path) => rm(path, { recursive: true, force: true })));
+});
 
-async function fixture() {
+async function fixture(withMembers = true) {
   const path = await mkdtemp(join(tmpdir(), "logos-bridge-")); directories.push(path);
   const store = new SessionStore(path);
   const usage = new UsageStore(path);
+  if (withMembers) { await usage.add("测试甲"); await usage.add("测试乙"); }
+  const members = (await usage.view()).members;
   const sent: ExtensionToWebviewMessage[] = [];
   let emit: (event: RuntimeEvent) => void = () => undefined;
   let receive: (value: unknown) => void = () => undefined;
   const runtime = {
     currentStatus: "ready", isRunning: true, state: { sessionId: "saved", sessionFile: "/saved.jsonl", isStreaming: false },
     onDidEvent: (listener: typeof emit) => { emit = listener; return { dispose() {} }; },
+    restart: vi.fn(async () => undefined),
     start: vi.fn(async () => undefined), newSession: vi.fn(async () => undefined), switchSession: vi.fn(async () => undefined),
     prompt: vi.fn(async () => undefined), abort: vi.fn(async () => undefined),
     getRuntimeConfig: vi.fn(async () => ({ models: [], thinkingLevels: [] })),
     snapshot: vi.fn(async () => ({ type: "logos/session_restore", messages: [{ role: "user", content: "Remember project A" }], state: runtime.state })),
   };
+  const software = { host: "test", platform: "win32", checkedAt: "2026-01-01", products: [] };
+  const settings = { view: async () => ({}), load: async () => ({ activeConnectionId: "connection" }),
+    software: vi.fn(async () => software), scanSoftware: vi.fn(async () => software) };
   const provider = new LogosWebviewProvider({ extensionUri: "test", extension: { packageJSON: { version: "1.2.3" } } } as unknown as vscode.ExtensionContext,
     runtime as unknown as LocalRuntime, store,
-    { view: async () => ({}), load: async () => ({ activeConnectionId: "connection" }) } as unknown as ConnectionSettingsStore, {} as OpenAiAuthStore, usage);
+    settings as unknown as ConnectionSettingsStore, {} as OpenAiAuthStore, usage);
   const view = { webview: { cspSource: "vscode-resource:", asWebviewUri: (value: string) => value,
     postMessage: (message: ExtensionToWebviewMessage) => { sent.push(message); },
     onDidReceiveMessage: (listener: typeof receive) => { receive = listener; return { dispose() {} }; },
   }, onDidDispose() {} };
   provider.resolveWebviewView(view as unknown as vscode.WebviewView);
+  cleanups.push(async () => { provider.dispose(); await Promise.all([store.load(), usage.view()]); });
   const send = async (value: unknown) => { receive(value); await vi.waitFor(() => expect(sent.at(-1)?.type).not.toBe("session/loading")); };
-  return { runtime, store, usage, sent, emit: (event: RuntimeEvent) => emit(event), receive: (value: unknown) => receive(value), provider, send };
+  return { runtime, store, usage, members, settings, sent, emit: (event: RuntimeEvent) => emit(event), receive: (value: unknown) => receive(value), provider, send };
 }
 
 describe("chat lifecycle", () => {
+  it("adds a custom name through the webview and rejects unknown selections", async () => {
+    const f = await fixture(false);
+    f.receive({ type: "identity/add", name: "自定义用户" });
+    await vi.waitFor(async () => expect((await f.usage.selected())?.name).toBe("自定义用户"));
+    f.receive({ type: "identity/select", memberId: "unknown-id" });
+    await vi.waitFor(() => expect(f.sent).toContainEqual(expect.objectContaining({ type: "identity/error" })));
+    expect((await f.usage.view()).members).toHaveLength(1);
+  });
+
+  it("scans without an identity or API connection and publishes the refreshed software", async () => {
+    const f = await fixture(false); f.runtime.isRunning = false;
+    f.receive({ type: "software/scan" });
+    await vi.waitFor(() => expect(f.sent).toContainEqual(expect.objectContaining({ type: "software/result" })));
+    expect(f.sent).toContainEqual({ type: "software/scanning" });
+    expect(f.runtime.start).not.toHaveBeenCalled();
+    expect(f.runtime.restart).not.toHaveBeenCalled();
+  });
+
+  it("applies scan results to an idle runtime and prevents scanning during a task", async () => {
+    const f = await fixture();
+    f.receive({ type: "software/scan" });
+    await vi.waitFor(() => expect(f.sent).toContainEqual(expect.objectContaining({ type: "software/result" })));
+    expect(f.runtime.restart).toHaveBeenCalledOnce();
+    f.runtime.currentStatus = "running";
+    f.receive({ type: "software/scan" });
+    await vi.waitFor(() => expect(f.sent).toContainEqual(expect.objectContaining({ type: "software/error" })));
+    expect(f.settings.scanSoftware).toHaveBeenCalledOnce();
+  });
+
+  it("surfaces scan failures and permits retry", async () => {
+    const f = await fixture(); f.runtime.isRunning = false;
+    f.settings.scanSoftware.mockRejectedValueOnce(new Error("磁盘读取失败"));
+    f.receive({ type: "software/scan" });
+    await vi.waitFor(() => expect(f.sent).toContainEqual({ type: "software/error", message: "磁盘读取失败" }));
+    f.receive({ type: "software/scan" });
+    await vi.waitFor(() => expect(f.sent).toContainEqual(expect.objectContaining({ type: "software/result" })));
+  });
+
   it("requires a selected member before starting a prompt", async () => {
-    const f = await fixture(); f.receive({ type: "chat/send", text: "Hello" });
+    const f = await fixture(false); f.receive({ type: "chat/send", text: "Hello" });
     await vi.waitFor(() => expect(f.sent).toContainEqual(expect.objectContaining({ type: "identity/required" })));
     expect(f.runtime.prompt).not.toHaveBeenCalled();
     expect(f.runtime.start).not.toHaveBeenCalled();
   });
 
   it("binds new conversations and preserves the owner when another member views history", async () => {
-    const f = await fixture(); await f.usage.select(MEMBERS[0].id);
+    const f = await fixture(); await f.usage.select(f.members[0].id);
     f.runtime.snapshot.mockResolvedValueOnce({ type: "logos/session_restore", messages: [], state: f.runtime.state });
     f.receive({ type: "chat/send", text: "Hello" });
     await vi.waitFor(() => expect(f.runtime.prompt).toHaveBeenCalledWith("Hello"));
-    expect(await f.usage.owner("saved")).toEqual(MEMBERS[0]);
-    expect(f.sent).toContainEqual(expect.objectContaining({ type: "message/user", userName: MEMBERS[0].name }));
-    await f.usage.select(MEMBERS[1].id);
+    expect(await f.usage.owner("saved")).toEqual(f.members[0]);
+    expect(f.sent).toContainEqual(expect.objectContaining({ type: "message/user", userName: f.members[0].name }));
+    await f.usage.select(f.members[1].id);
     f.emit({ type: "record", record: await f.runtime.snapshot() });
     await vi.waitFor(() => expect(f.sent).toContainEqual(expect.objectContaining({ type: "session/restore",
-      messages: [expect.objectContaining({ userName: MEMBERS[0].name })] })));
+      messages: [expect.objectContaining({ userName: f.members[0].name })] })));
     f.receive({ type: "chat/send", text: "Wrong owner" });
     await vi.waitFor(() => expect(f.sent).toContainEqual(expect.objectContaining({ type: "runtime/error", message: expect.stringContaining("请新建会话") })));
     expect(f.runtime.prompt).toHaveBeenCalledTimes(1);
   });
 
   it("does not assign legacy conversations to the newly selected user", async () => {
-    const f = await fixture(); await f.usage.select(MEMBERS[0].id);
+    const f = await fixture(); await f.usage.select(f.members[0].id);
     f.receive({ type: "chat/send", text: "Continue" });
     await vi.waitFor(() => expect(f.sent).toContainEqual(expect.objectContaining({ type: "runtime/error", message: expect.stringContaining("历史会话") })));
     expect(f.runtime.prompt).not.toHaveBeenCalled();
@@ -79,7 +127,7 @@ describe("chat lifecycle", () => {
   });
 
   it("counts live usage once and keeps it attributed to the session owner", async () => {
-    const f = await fixture(); await f.usage.bind("saved", MEMBERS[0]); await f.usage.select(MEMBERS[1].id);
+    const f = await fixture(); await f.usage.bind("saved", f.members[0]); await f.usage.select(f.members[1].id);
     const message = { role: "assistant", provider: "test-api", model: "test-model", timestamp: 123, content: [],
       usage: { input: 10, output: 5, cacheRead: 2, cacheWrite: 1 }, stopReason: "toolUse" };
     f.emit({ type: "record", record: { type: "message_end", message } });
@@ -89,7 +137,7 @@ describe("chat lifecycle", () => {
   });
 
   it("recovers saved response usage without double counting when reopened", async () => {
-    const f = await fixture(); await f.usage.bind("saved", MEMBERS[0]);
+    const f = await fixture(); await f.usage.bind("saved", f.members[0]);
     const message = { role: "assistant", provider: "test-api", model: "test-model", timestamp: 123, content: [],
       usage: { input: 10, output: 5, cacheRead: 0, cacheWrite: 0 }, stopReason: "stop" };
     const record = { type: "logos/session_restore", messages: [message], state: f.runtime.state };
@@ -101,10 +149,10 @@ describe("chat lifecycle", () => {
   });
 
   it("rejects member changes during a running task", async () => {
-    const f = await fixture(); await f.usage.select(MEMBERS[0].id); f.runtime.currentStatus = "running";
-    f.receive({ type: "identity/select", memberId: MEMBERS[1].id });
+    const f = await fixture(); await f.usage.select(f.members[0].id); f.runtime.currentStatus = "running";
+    f.receive({ type: "identity/select", memberId: f.members[1].id });
     await vi.waitFor(() => expect(f.sent).toContainEqual(expect.objectContaining({ type: "identity/error" })));
-    expect(await f.usage.selected()).toEqual(MEMBERS[0]);
+    expect(await f.usage.selected()).toEqual(f.members[0]);
   });
 
   it("replays persisted context every time an already running runtime gets a new view", async () => {

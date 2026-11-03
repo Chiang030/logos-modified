@@ -1,4 +1,8 @@
+![LOGOS](resources/logos_extension_banner.png)
+
 # LOGOS VS Code extension
+
+**开发团队：Lead-Intelligent**
 
 A standalone LOGOS package for VS Code 1.90 or newer, built per platform:
 `win32-x64`, `linux-x64`, and `linux-arm64`. The VSIX includes the Pi core,

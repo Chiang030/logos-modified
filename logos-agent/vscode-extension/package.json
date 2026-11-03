@@ -2,8 +2,12 @@
   "name": "logos-vscode",
   "displayName": "LOGOS",
   "description": "A local VS Code workbench with the LOGOS agent core included.",
-  "version": "0.3.13",
+  "version": "0.3.14",
   "publisher": "logos",
+  "author": {
+    "name": "Lead-Intelligent"
+  },
+  "icon": "resources/logos_extension_icon_512x512.png",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -32,7 +36,7 @@
         "command": "logos.openChat",
         "title": "LOGOS: Open Chat",
         "icon": {
-          "light": "resources/logos_vscode_icon_512x512.png",
+          "light": "resources/logos_extension_icon_512x512.png",
           "dark": "resources/logos_vscode_icon_512x512.png"
         }
       },
@@ -136,9 +140,9 @@
     "verify:runtime": "node scripts/verify-runtime.mjs",
     "smoke:runtime": "node scripts/smoke-runtime.mjs",
     "package": "npm run package:win32-x64",
-    "package:win32-x64": "npm run prepare:runtime -- --target win32-x64 && npm run compile && npm run verify:runtime -- --target win32-x64 && npm run smoke:runtime -- --target win32-x64 && vsce package --target win32-x64",
-    "package:linux-x64": "npm run prepare:runtime -- --target linux-x64 && npm run compile && npm run verify:runtime -- --target linux-x64 && npm run smoke:runtime -- --target linux-x64 && vsce package --target linux-x64",
-    "package:linux-arm64": "npm run prepare:runtime -- --target linux-arm64 && npm run compile && npm run verify:runtime -- --target linux-arm64 && npm run smoke:runtime -- --target linux-arm64 && vsce package --target linux-arm64",
+    "package:win32-x64": "npm run prepare:runtime -- --target win32-x64 && npm run compile && npm run verify:runtime -- --target win32-x64 && npm run smoke:runtime -- --target win32-x64 && vsce package --no-rewrite-relative-links --target win32-x64",
+    "package:linux-x64": "npm run prepare:runtime -- --target linux-x64 && npm run compile && npm run verify:runtime -- --target linux-x64 && npm run smoke:runtime -- --target linux-x64 && vsce package --no-rewrite-relative-links --target linux-x64",
+    "package:linux-arm64": "npm run prepare:runtime -- --target linux-arm64 && npm run compile && npm run verify:runtime -- --target linux-arm64 && npm run smoke:runtime -- --target linux-arm64 && vsce package --no-rewrite-relative-links --target linux-arm64",
     "publish:release": "node scripts/publish-release.mjs"
   },
   "dependencies": {

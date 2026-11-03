@@ -4,7 +4,7 @@ import { DEFAULT_PROVIDER_ID, PROVIDER_PRESETS, presetById, type ProviderId } fr
 import { SoftwarePanel } from "./SoftwarePanel";
 import { IdentityPanel } from "./IdentityPanel";
 
-type Props = { open: boolean; busy: boolean; onOpen: () => void; onClose: () => void; post: (message: unknown) => void };
+type Props = { softwareRequested?: number; open: boolean; busy: boolean; onOpen: () => void; onClose: () => void; post: (message: unknown) => void };
 
 type LoginPhase = "" | "waiting" | "exchanging";
 
@@ -29,7 +29,7 @@ function presetLabel(entry: ConnectionEntry): string {
   return entry.providerId === "custom" ? "自定义" : presetById(entry.providerId)?.label ?? "自定义";
 }
 
-export function SettingsPanel({ open, busy, onOpen, onClose, post }: Props): ReactElement | null {
+export function SettingsPanel({ softwareRequested = 0, open, busy, onOpen, onClose, post }: Props): ReactElement | null {
   const [settings, setSettings] = useState<SettingsView>();
   const [editing, setEditing] = useState<ConnectionEntry>();
   const [isNew, setIsNew] = useState(false);
@@ -70,6 +70,9 @@ export function SettingsPanel({ open, busy, onOpen, onClose, post }: Props): Rea
     post({ type: "settings/load" });
     return () => window.removeEventListener("message", receive);
   }, []);
+  useEffect(() => {
+    if (softwareRequested > 0) { setEditing(undefined); setIsNew(false); }
+  }, [softwareRequested]);
   if (!open) return null;
   if (!settings) return <section className="logos-settings" aria-label="LOGOS 设置">
     <div className="settings-heading"><strong>LOGOS 设置</strong><button onClick={onClose} aria-label="关闭设置">×</button></div>
@@ -157,7 +160,7 @@ export function SettingsPanel({ open, busy, onOpen, onClose, post }: Props): Rea
     <div className="settings-heading"><strong>LOGOS 设置</strong><button onClick={onClose} aria-label="关闭设置">×</button></div>
     <IdentityPanel busy={busy} post={post} />
     <div className="settings-actions"><button type="button" onClick={() => post({ type: "update/check" })}>检查更新</button><button type="button" onClick={() => post({ type: "update/logs" })}>更新日志</button></div>
-    <SoftwarePanel busy={busy} post={post} />
+    <SoftwarePanel busy={busy} post={post} expanded={softwareRequested > 0} />
     <div className="settings-list-head"><strong>已保存的 API 配置</strong><button onClick={() => { setEditing(draftEntry()); setIsNew(true); setNotice(""); }}>＋ 新建</button></div>
     {settings.connections.length
       ? <ul className="settings-connections">{settings.connections.map((entry) => <li key={entry.id} className="settings-connection">

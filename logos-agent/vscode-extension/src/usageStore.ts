@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { isRecord } from "./shared/protocol";
-import { MEMBERS, memberById, type IdentityView, type MemberIdentity, type ModelUsageSummary, type TokenUsage, type UsageSummary } from "./shared/members";
+import { validMemberName, type IdentityView, type MemberIdentity, type ModelUsageSummary, type TokenUsage, type UsageSummary } from "./shared/members";
 
 interface SessionIdentity { sessionId: string; member: MemberIdentity; createdAt: string; }
 interface UsageEntry {
@@ -17,6 +17,7 @@ interface UsageEntry {
 }
 interface Ledger {
   version: 1;
+  members: MemberIdentity[];
   selectedId?: string;
   sessions: SessionIdentity[];
   usage: UsageEntry[];
@@ -29,11 +30,27 @@ export class UsageStore {
   readonly filePath: string;
   constructor(private readonly directory: string) { this.filePath = join(directory, "session-identities.json"); }
 
-  async selected(): Promise<MemberIdentity | undefined> { return memberById((await this.read()).selectedId); }
+  async selected(): Promise<MemberIdentity | undefined> {
+    const ledger = await this.read();
+    return ledger.members.find((member) => member.id === ledger.selectedId);
+  }
+
+  /** Add a local name, or select the existing entry when the name matches. */
+  add(name: string): Promise<void> {
+    if (!validMemberName(name)) return Promise.reject(new Error("请输入 1–80 个字符的姓名，不含控制字符。"));
+    return this.change((ledger) => {
+      const normalized = name.trim().normalize("NFC");
+      let member = ledger.members.find((entry) => entry.name.normalize("NFC") === normalized);
+      if (!member) { member = { id: randomUUID(), name: normalized }; ledger.members.push(member); }
+      ledger.selectedId = member.id;
+    });
+  }
 
   select(id: string): Promise<void> {
-    if (!memberById(id)) return Promise.reject(new Error("请选择名单中的使用者。"));
-    return this.change((ledger) => { ledger.selectedId = id; });
+    return this.change((ledger) => {
+      if (!ledger.members.some((member) => member.id === id)) throw new Error("请选择已添加的姓名。");
+      ledger.selectedId = id;
+    });
   }
 
   async owner(sessionId: string): Promise<MemberIdentity | undefined> {
@@ -41,11 +58,12 @@ export class UsageStore {
   }
 
   bind(sessionId: string, member: MemberIdentity): Promise<void> {
-    if (!sessionId || !memberById(member.id)) return Promise.reject(new Error("无效的会话或使用者。"));
     return this.change((ledger) => {
+      const registered = ledger.members.find((entry) => entry.id === member.id);
+      if (!sessionId || !registered) throw new Error("无效的会话或使用者。");
       const previous = ledger.sessions.find((entry) => entry.sessionId === sessionId);
       if (previous && previous.member.id !== member.id) throw new Error(`当前会话属于 ${previous.member.name}，请新建会话后使用。`);
-      if (!previous) ledger.sessions.push({ sessionId, member: { ...memberById(member.id)! }, createdAt: new Date().toISOString() });
+      if (!previous) ledger.sessions.push({ sessionId, member: { ...registered }, createdAt: new Date().toISOString() });
     });
   }
 
@@ -67,14 +85,15 @@ export class UsageStore {
 
   async view(): Promise<IdentityView> {
     const ledger = await this.read();
-    const summaries = MEMBERS.map((member) => summarize(member, ledger.sessions, ledger.usage));
+    const summaries = ledger.members.map((member) => summarize(member, ledger.sessions, ledger.usage));
     const models = new Map<string, ModelUsageSummary>();
     for (const entry of ledger.usage) {
       const key = JSON.stringify([entry.member.id, entry.provider, entry.model]);
       if (!models.has(key)) models.set(key, { ...summarize(entry.member, [], []), provider: entry.provider, model: entry.model });
       accumulate(models.get(key)!, entry);
     }
-    return { selected: memberById(ledger.selectedId), summaries, models: [...models.values()], recordFile: this.filePath };
+    return { selected: ledger.members.find((member) => member.id === ledger.selectedId), members: ledger.members,
+      summaries, models: [...models.values()], recordFile: this.filePath };
   }
 
   private async read(): Promise<Ledger> {
@@ -85,7 +104,7 @@ export class UsageStore {
   private async readFile(): Promise<Ledger> {
     try { return parseLedger(await readFile(this.filePath, "utf8")); }
     catch (error) {
-      if (isRecord(error) && error.code === "ENOENT") return { version: 1, sessions: [], usage: [] };
+      if (isRecord(error) && error.code === "ENOENT") return { version: 1, members: [], sessions: [], usage: [] };
       throw error;
     }
   }
@@ -160,9 +179,14 @@ function isTokens(value: unknown): boolean {
 
 function parseLedger(text: string): Ledger {
   const value: unknown = JSON.parse(text);
-  if (!isRecord(value) || value.version !== 1 || (value.selectedId !== undefined && !memberById(value.selectedId))
+  if (!isRecord(value) || value.version !== 1 || (value.selectedId !== undefined && typeof value.selectedId !== "string")
+    || (value.members !== undefined && (!Array.isArray(value.members) || !value.members.every(isMember)))
     || !Array.isArray(value.sessions) || !value.sessions.every(isSession) || !Array.isArray(value.usage) || !value.usage.every(isUsage)) {
     throw new Error("使用记录文件格式无效，请检查 session-identities.json；原文件未被覆盖。");
   }
-  return value as unknown as Ledger;
+  // Old preset selections are cleared; historical session owners remain intact.
+  if (value.members === undefined) { value.members = []; delete value.selectedId; }
+  const ledger = value as unknown as Ledger;
+  if (ledger.selectedId && !ledger.members.some((member) => member.id === ledger.selectedId)) delete ledger.selectedId;
+  return ledger;
 }

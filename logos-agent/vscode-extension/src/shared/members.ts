@@ -1,22 +1,7 @@
-/** Stable IDs keep historical attribution independent of display names. */
-export const MEMBERS = [
-  { id: "murphy", name: "马凡/Murphy" },
-  { id: "linchen", name: "林晨/LinChen" },
-  { id: "peyman", name: "Peyman" },
-  { id: "xu-yaxiong", name: "许亚雄" },
-  { id: "qian-yingtao", name: "钱营涛" },
-  { id: "jiang-jincheng", name: "蒋金成" },
-  { id: "lu-junqian", name: "陆俊谦" },
-  { id: "wu-kaiyang", name: "吴锴扬" },
-  { id: "shen-guanbin", name: "沈冠斌" },
-  { id: "hu-junwei", name: "胡峻玮" },
-  { id: "xie-yuan", name: "谢元" },
-] as const;
-
 export interface MemberIdentity { id: string; name: string; }
 
-export function memberById(id: unknown): MemberIdentity | undefined {
-  return MEMBERS.find((member) => member.id === id);
+export function validMemberName(name: unknown): name is string {
+  return typeof name === "string" && name.trim().length > 0 && name.trim().length <= 80 && !/[\u0000-\u001f\u007f]/.test(name);
 }
 
 export interface TokenUsage {
@@ -39,6 +24,7 @@ export interface ModelUsageSummary extends UsageSummary { provider: string; mode
 
 export interface IdentityView {
   selected?: MemberIdentity;
+  members: MemberIdentity[];
   summaries: UsageSummary[];
   models: ModelUsageSummary[];
   recordFile: string;

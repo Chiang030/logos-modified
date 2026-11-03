@@ -1,5 +1,5 @@
 import { isProviderId, type ProviderId } from "./providerPresets";
-import { memberById, type IdentityView } from "./members";
+import { validMemberName, type IdentityView } from "./members";
 import type { SoftwareDiscovery } from "../../../pi-domain/src/software-discovery.mjs";
 
 export type RuntimeStatus = "idle" | "starting" | "ready" | "running" | "stopping" | "error";
@@ -92,6 +92,7 @@ export type ExtensionToWebviewMessage =
   | { type: "identity/error"; message: string }
   | { type: "identity/required"; message: string }
   | { type: "software/result"; result: SoftwareDiscovery }
+  | { type: "software/scanning" }
   | { type: "software/error"; message: string }
   | { type: "settings/loaded"; settings: SettingsView }
   | { type: "settings/models"; modelIds: string[]; source: ModelSource }
@@ -118,8 +119,10 @@ export type ExtensionToWebviewMessage =
 export type WebviewToExtensionMessage =
   | { type: "identity/load" }
   | { type: "identity/select"; memberId: string }
+  | { type: "identity/add"; name: string }
   | { type: "identity/openRecords" }
   | { type: "software/load"; refresh?: boolean }
+  | { type: "software/scan" }
   | { type: "software/path"; product: string; path: string }
   | { type: "settings/load" }
   | { type: "settings/models"; baseUrl: string; api: ApiProtocol; apiKey?: string }
@@ -149,7 +152,9 @@ export function isWebviewToExtensionMessage(value: unknown): value is WebviewToE
   switch (value.type) {
     case "identity/load":
     case "identity/openRecords": return true;
-    case "identity/select": return !!memberById(value.memberId);
+    case "identity/select": return typeof value.memberId === "string" && value.memberId.length > 0;
+    case "identity/add": return validMemberName(value.name);
+    case "software/scan": return true;
     case "software/load": return value.refresh === undefined || typeof value.refresh === "boolean";
     case "software/path": return typeof value.product === "string" && typeof value.path === "string";
     case "diagnostics/open": return true;

@@ -33,3 +33,46 @@ test("scans versioned standard directories without running binaries", async () =
     assert.equal(linux.products[0].status, "missing");
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+
+test("global scans find custom nested locations and retain them after refresh and restart", async () => {
+  const root = await mkdtemp(join(tmpdir(), "logos-global-"));
+  try {
+    const directory = join(root, "自定义软件", "engineering", "tools", "release", "application", "bin");
+    await mkdir(directory, { recursive: true });
+    const executable = join(directory, "BLENDER.EXE");
+    await writeFile(executable, "not executable; discovery must never launch this");
+    const options = { platform: "win32", env: {}, roots: [], registry: async () => [], cacheFile: join(root, "cache.json") };
+    assert.equal((await discoverSoftware(options)).products[0].status, "missing");
+    const result = await discoverSoftware({ ...options, global: true, scanOptions: { roots: [root] } });
+    assert.equal(result.products[0].selected, executable);
+    assert.equal(result.products[0].candidates[0].source, "global-scan");
+    assert.equal(result.globalScan.limited, false);
+    const refreshed = await discoverSoftware({ ...options, refresh: true });
+    assert.equal(refreshed.products[0].selected, executable);
+    assert.equal(refreshed.globalScan.checkedAt, result.globalScan.checkedAt);
+    assert.equal(discoveryEnvironment(refreshed, {}).BLENDER_PATH, executable);
+    await rm(executable);
+    assert.equal((await discoverSoftware({ ...options, refresh: true })).products[0].status, "missing");
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test("global scans report incomplete coverage, skip dependencies and honor manual overrides", async () => {
+  const root = await mkdtemp(join(tmpdir(), "logos-scan-limit-"));
+  try {
+    const manual = join(root, "blender.exe"); await writeFile(manual, "fixture");
+    await mkdir(join(root, "node_modules")); await writeFile(join(root, "node_modules", "gmsh.exe"), "fixture");
+    await mkdir(join(root, "extra")); await writeFile(join(root, "extra", "blender.exe"), "fixture");
+    const options = { platform: "win32", env: {}, roots: [], registry: async () => [], global: true };
+    const limited = await discoverSoftware({ ...options, scanOptions: { roots: [root], maxDirectories: 1 } });
+    assert.equal(limited.globalScan.limited, true);
+    assert.equal(limited.globalScan.visited, 1);
+    const result = await discoverSoftware({ ...options, overrides: { blender: manual }, scanOptions: { roots: [root, join(root, "absent")] } });
+    assert.equal(result.products[0].selected, manual);
+    assert.equal(result.products[0].candidates.length, 2);
+    assert.equal(result.products.find((product) => product.product === "gmsh").status, "missing");
+    assert.equal(result.globalScan.skipped, 1);
+    const invalid = await discoverSoftware({ ...options, overrides: { blender: join(root, "absent.exe") }, scanOptions: { roots: [root] } });
+    assert.equal(invalid.products[0].status, "invalid-path");
+    assert.equal(invalid.products[0].selected, undefined);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});

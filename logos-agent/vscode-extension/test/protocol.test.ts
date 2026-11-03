@@ -3,8 +3,10 @@ import { isWebviewToExtensionMessage } from "../src/shared/protocol";
 
 describe("Webview protocol validation", () => {
   it("accepts supported commands", () => {
-    expect(isWebviewToExtensionMessage({ type: "identity/select", memberId: "murphy" })).toBe(true);
+    expect(isWebviewToExtensionMessage({ type: "identity/select", memberId: "custom-id" })).toBe(true);
     expect(isWebviewToExtensionMessage({ type: "identity/load" })).toBe(true);
+    expect(isWebviewToExtensionMessage({ type: "identity/add", name: "张三" })).toBe(true);
+    expect(isWebviewToExtensionMessage({ type: "software/scan" })).toBe(true);
     expect(isWebviewToExtensionMessage({ type: "chat/send", text: "inspect the workspace" })).toBe(true);
     expect(isWebviewToExtensionMessage({ type: "runtime/restart" })).toBe(true);
     expect(isWebviewToExtensionMessage({ type: "session/select", sessionId: "session-1" })).toBe(true);
@@ -16,8 +18,10 @@ describe("Webview protocol validation", () => {
   });
 
   it("rejects malformed or unknown commands", () => {
-    expect(isWebviewToExtensionMessage({ type: "identity/select", memberId: "unlisted" })).toBe(false);
+    expect(isWebviewToExtensionMessage({ type: "identity/select", memberId: "" })).toBe(false);
     expect(isWebviewToExtensionMessage({ type: "identity/select", memberId: 42 })).toBe(false);
+    expect(isWebviewToExtensionMessage({ type: "identity/add", name: "  " })).toBe(false);
+    expect(isWebviewToExtensionMessage({ type: "identity/add", name: "a".repeat(81) })).toBe(false);
     expect(isWebviewToExtensionMessage({ type: "chat/send", text: "" })).toBe(false);
     expect(isWebviewToExtensionMessage({ type: "chat/send", text: 42 })).toBe(false);
     expect(isWebviewToExtensionMessage({ type: "model/select", provider: "", modelId: "gpt-4.1" })).toBe(false);

@@ -92,8 +92,10 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
           await this.publishIdentity();
           break;
         case "identity/select":
+        case "identity/add":
           if (["starting", "running", "stopping"].includes(this.runtime.currentStatus)) throw new Error("请等待当前任务结束或停止后再切换使用者。");
-          await this.usage.select(value.memberId);
+          if (value.type === "identity/add") await this.usage.add(value.name);
+          else await this.usage.select(value.memberId);
           await this.publishIdentity();
           break;
         case "identity/openRecords":
@@ -108,6 +110,14 @@ export class LogosWebviewProvider implements vscode.WebviewViewProvider, vscode.
         case "software/load":
           this.post({ type: "software/result", result: await this.settings.software(value.refresh) });
           break;
+        case "software/scan": {
+          this.guardSessionChange();
+          this.post({ type: "software/scanning" });
+          const result = await this.settings.scanSoftware();
+          if (this.runtime.isRunning) await this.synchronize(() => this.runtime.restart());
+          this.post({ type: "software/result", result });
+          break;
+        }
         case "software/path":
           this.guardSessionChange();
           await this.settings.setSoftwarePath(value.product, value.path);

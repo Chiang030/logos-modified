@@ -3,13 +3,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { UsageStore } from "../src/usageStore";
-import { MEMBERS } from "../src/shared/members";
 
 const directories: string[] = [];
 afterEach(async () => { await Promise.all(directories.splice(0).map((path) => rm(path, { recursive: true, force: true }))); });
-async function fixture(): Promise<UsageStore> {
+async function fixture() {
   const path = await mkdtemp(join(tmpdir(), "logos-usage-")); directories.push(path);
-  return new UsageStore(path);
+  const store = new UsageStore(path);
+  await store.add("测试甲"); await store.add("测试乙");
+  return { store, members: (await store.view()).members };
 }
 function response(timestamp = 123): Record<string, unknown> {
   return { role: "assistant", provider: "api", model: "model", timestamp, content: [{ type: "text", text: "Private content" }],
@@ -17,22 +18,49 @@ function response(timestamp = 123): Record<string, unknown> {
 }
 
 describe("member attribution and usage", () => {
-  it("has no implicit user, persists selection, and rejects unlisted members", async () => {
-    const store = await fixture(); expect(await store.selected()).toBeUndefined();
-    await expect(store.select("intruder")).rejects.toThrow("名单");
-    await store.select(MEMBERS[0].id);
-    expect(await new UsageStore(directories[0]).selected()).toEqual(MEMBERS[0]);
+  it("starts empty and persists custom names and selection without duplicates", async () => {
+    const path = await mkdtemp(join(tmpdir(), "logos-usage-")); directories.push(path);
+    const store = new UsageStore(path);
+    expect(await store.selected()).toBeUndefined();
+    expect((await store.view()).members).toEqual([]);
+    await expect(store.select("intruder")).rejects.toThrow("已添加");
+    await expect(store.add("   ")).rejects.toThrow();
+    await expect(store.add("a".repeat(81))).rejects.toThrow();
+    await store.add("  张三  "); const member = await store.selected();
+    await store.add("李四"); await store.add("张三");
+    expect((await store.view()).members).toHaveLength(2);
+    expect(await new UsageStore(path).selected()).toEqual(member);
+    const other = (await store.view()).members[1]; await store.select(other.id);
+    expect(await new UsageStore(path).selected()).toEqual(other);
+  });
+
+  it("clears legacy presets while preserving historical owners and records", async () => {
+    const { store } = await fixture();
+    const member = { id: "old-preset", name: "历史用户" };
+    await writeFile(store.filePath, JSON.stringify({ version: 1, selectedId: member.id,
+      sessions: [{ sessionId: "old", member, createdAt: "2026-01-01" }], usage: [] }));
+    expect((await store.view()).members).toEqual([]);
+    expect(await store.selected()).toBeUndefined();
+    await store.add("新用户");
+    expect(await store.owner("old")).toEqual(member);
+    expect((await store.view()).members.map((entry) => entry.name)).toEqual(["新用户"]);
+  });
+
+  it("deduplicates concurrent additions across store instances", async () => {
+    const { store } = await fixture(); const other = new UsageStore(directories[0]);
+    await Promise.all([store.add("同名用户"), other.add(" 同名用户 ")]);
+    expect((await store.view()).members.filter((member) => member.name === "同名用户")).toHaveLength(1);
   });
 
   it("keeps session identity immutable and rejects forged display names", async () => {
-    const store = await fixture(); await store.bind("s", { id: MEMBERS[0].id, name: "Someone else" });
-    await store.select(MEMBERS[1].id);
-    await expect(store.bind("s", MEMBERS[1])).rejects.toThrow("请新建会话");
-    expect(await store.owner("s")).toEqual(MEMBERS[0]);
+    const { store, members } = await fixture(); await store.bind("s", { id: members[0].id, name: "Someone else" });
+    await store.select(members[1].id);
+    await expect(store.bind("s", members[1])).rejects.toThrow("请新建会话");
+    expect(await store.owner("s")).toEqual(members[0]);
   });
 
   it("deduplicates restored responses and does not double-count reasoning or cached input", async () => {
-    const store = await fixture(); await store.bind("s", MEMBERS[0]);
+    const { store, members } = await fixture(); await store.bind("s", members[0]);
     await store.record("s", [response(), response()]);
     await new UsageStore(directories[0]).record("s", [response()]);
     const view = await store.view();
@@ -44,12 +72,12 @@ describe("member attribution and usage", () => {
   });
 
   it("does not infer identity for legacy transcripts", async () => {
-    const store = await fixture(); await store.select(MEMBERS[0].id); await store.record("legacy", [response()]);
+    const { store, members } = await fixture(); await store.select(members[0].id); await store.record("legacy", [response()]);
     expect((await store.view()).summaries[0]).toMatchObject({ sessions: 0, responses: 0, total: 0 });
   });
 
   it("separates errors and unknown/zero usage instead of reporting verified zero consumption", async () => {
-    const store = await fixture(); await store.bind("s", MEMBERS[0]);
+    const { store, members } = await fixture(); await store.bind("s", members[0]);
     await store.record("s", [
       { ...response(1), usage: undefined, stopReason: "error" },
       { ...response(2), usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } },
@@ -59,8 +87,8 @@ describe("member attribution and usage", () => {
   });
 
   it("serializes concurrent records from store instances and separates model usage", async () => {
-    const store = await fixture(); const other = new UsageStore(directories[0]);
-    await store.bind("one", MEMBERS[0]); await store.bind("two", MEMBERS[1]);
+    const { store, members } = await fixture(); const other = new UsageStore(directories[0]);
+    await store.bind("one", members[0]); await store.bind("two", members[1]);
     await Promise.all(Array.from({ length: 20 }, (_, index) => (index % 2 ? store : other).record(index % 2 ? "one" : "two", [response(index)])));
     const view = await store.view();
     expect(view.summaries[0]).toMatchObject({ responses: 10, total: 1000 });
@@ -69,8 +97,8 @@ describe("member attribution and usage", () => {
   });
 
   it("preserves corrupt records and refuses to silently replace accounting history", async () => {
-    const store = await fixture(); await writeFile(store.filePath, "{corrupt");
-    await expect(store.select(MEMBERS[0].id)).rejects.toThrow();
+    const { store, members } = await fixture(); await writeFile(store.filePath, "{corrupt");
+    await expect(store.select(members[0].id)).rejects.toThrow();
     expect(await readFile(store.filePath, "utf8")).toBe("{corrupt");
   });
 });
