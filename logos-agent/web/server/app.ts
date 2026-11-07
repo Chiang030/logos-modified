@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { Store } from "./store.ts";
 import { WorkspaceFiles, segments } from "./files.ts";
-import { beginLogin, completeLogin, cookie, cookies, equal, ready, type Config } from "./auth.ts";
+import { beginLogin, completeLogin, cookie, cookies, equal, ready, identityName, type Config } from "./auth.ts";
 import { HttpError, text } from "./errors.ts";
 import { body, failure, json, sendFile } from "./http.ts";
 
@@ -24,7 +24,7 @@ async function route(s: Services, req: IncomingMessage, res: ServerResponse): Pr
   if (url.pathname === "/api/bootstrap" && method === "GET") {
     let identity: ReturnType<Store["authenticate"]> | undefined;
     try { identity = store.authenticate(cookies(req).logos_session); } catch (error) { if (!(error instanceof HttpError) || error.status !== 401) throw error; }
-    json(res, { user: identity?.user ?? null, csrf: identity?.csrf, feishuReady: ready(config), previewEnabled: config.preview,
+    json(res, { user: identity?.user ?? null, csrf: identity?.csrf, feishuReady: ready(config), identityLabel: identityName(config), previewEnabled: config.preview,
       version: "0.3.14", executionReady: false, executionReason: "服务器执行隔离尚未就绪，暂不接受 Agent 任务" });
     return;
   }
@@ -32,7 +32,7 @@ async function route(s: Services, req: IncomingMessage, res: ServerResponse): Pr
     const login = beginLogin(config, store); res.writeHead(302, { Location: login.location, "Set-Cookie": login.cookie, "Cache-Control": "no-store" }); res.end(); return;
   }
   if (url.pathname === "/auth/feishu/callback" && method === "GET") {
-    if (!ready(config)) throw new HttpError(503, "飞书应用尚未配置");
+    if (!ready(config)) throw new HttpError(503, identityName(config) + "应用尚未配置");
     const state = url.searchParams.get("state") ?? "", code = url.searchParams.get("code") ?? "";
     if (!state || !equal(state, cookies(req).logos_oauth ?? "") || !store.consumeState(state) || !code) throw new HttpError(400, "登录请求已过期，请重新登录");
     const user = await completeLogin(config, store, code), session = store.login(user);

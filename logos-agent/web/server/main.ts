@@ -11,11 +11,15 @@ import type { Config } from "./auth.ts";
 process.umask(0o077);
 const port = Number(process.env.LOGOS_WEB_PORT ?? 18880), host = process.env.LOGOS_WEB_HOST ?? "127.0.0.1";
 const publicUrl = (process.env.LOGOS_WEB_PUBLIC_URL ?? "http://127.0.0.1:" + port).replace(/\/$/, "");
+const platform = process.env.LOGOS_WEB_IDENTITY_PLATFORM ?? "feishu";
+if (platform !== "feishu" && platform !== "lark") throw new Error("Identity platform must be feishu or lark");
+const credentialPrefix = platform === "lark" ? "LARK" : "FEISHU";
 const config: Config = {
+  platform,
   host, port, publicUrl, data: resolve(process.env.LOGOS_WEB_DATA_DIR ?? join(homedir(), ".local/share/logos-web")),
   preview: process.env.LOGOS_WEB_PREVIEW === "1",
-  appId: process.env.FEISHU_APP_ID ?? "", appSecret: process.env.FEISHU_APP_SECRET ?? "",
-  tenant: process.env.FEISHU_TENANT_KEY ?? "", admins: (process.env.LOGOS_WEB_ADMIN_OPEN_IDS ?? "").split(",").filter(Boolean),
+  appId: process.env[credentialPrefix + "_APP_ID"] ?? "", appSecret: process.env[credentialPrefix + "_APP_SECRET"] ?? "",
+  tenant: process.env[credentialPrefix + "_TENANT_KEY"] ?? "", admins: (process.env.LOGOS_WEB_ADMIN_OPEN_IDS ?? "").split(",").filter(Boolean),
   uploadLimit: 64 * 1024 * 1024,
 };
 const address = new URL(publicUrl);

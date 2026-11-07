@@ -44,7 +44,7 @@ export class Store {
   authenticate(token: string | undefined): { user: User; csrf: string } {
     const row = token && this.db.prepare("SELECT u.id,u.name,u.admin,s.csrf FROM auth_sessions s JOIN users u ON u.id=s.owner WHERE s.hash=? AND s.expires>?")
       .get(digest(token), Date.now()) as unknown as (UserRow & { csrf: string }) | undefined;
-    if (!row) throw new HttpError(401, "请先使用飞书登录");
+    if (!row) throw new HttpError(401, "请先登录");
     return { user: { id: row.id, name: row.name, admin: Boolean(row.admin) }, csrf: row.csrf };
   }
   logout(token: string): void { this.db.prepare("DELETE FROM auth_sessions WHERE hash=?").run(digest(token)); }

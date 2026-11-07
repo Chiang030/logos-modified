@@ -30,7 +30,7 @@ test("identity, project and conversation ownership survive a database restart", 
 
 test("OAuth state is one-use, credentials remain server-side and tenant is enforced", async () => {
   const directory = await mkdtemp(join(tmpdir(), "logos-oauth-")), store = new Store(join(directory, "db.sqlite"));
-  const config = { appId: "test-app", appSecret: "fixture-secret", tenant: "company", admins: ["alice"], publicUrl: "https://logos.example.test" } as Config;
+  const config: Config = { host: "127.0.0.1", port: 0, data: directory, preview: false, uploadLimit: 1000, appId: "test-app", appSecret: "fixture-secret", tenant: "company", admins: ["alice"], publicUrl: "https://logos.example.test" };
   try {
     assert.equal(equal("é", "a"), false);
     const login = beginLogin(config, store), url = new URL(login.location);
@@ -48,5 +48,42 @@ test("OAuth state is one-use, credentials remain server-side and tenant is enfor
     const user = await completeLogin(config, store, "code", exchange("company"));
     assert.equal(user.admin, true);
     await assert.rejects(completeLogin(config, store, "code", exchange("another-company")), /允许的企业/);
+  } finally { store.close(); await rm(directory, { recursive: true, force: true }); }
+});
+
+test("Lark uses international endpoints and accepts string success codes without mixing identities", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "logos-lark-")), store = new Store(join(directory, "db.sqlite"));
+  const config: Config = { host: "127.0.0.1", port: 0, data: directory, preview: false, uploadLimit: 1000, platform: "lark", appId: "test-app", appSecret: "fixture-secret", tenant: "company", admins: [], publicUrl: "https://logos.example.test" };
+  try {
+    const url = new URL(beginLogin(config, store).location);
+    assert.equal(url.origin, "https://accounts.larksuite.com");
+    assert.equal(url.searchParams.get("client_id"), config.appId);
+    assert.equal(url.searchParams.get("redirect_uri"), config.publicUrl + "/auth/feishu/callback");
+    assert.equal(url.href.includes(config.appSecret), false);
+    const feishuUser = store.user("test-app:company:alice", "Alice");
+    let identity: string | undefined;
+    for (const code of [0, "0"]) {
+      const exchange: typeof fetch = async (input, init) => {
+        const endpoint = new URL(String(input));
+        assert.equal(endpoint.origin, "https://open.larksuite.com");
+        if (endpoint.pathname === "/open-apis/authen/v2/oauth/token") {
+          assert.equal(JSON.parse(String(init?.body)).client_secret, config.appSecret);
+          return Response.json({ code, access_token: "lark-test-token" });
+        }
+        assert.equal(endpoint.pathname, "/open-apis/authen/v1/user_info");
+        assert.equal(new Headers(init?.headers).get("Authorization"), "Bearer lark-test-token");
+        return Response.json({ code: 0, data: { open_id: "alice", tenant_key: "company", name: "Alice" } });
+      };
+      const user = await completeLogin(config, store, "authorization-code", exchange);
+      assert.notEqual(user.id, feishuUser.id);
+      if (identity) assert.equal(user.id, identity);
+      identity = user.id;
+    }
+    await assert.rejects(completeLogin(config, store, "invalid-code", async () =>
+      Response.json({ code: "20002", error: "invalid_client", access_token: "must-not-be-used" })), /Lark授权交换失败/);
+    await assert.rejects(completeLogin(config, store, "foreign-tenant", async (input) =>
+      String(input).endsWith("/oauth/token")
+        ? Response.json({ code: "0", access_token: "token" })
+        : Response.json({ code: 0, data: { open_id: "alice", tenant_key: "another-company", name: "Alice" } })), /允许的企业/);
   } finally { store.close(); await rm(directory, { recursive: true, force: true }); }
 });

@@ -59,9 +59,11 @@ Start from `logos-agent/web`. TypeScript executes with
 | `LOGOS_WEB_PUBLIC_URL` | `http://127.0.0.1:<port>`; exact origin without subpath |
 | `LOGOS_WEB_DATA_DIR` | `~/.local/share/logos-web`; outside the checkout |
 | `LOGOS_WEB_PREVIEW` | `0`; `1` enables static loopback-only sample UI |
-| `FEISHU_APP_ID` | Required for login |
+| `LOGOS_WEB_IDENTITY_PLATFORM` | `feishu` (default) or `lark`; pilot uses `lark` |
+| `FEISHU_APP_ID` | Required for Feishu login |
 | `FEISHU_APP_SECRET` | Required server-side secret |
-| `FEISHU_TENANT_KEY` | Required allowed enterprise |
+| `FEISHU_TENANT_KEY` | Required allowed Feishu enterprise |
+| `LARK_APP_ID`, `LARK_APP_SECRET`, `LARK_TENANT_KEY` | Required instead of FEISHU credentials when platform is `lark` |
 | `LOGOS_WEB_ADMIN_OPEN_IDS` | Comma-separated app-scoped Feishu open IDs; no automatic first-user admin |
 
 Use a protected server environment file for secrets. Never place them in source,
@@ -166,7 +168,7 @@ npm run compile
 npm test
 ```
 
-Five web tests cover persistent ownership, mocked OAuth checks, traversal/symlink
+Six web tests cover persistent ownership, mocked OAuth checks, traversal/symlink
 rejection, upload no-overwrite/limits/interruption cleanup, and real HTTP auth,
 CSRF, project/file/session behavior and blocked execution.
 
@@ -180,3 +182,33 @@ Next: validate execution isolation; integrate Pi worker, persistent queue
 and an idempotent request-level usage ledger; finish rich file interactions;
 then real Feishu and HTTPS deployment acceptance. Failed model calls without
 usage must remain unknown, not zero. Queue/accounting are not delivered here.
+
+## Lark international application (2026-11-07)
+
+The user confirmed that the application was created in open.larksuite.com.
+The pilot uses LOGOS_WEB_IDENTITY_PLATFORM=lark and the LARK_APP_ID,
+LARK_APP_SECRET and LARK_TENANT_KEY environment variables. Configure credentials
+in ~/.config/logos-web-pilot/server.env (mode 0600), outside the repository.
+The callback remains /auth/feishu/callback for compatibility with the URL already
+registered in the application; its path does not choose the identity platform.
+
+The provider's official documentation was reviewed:
+- Authorization: https://open.larksuite.com/document/common-capabilities/sso/api/obtain-oauth-code
+- Token exchange: https://open.larksuite.com/document/uAjLw4CM/ukTMukTMukTM/authentication-management/access-token/get-user-access-token
+- User profile: https://open.larksuite.com/document/uAjLw4CM/ukTMukTMukTM/reference/authen-v1/user_info/get
+
+Lark uses accounts.larksuite.com for authorization and open.larksuite.com for
+token/profile calls. Token success may contain code as the string "0", not
+only the number 0. Both are accepted; upstream failures and foreign tenants are
+rejected. Lark identities have a separate namespace, preserving existing Feishu
+identity keys. User-facing login labels follow the configured platform.
+
+Lark credentials never fall back to Feishu credentials. Both providers still
+require an explicit enterprise tenant key before enabling login. To obtain it,
+the application administrator can authorize the official user_info API debug
+tool with a user_access_token and copy data.tenant_key from their own account's
+response. Do not paste access tokens into chat or the web configuration file.
+
+The application must be published/approved and available to the test users.
+Current tests use simulated OAuth responses, including string/numeric success,
+upstream failure and enterprise mismatch. They do not prove a real Lark login.

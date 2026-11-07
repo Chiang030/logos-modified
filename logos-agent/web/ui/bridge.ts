@@ -28,7 +28,7 @@ export class BrowserBridge implements HostBridge {
         this.emit({ type: "runtime/config", config: { models: [], thinkingLevels: [] } });
         this.emit({ type: "runtime/status", status: "idle", detail: "执行环境尚未就绪" });
         this.emit({ type: "session/loading", loading: false }); await this.history(); return;
-      case "identity/load": this.identity(); this.notice("当前身份来自飞书登录，不能在页面中切换姓名"); return;
+      case "identity/load": this.identity(); this.notice("当前身份来自企业登录，不能在页面中切换姓名"); return;
       case "settings/load": this.notice("模型账号由管理员统一配置。管理功能与真实运行将在后续阶段接入。"); return;
       case "software/scan": this.emit({ type: "software/error", message: "服务器软件扫描由管理员维护" }); this.notice("服务器软件扫描由管理员维护"); return;
       case "diagnostics/open": this.notice("当前未启动 Agent。执行隔离验证失败，任务入口保持关闭。"); return;

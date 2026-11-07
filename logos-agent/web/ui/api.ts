@@ -2,7 +2,7 @@ export interface User { id: string; name: string; admin: boolean; }
 export interface Project { id: string; name: string; directory: string; }
 export interface Conversation { id: string; title: string; project: string; }
 export interface Entry { name: string; directory: boolean; size: number; modified: number; }
-export interface Bootstrap { user: User | null; csrf?: string; feishuReady: boolean; previewEnabled: boolean; version: string; executionReady: boolean; executionReason: string; }
+export interface Bootstrap { user: User | null; csrf?: string; feishuReady: boolean; identityLabel?: string; previewEnabled: boolean; version: string; executionReady: boolean; executionReason: string; }
 let csrf = "";
 export function setCsrf(value: string): void { csrf = value; }
 export async function api<T>(path: string, value?: unknown, method = value === undefined ? "GET" : "POST"): Promise<T> {

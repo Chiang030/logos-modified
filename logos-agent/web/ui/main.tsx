@@ -31,7 +31,7 @@ function Workspace(): ReactElement {
   if (!boot.user && !preview) return <div className="login-page">
     <div className="login-brand"><img src={logo} alt="LOGOS" /><span>设计 · 仿真 · 工作空间</span></div>
     <div className="login-card"><div className="eyebrow">LOGOS WORKSPACE</div><h1>从一个项目开始。</h1><p>整理资料、探索方案，并在同一工作台中查看文件与对话。</p>
-      {boot.feishuReady ? <a className="primary button" href="/auth/feishu">使用飞书登录 →</a> : <><button className="primary" disabled>使用飞书登录</button><p className="hint">企业飞书应用尚未配置，正式登录暂未开放。</p></>}
+      {boot.feishuReady ? <a className="primary button" href="/auth/feishu">使用 {boot.identityLabel ?? "飞书"} 登录 →</a> : <><button className="primary" disabled>使用 {boot.identityLabel ?? "飞书"} 登录</button><p className="hint">{boot.identityLabel ?? "飞书"} 企业应用尚未配置，正式登录暂未开放。</p></>}
       {boot.previewEnabled ? <button className="secondary" onClick={() => { history.replaceState(null, "", "/?preview=1"); setPreview(true); }}>查看只读界面预览</button> : null}
       <div className="login-foot">个人文件空间 · 项目会话 · 内网工作台</div>
     </div><div className="login-orbit" aria-hidden="true" />
