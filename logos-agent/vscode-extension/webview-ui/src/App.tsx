@@ -32,9 +32,7 @@ import {
   type TimelineMessage,
 } from "./timeline";
 
-declare function acquireVsCodeApi(): { postMessage(message: unknown): void };
-
-const vscode = acquireVsCodeApi();
+import { getHostBridge, type HostBridge } from "./hostBridge";
 
 const quickPrompts = [
   { icon: <FileCode className="h-4 w-4 text-amber-400" />, title: "优化设计", desc: "探索更好的气动方案", detail: "分析设计参数、边界条件与减阻方向", prompt: "/optimize 请分析当前飞行器设计的气动性能，并给出优化建议。" },
@@ -43,7 +41,8 @@ const quickPrompts = [
   { icon: <Search className="h-4 w-4 text-teal-400" />, title: "全局扫描软件", desc: "查找本机已安装的软件", detail: "扫描各磁盘，自动更新设置中的软件路径", action: "scan" },
 ];
 
-export function App(): ReactElement {
+export function App({ host = getHostBridge(), web = false }: { host?: HostBridge; web?: boolean } = {}): ReactElement {
+  const vscode = host;
   const [extensionVersion, setExtensionVersion] = useState<string>();
   const [status, setStatus] = useState<RuntimeStatus>("idle");
   const [statusDetail, setStatusDetail] = useState<string>();
@@ -125,10 +124,10 @@ export function App(): ReactElement {
         case "run/settled": setStatus(message.outcome === "interrupted" ? "error" : "ready"); setTimeline((current) => settleTimeline(current, message.outcome ?? (message.aborted ? "aborted" : "completed"))); break;
       }
     };
-    window.addEventListener("message", onMessage);
+    const unsubscribe = host.subscribe((message) => onMessage({ data: message } as MessageEvent<ExtensionToWebviewMessage>));
     vscode.postMessage({ type: "webview/ready" });
-    return () => window.removeEventListener("message", onMessage);
-  }, []);
+    return unsubscribe;
+  }, [host]);
 
   useEffect(() => {
     if (followScroll.current && !window.getSelection()?.toString()) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -166,7 +165,7 @@ export function App(): ReactElement {
         <div className="flex min-w-0 items-center"><img className="h-7 w-auto max-w-[180px] object-contain object-left" src={fullLogo} alt="LOGOS Aircraft Design and Simulation Agent" /></div>
         <div className="history-menu-wrap relative flex items-center gap-2">
           <div className="flex items-center gap-1.5 rounded-full border border-[#2b2b2b] bg-[#1c1c1c] px-2 py-0.5 font-mono text-[10px] text-[#9ca3af]" title={error || statusDetail}><span className={`h-1.5 w-1.5 rounded-full ${status === "error" ? "bg-red-400" : status === "ready" ? "bg-emerald-400" : "animate-pulse bg-sky-400"}`} /><span className="tracking-wide">{statusLabel(status)}</span><span className="text-[#525252]">•</span><span className="text-[#737373]">MACH-SYS</span></div>
-          <button type="button" className="flex h-7 w-7 items-center justify-center rounded text-[#9ca3af]" title="LOGOS 设置" aria-label="LOGOS 设置" onClick={() => setSettingsOpen((value) => !value)}><Settings className="h-3.5 w-3.5" /></button>
+          <button type="button" className="flex h-7 w-7 items-center justify-center rounded text-[#9ca3af]" title="LOGOS 设置" aria-label="LOGOS 设置" onClick={() => web ? host.postMessage({ type: "settings/load" }) : setSettingsOpen((value) => !value)}><Settings className="h-3.5 w-3.5" /></button>
           <button type="button" className="flex h-7 w-7 items-center justify-center rounded text-[#9ca3af] transition-colors hover:bg-[#262626] hover:text-white" title="Session History" aria-label="Session History" aria-expanded={historyOpen} onClick={() => setHistoryOpen((open) => !open)}><History className="h-3.5 w-3.5" /></button>
           {historyOpen ? <HistoryMenu sessions={sessions} active={activeSessionId} busy={busy} post={(message) => { vscode.postMessage(message); if (message.type !== "session/rename") setHistoryOpen(false); }} /> : null}
         </div>
@@ -177,15 +176,15 @@ export function App(): ReactElement {
       </details> : null}
       {loading ? <p role="status">正在恢复会话…</p> : waiting ? <p role="status">仍在等待模型或工具输出，可随时停止。</p> : null}
 
-      <SettingsPanel softwareRequested={softwareRequested} open={settingsOpen} busy={busy} onOpen={() => setSettingsOpen(true)} onClose={() => setSettingsOpen(false)} post={(message) => vscode.postMessage(message)} />
-      <main hidden={settingsOpen} className="custom-scrollbar flex-1 overflow-x-hidden overflow-y-auto px-3 py-3" ref={scrollRef} onScroll={(event) => { const node = event.currentTarget; followScroll.current = node.scrollHeight - node.scrollTop - node.clientHeight < 48; }}>{!hasConversation ? <EmptyState onPrompt={setInputValue} version={extensionVersion} busy={busy} onScan={() => { setScanning(true); setSoftwareRequested((value) => value + 1); setSettingsOpen(true); vscode.postMessage({ type: "software/scan" }); }} /> : <div className="space-y-3 font-sans" aria-live="polite">{timeline.map((item) => item.kind === "message" ? <MessageItem key={`message-${item.value.id}`} message={item.value} /> : <ToolItem key={`tool-${item.value.id}`} tool={item.value} />)}</div>}</main>
+      {!web && <SettingsPanel softwareRequested={softwareRequested} open={settingsOpen} busy={busy} onOpen={() => setSettingsOpen(true)} onClose={() => setSettingsOpen(false)} post={(message) => vscode.postMessage(message)} />}
+      <main hidden={settingsOpen} className="custom-scrollbar flex-1 overflow-x-hidden overflow-y-auto px-3 py-3" ref={scrollRef} onScroll={(event) => { const node = event.currentTarget; followScroll.current = node.scrollHeight - node.scrollTop - node.clientHeight < 48; }}>{!hasConversation ? <EmptyState web={web} onPrompt={setInputValue} version={extensionVersion} busy={busy} onScan={() => { setScanning(true); setSoftwareRequested((value) => value + 1); if (!web) setSettingsOpen(true); vscode.postMessage({ type: "software/scan" }); }} /> : <div className="space-y-3 font-sans" aria-live="polite">{timeline.map((item) => item.kind === "message" ? <MessageItem key={`message-${item.value.id}`} message={item.value} /> : <ToolItem key={`tool-${item.value.id}`} tool={item.value} />)}</div>}</main>
 
       <footer hidden={settingsOpen} className="control-footer shrink-0 space-y-2 border-t border-[#262626] bg-[#131313] px-0 py-2">
-        <button type="button" className="px-2.5 text-[11px] text-[#9ca3af]" onClick={() => setSettingsOpen(true)}>使用者：{member?.name ?? "添加或选择姓名"}</button>
+        <button type="button" className="px-2.5 text-[11px] text-[#9ca3af]" onClick={() => web ? host.postMessage({ type: "identity/load" }) : setSettingsOpen(true)}>使用者：{member?.name ?? "添加或选择姓名"}</button>
         <div className="relative rounded-lg border border-[#2b2b2b] bg-[#1a1a1a] transition-all focus-within:border-sky-500/70 focus-within:ring-1 focus-within:ring-sky-500/30"><textarea value={inputValue} onChange={(event) => setInputValue(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }} placeholder="输入设计问题或仿真需求…" rows={2} className="w-full resize-none bg-transparent px-2.5 py-2 font-sans text-xs text-white outline-none placeholder-[#555]" aria-label="Message LOGOS" /></div>
         <div className="control-dock flex items-center justify-between gap-2"><div className="control-meta flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           <div className="control-picker relative min-w-0 max-w-full"><PickerButton label={runtimeConfig.activeModel?.name || runtimeConfig.activeModel?.id || "选择模型"} icon={<Cpu className="h-3 w-3 shrink-0 text-sky-400" />} open={modelOpen} disabled={busy} onClick={() => { setModelOpen((open) => !open); setThinkingOpen(false); }} />{modelOpen ? <div className="absolute bottom-8 left-0 z-50 max-h-72 w-56 max-w-[calc(100vw-16px)] overflow-y-auto rounded-lg border border-[#2e2e32] bg-[#1c1c1e] py-1 font-mono text-[11px] shadow-2xl">{runtimeConfig.models.length === 0
-            ? <button type="button" className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-sky-400 hover:bg-[#2a2a2e]" onClick={() => { setModelOpen(false); setSettingsOpen(true); }}><span aria-hidden="true">＋</span> 尚未配置 API，点击新建</button>
+            ? <button type="button" className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-sky-400 hover:bg-[#2a2a2e]" onClick={() => { setModelOpen(false); if (web) host.postMessage({ type: "settings/load" }); else setSettingsOpen(true); }}><span aria-hidden="true">＋</span> {web ? "尚未配置 API，查看设置" : "尚未配置 API，点击新建"}</button>
             : modelGroups.map((group) => <Fragment key={group.key}>
               <div className="px-2.5 pb-0.5 pt-1.5 text-[9px] uppercase tracking-wider text-[#636366]">{group.name}</div>
               {group.models.map((model) => { const selected = model.provider === runtimeConfig.activeModel?.provider && model.id === runtimeConfig.activeModel?.id; return <button type="button" key={`${model.provider}/${model.id}`} className={`flex w-full items-center justify-between px-2.5 py-1.5 text-left hover:bg-[#2a2a2e] ${selected ? "bg-[#222226] font-bold text-sky-400" : "text-[#a1a1aa]"}`} onClick={() => { vscode.postMessage({ type: "model/select", provider: model.provider, modelId: model.id }); setModelOpen(false); }}>{model.name || model.id}{selected ? <CheckCircle2 className="h-3 w-3" /> : null}</button>; })}
@@ -198,14 +197,14 @@ export function App(): ReactElement {
   );
 }
 
-function EmptyState({ onPrompt, version, busy, onScan }: { onPrompt: (value: string) => void; version?: string; busy: boolean; onScan: () => void }): ReactElement {
+function EmptyState({ onPrompt, version, busy, onScan, web = false }: { web?: boolean; onPrompt: (value: string) => void; version?: string; busy: boolean; onScan: () => void }): ReactElement {
   return <div className="logos-empty-state relative flex h-full flex-col justify-between py-2 font-sans">
     <div className="logos-background-orbit" aria-hidden="true" />
     <div className="relative z-10 mt-6 flex flex-col items-center text-center">
       <div className="logos-empty-mark relative mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-[#2a2a2c] bg-[#1b1b1c] p-0.5 shadow-inner shadow-black/50"><img className="h-9 w-9 object-contain" src={iconLogo} alt="" /></div>
       <div className="mb-1 flex items-center gap-2">
         <h1 className="text-sm font-semibold text-white">LOGOS 设计与仿真助手</h1>
-        {version ? <span aria-label="插件版本" className="rounded border border-sky-800/60 bg-sky-950/70 px-1.5 py-0.5 text-[10px] text-sky-400">v{version}</span> : null}
+        {version ? <span aria-label={web ? "核心版本" : "插件版本"} className="rounded border border-sky-800/60 bg-sky-950/70 px-1.5 py-0.5 text-[10px] text-sky-400">v{version}</span> : null}
       </div>
       <p className="mb-1 text-[11px] font-medium text-[#a0a7b4]">飞行器设计 · 工程仿真 · 智能协作</p>
       <p className="max-w-[280px] text-[11px] text-[#687386]">从设计分析、仿真准备或软件扫描开始。</p>
@@ -215,7 +214,7 @@ function EmptyState({ onPrompt, version, busy, onScan }: { onPrompt: (value: str
         <span className="text-[10px] text-[#76839a]">快捷开始</span>
         <span className="flex items-center gap-1 text-[10px] text-sky-400"><Sparkles className="h-2.5 w-2.5" /> 设计与仿真</span>
       </div>
-      {quickPrompts.map((item) => <button type="button" key={item.title} disabled={item.action === "scan" && busy}
+      {quickPrompts.map((original) => { const item = web && original.action === "scan" ? { ...original, title: "服务器软件", desc: "查看可用的仿真工具", detail: "软件路径由管理员统一维护" } : original; return <button type="button" key={item.title} disabled={item.action === "scan" && busy}
         onClick={() => item.action === "scan" ? onScan() : onPrompt(item.prompt!)}
         className="group flex w-full cursor-pointer items-start gap-2.5 rounded-lg border border-[#273044] bg-[#151b29]/90 p-2 text-left shadow-[0_8px_24px_rgba(0,0,0,.18)] transition-all hover:border-sky-400/60 hover:bg-[#1c2940]">
         <span className="mt-0.5 shrink-0 rounded bg-[#202c42] p-1 group-hover:bg-[#263b5a]">{item.icon}</span>
@@ -223,7 +222,7 @@ function EmptyState({ onPrompt, version, busy, onScan }: { onPrompt: (value: str
           <span className="block text-xs leading-relaxed text-[#dbe6f6]"><span className="font-semibold text-sky-400">{item.title}</span><span className="ml-2 text-[11px]">{item.desc}</span></span>
           <span className="mt-0.5 block text-[10px] leading-relaxed text-[#8492a8]">{item.detail}</span>
         </span>
-      </button>)}
+      </button>; })}
     </div>
     <div className="relative z-10 flex flex-wrap items-center justify-center gap-3 rounded-lg border border-[#273044] bg-[#101827]/85 p-2 text-[10px] text-[#8190a7]">
       <span><kbd className="rounded bg-[#26344c] px-1.5 py-0.5 text-[9px] text-white">Enter</kbd> 发送</span>
