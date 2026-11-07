@@ -1,0 +1,984 @@
+{
+  "host": "leadhk01",
+  "user": "jiangjincheng",
+  "checked_at": "2026-11-07T12:06:30.957849+08:00",
+  "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.39",
+  "repository": "/home/jiangjincheng/logos-server-20261009/logos-server",
+  "version_checks": {
+    "gmsh": {
+      "argv": [
+        "/home/jiangjincheng/.local/opt/gmsh-4.15.2-Linux64/bin/gmsh",
+        "-version"
+      ],
+      "exit_code": 0,
+      "stdout": "4.15.2\n",
+      "stderr": ""
+    },
+    "freecadcmd_wrapper": {
+      "argv": [
+        "/home/jiangjincheng/.local/bin/freecadcmd",
+        "--get-config",
+        "ExeVersion"
+      ],
+      "exit_code": 0,
+      "stdout": "1.1.4\n",
+      "stderr": ""
+    },
+    "kicad_direct": {
+      "argv": [
+        "/home/jiangjincheng/.local/opt/kicad-9.0.9/usr/bin/kicad-cli",
+        "--version"
+      ],
+      "exit_code": 127,
+      "stdout": "",
+      "stderr": "/home/jiangjincheng/.local/opt/kicad-9.0.9/usr/bin/kicad-cli: error while loading shared libraries: libkicommon.so.9.0.9: cannot open shared object file: No such file or directory\n"
+    },
+    "blender": {
+      "argv": [
+        "/home/jiangjincheng/opt/blender-5.2.2-linux-x64/blender",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "Blender 5.2.2 LTS\n\tbuild date: 2026-09-15\n\tbuild time: 01:34:58\n\tbuild commit date: 2026-09-14\n\tbuild commit time: 15:14\n\tbuild hash: d13f752e3b9c\n\tbuild branch: blender-v5.2-release\n\tbuild platform: Linux\n\tbuild type: Release\n\tbuild c flags:  -Wall -Werror=implicit-function-declaration -Wstrict-prototypes -Werror=return-type -Werror=vla -Wmissing-prototypes -Wno-char-subscripts -Wno-unknown-pragmas -Wpointer-arith -Wunused-parameter -Wwrite-strings -Wlogical-op -Wundef -Winit-self -Wmissing-include-dirs -Wno-div-by-zero -Wtype-limits -Wformat-signedness -Wrestrict -Wno-stringop-overread -Wno-stringop-overflow -Wnonnull -Wabsolute-value -Wuninitialized -Wredundant-decls -Wshadow -Wimplicit-fallthrough=5 -Wno-error=unused-but-set-variable  -march=x86-64-v2 -std=gnu11 -pipe -fPIC -funsigned-char -fno-strict-aliasing -ffp-contract=off  \n\tbuild c++ flags:  -Wuninitialized -Wredundant-decls -Wall -Wno-invalid-offsetof -Wno-sign-compare -Wlogical-op -Winit-self -Wmissing-include-dirs -Wno-div-by-zero -Wtype-limits -Werror=return-type -Wno-char-subscripts -Wno-unknown-pragmas -Wpointer-arith -Wunused-parameter -Wwrite-strings -Wundef -Wcomma-subscript -Wformat-signedness -Wrestrict -Wno-suggest-override -Wuninitialized -Wno-stringop-overread -Wno-stringop-overflow -Wimplicit-fallthrough=5 -Wundef -Wmissing-declarations  -march=x86-64-v2 -pipe -fPIC -funsigned-char -fno-strict-aliasing -ffp-contract=off  \n\tbuild link flags: \n\tbuild system: CMake\n",
+      "stderr": ""
+    },
+    "solidcraft_cli": {
+      "argv": [
+        "/home/jiangjincheng/.local/bin/solidcraft-cli",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "solidcraft-cli 0.16.2\n",
+      "stderr": ""
+    },
+    "python": {
+      "argv": [
+        "/usr/bin/python3",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "Python 3.12.3\n",
+      "stderr": ""
+    },
+    "node": {
+      "argv": [
+        "/home/jiangjincheng/.local/bin/node",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "v22.23.3\n",
+      "stderr": ""
+    },
+    "kicad9_wrapper": {
+      "argv": [
+        "/home/jiangjincheng/.local/bin/kicad9-cli",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "9.0.9\n",
+      "stderr": ""
+    },
+    "gcc": {
+      "argv": [
+        "/usr/bin/gcc",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+      "stderr": ""
+    },
+    "cmake": {
+      "argv": [
+        "/usr/bin/cmake",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "cmake version 3.28.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n",
+      "stderr": ""
+    },
+    "sim": {
+      "argv": [
+        "/home/jiangjincheng/logos-server-20261009/logos-server/logos-agent/integrations/.venv/bin/python",
+        "-m",
+        "sim",
+        "--help"
+      ],
+      "exit_code": 0,
+      "stdout": "Usage: python -m sim [OPTIONS] COMMAND [ARGS]...\n\n  sim — unified CLI for LLM agents to control CAD/CAE simulation software.\n\nOptions:\n  --version         Show the version and exit.\n  --json            JSON output for all commands.\n  --host TEXT       Remote sim-server host. Default: SIM_HOST env > config\n                    [server].host > localhost.\n  --port INTEGER    sim-server port. Default: SIM_PORT env > config\n                    [server].port > 7600.\n  --session TEXT    Target session id (multi-session). Default: SIM_SESSION\n                    env > server's sole session.\n  --no-interactive  Fail fast (NONINTERACTIVE_INPUT_REQUIRED) instead of\n                    prompting. Auto-on when stdout is not a TTY.\n  --help            Show this message and exit.\n\nCommands:\n  attach      Attach without taking ownership of existing software.\n  check       Detect installed versions of a solver and resolve their...\n  config      Inspect and manage the two-tier sim config.\n  connect     Launch a solver and hold a persistent session.\n  describe    Emit the full CLI manifest as JSON.\n  detach      Release the connection, preserving the running software.\n  disconnect  Tear down the active session.\n  discover    Discover installations without launching software.\n  doctor      Check plugin registration/dependencies/config; never launch...\n  exec        Execute a code snippet in the live session.\n  init        Create a starter sim.toml in the current directory.\n  inspect     Query live session state.\n  launch      Launch an explicitly selected product installation.\n  lint        Validate a simulation script before execution.\n  logs        Browse global run history at ~/.sim/history.jsonl.\n  plugin      Inspect installed sim plugins and sync bundled skills.\n  probe       Probe installation evidence, not connected runtime...\n  ps          List active sessions.\n  run         Execute a simulation script in a subprocess (one-shot).\n  scan        Parse historical simulation files and directories without...\n  screenshot  Capture the server desktop and save as PNG.\n  serve       Start the sim HTTP server (like ollama serve).\n  setup       Read sim.toml and report the plugin packages it declares.\n  stop        Stop the sim-server process.\n  verify      Run a bounded read-only probe, or a new isolated-session...\n",
+      "stderr": ""
+    },
+    "system_kicad": {
+      "argv": [
+        "/usr/bin/kicad-cli",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "10.0.7\n",
+      "stderr": ""
+    }
+  },
+  "path_commands": {
+    "fluent": null,
+    "ansys261": null,
+    "mapdl": null,
+    "runwb2": null,
+    "ansysedt": null,
+    "cfx5solve": null,
+    "cfdpost": null,
+    "systemcoupling": null,
+    "gmsh": "/home/jiangjincheng/.local/bin/gmsh",
+    "blender": "/home/jiangjincheng/.local/bin/blender",
+    "freecadcmd": "/home/jiangjincheng/.local/bin/freecadcmd",
+    "kicad-cli": "/usr/bin/kicad-cli",
+    "kicad9-cli": "/home/jiangjincheng/.local/bin/kicad9-cli",
+    "solidcraft-cli": "/home/jiangjincheng/.local/bin/solidcraft-cli",
+    "sim": null,
+    "python3": "/usr/bin/python3",
+    "node": "/home/jiangjincheng/.local/bin/node",
+    "gcc": "/usr/bin/gcc",
+    "g++": "/usr/bin/g++",
+    "gfortran": null,
+    "make": "/usr/bin/make",
+    "cmake": "/usr/bin/cmake",
+    "mpirun": null,
+    "mpiexec": null,
+    "nvidia-smi": "/usr/bin/nvidia-smi",
+    "git": "/usr/bin/git",
+    "uv": "/home/jiangjincheng/.local/bin/uv",
+    "rg": null,
+    "pandoc": null,
+    "pdflatex": null,
+    "latexmk": null,
+    "paraview": null,
+    "pvpython": null,
+    "foamDictionary": null,
+    "checkMesh": null,
+    "simpleFoam": null,
+    "blockMesh": null,
+    "snappyHexMesh": null,
+    "run_aster": null,
+    "as_run": null,
+    "SU2_CFD": null,
+    "pyfr": null,
+    "lmp": null,
+    "lmp_mpi": null,
+    "ccx": null,
+    "cgx": null,
+    "ElmerSolver": null,
+    "ElmerGrid": null,
+    "FreeFem++": null,
+    "scilab-cli": null,
+    "vsp": null,
+    "vspscript": null,
+    "vspaero": null,
+    "starccm+": null,
+    "comsol": null,
+    "comsolbatch": null,
+    "abaqus": null,
+    "fds": null,
+    "smokeview": null,
+    "DualSPHysics": null,
+    "starter_linux64_gf": null,
+    "engine_linux64_gf": null,
+    "IncNavierStokesSolver": null,
+    "NekMesh": null,
+    "FieldConvert": null
+  },
+  "system_packages": [
+    "kicad\t10.0.7~ubuntu24.04.1",
+    "kicad-demos\t10.0.7~ubuntu24.04.1",
+    "kicad-doc-en\t10.0.7~ubuntu24.04.1",
+    "kicad-footprints\t10.0.7~ubuntu24.04.1",
+    "kicad-libraries\t10.0.7~ubuntu24.04.1",
+    "kicad-packages3d\t10.0.7~ubuntu24.04.1",
+    "kicad-symbols\t10.0.7~ubuntu24.04.1",
+    "kicad-templates\t10.0.7~ubuntu24.04.1"
+  ],
+  "python_environments": [
+    {
+      "python": "/usr/bin/python3",
+      "version": "3.12.3",
+      "modules": [
+        {
+          "module": "pcbnew",
+          "version": null,
+          "origin": "/usr/lib/python3/dist-packages/pcbnew.py"
+        }
+      ]
+    },
+    {
+      "python": "/home/jiangjincheng/.local/opt/gmsh-venv/bin/python",
+      "version": "3.12.3",
+      "modules": [
+        {
+          "module": "gmsh",
+          "version": "4.15.2",
+          "origin": "/home/jiangjincheng/.local/opt/gmsh-venv/lib/python3.12/site-packages/gmsh.py"
+        }
+      ]
+    },
+    {
+      "python": "/home/jiangjincheng/logos-server-20261009/logos-server/logos-agent/integrations/.venv/bin/python",
+      "version": "3.12.3",
+      "modules": [
+        {
+          "module": "numpy",
+          "version": "2.5.4",
+          "origin": "/home/jiangjincheng/logos-server-20261009/logos-server/logos-agent/integrations/.venv/lib/python3.12/site-packages/numpy/__init__.py"
+        },
+        {
+          "module": "pandas",
+          "version": "2.3.3",
+          "origin": "/home/jiangjincheng/logos-server-20261009/logos-server/logos-agent/integrations/.venv/lib/python3.12/site-packages/pandas/__init__.py"
+        },
+        {
+          "module": "ansys.fluent.core",
+          "version": "0.38.1",
+          "origin": "/home/jiangjincheng/logos-server-20261009/logos-server/logos-agent/integrations/.venv/lib/python3.12/site-packages/ansys/fluent/core/__init__.py"
+        },
+        {
+          "module": "ansys.mechanical.core",
+          "version": "0.13.3",
+          "origin": "/home/jiangjincheng/logos-server-20261009/logos-server/logos-agent/integrations/.venv/lib/python3.12/site-packages/ansys/mechanical/core/__init__.py"
+        },
+        {
+          "module": "sim",
+          "version": null,
+          "origin": "/home/jiangjincheng/logos-server-20261009/logos-server/logos-agent/integrations/sim-cli/src/sim/__init__.py"
+        }
+      ]
+    },
+    {
+      "python": "/home/jiangjincheng/projects/101402/.venv-fluent/bin/python",
+      "version": "3.12.3",
+      "modules": [
+        {
+          "module": "numpy",
+          "version": "2.5.4",
+          "origin": "/home/jiangjincheng/projects/101402/.venv-fluent/lib/python3.12/site-packages/numpy/__init__.py"
+        },
+        {
+          "module": "pandas",
+          "version": "2.3.3",
+          "origin": "/home/jiangjincheng/projects/101402/.venv-fluent/lib/python3.12/site-packages/pandas/__init__.py"
+        },
+        {
+          "module": "ansys.fluent.core",
+          "version": "0.43.0",
+          "origin": "/home/jiangjincheng/projects/101402/.venv-fluent/lib/python3.12/site-packages/ansys/fluent/core/__init__.py"
+        }
+      ]
+    },
+    {
+      "python": "/home/jiangjincheng/projects/ansys-agent-harness/.venv/bin/python",
+      "version": "3.12.3",
+      "modules": [
+        {
+          "module": "numpy",
+          "version": "2.5.3",
+          "origin": "/home/jiangjincheng/projects/ansys-agent-harness/.venv/lib/python3.12/site-packages/numpy/__init__.py"
+        },
+        {
+          "module": "pandas",
+          "version": "2.3.3",
+          "origin": "/home/jiangjincheng/projects/ansys-agent-harness/.venv/lib/python3.12/site-packages/pandas/__init__.py"
+        },
+        {
+          "module": "ansys.fluent.core",
+          "version": "0.38.1",
+          "origin": "/home/jiangjincheng/projects/ansys-agent-harness/.venv/lib/python3.12/site-packages/ansys/fluent/core/__init__.py"
+        },
+        {
+          "module": "ansys.mechanical.core",
+          "version": "0.13.3",
+          "origin": "/home/jiangjincheng/projects/ansys-agent-harness/.venv/lib/python3.12/site-packages/ansys/mechanical/core/__init__.py"
+        },
+        {
+          "module": "ansys.aedt.core",
+          "version": "0.28.0",
+          "origin": "/home/jiangjincheng/projects/ansys-agent-harness/.venv/lib/python3.12/site-packages/ansys/aedt/core/__init__.py"
+        },
+        {
+          "module": "sim",
+          "version": null,
+          "origin": "/home/jiangjincheng/projects/ansys-agent-harness/.venv/lib/python3.12/site-packages/sim/__init__.py"
+        }
+      ]
+    },
+    {
+      "python": "/home/jiangjincheng/projects/ansys-agent-harness/.venv-structural-test/bin/python",
+      "version": "3.12.3",
+      "modules": [
+        {
+          "module": "numpy",
+          "version": "2.5.3",
+          "origin": "/home/jiangjincheng/projects/ansys-agent-harness/.venv-structural-test/lib/python3.12/site-packages/numpy/__init__.py"
+        },
+        {
+          "module": "scipy",
+          "version": "1.18.1",
+          "origin": "/home/jiangjincheng/projects/ansys-agent-harness/.venv-structural-test/lib/python3.12/site-packages/scipy/__init__.py"
+        },
+        {
+          "module": "matplotlib",
+          "version": "3.11.2",
+          "origin": "/home/jiangjincheng/projects/ansys-agent-harness/.venv-structural-test/lib/python3.12/site-packages/matplotlib/__init__.py"
+        },
+        {
+          "module": "cadquery",
+          "version": "2.8.0",
+          "origin": "/home/jiangjincheng/projects/ansys-agent-harness/.venv-structural-test/lib/python3.12/site-packages/cadquery/__init__.py"
+        },
+        {
+          "module": "OCP",
+          "version": "7.9.3.1.1",
+          "origin": "/home/jiangjincheng/projects/ansys-agent-harness/.venv-structural-test/lib/python3.12/site-packages/OCP/__init__.py"
+        },
+        {
+          "module": "vtk",
+          "version": "9.6.2",
+          "origin": "/home/jiangjincheng/projects/ansys-agent-harness/.venv-structural-test/lib/python3.12/site-packages/vtk.py"
+        }
+      ]
+    },
+    {
+      "python": "/home/jiangjincheng/.local/opt/kicad-mcp-venv/bin/python",
+      "version": "3.12.3",
+      "modules": []
+    },
+    {
+      "python": "/home/jiangjincheng/.local/opt/kicad-mcp-mixelpixx-venv/bin/python",
+      "version": "3.12.3",
+      "modules": [
+        {
+          "module": "numpy",
+          "version": "2.5.4",
+          "origin": "/home/jiangjincheng/.local/opt/kicad-mcp-mixelpixx-venv/lib/python3.12/site-packages/numpy/__init__.py"
+        }
+      ]
+    }
+  ],
+  "mcp_config": [
+    {
+      "path": "/home/jiangjincheng/.pi/agent/mcp.json",
+      "servers": [
+        {
+          "name": "solidcraft",
+          "command": "/home/jiangjincheng/.local/bin/solidcraft-cli",
+          "type": null,
+          "enabled": true
+        },
+        {
+          "name": "kicad",
+          "command": "/home/jiangjincheng/logos-server-20261009/logos-server/logos-agent/integrations/kicad-mcp-server/bin/kicad-mcp-server",
+          "type": null,
+          "enabled": true
+        },
+        {
+          "name": "blender",
+          "command": "/home/jiangjincheng/logos-server-20261009/logos-server/logos-agent/integrations/blender-mcp/bin/blender-mcp-server",
+          "type": null,
+          "enabled": true
+        }
+      ]
+    }
+  ],
+  "import_checks": {
+    "gmsh_python": {
+      "argv": [
+        "/home/jiangjincheng/.local/opt/gmsh-venv/bin/python",
+        "-c",
+        "import gmsh; gmsh.initialize(); print(gmsh.__version__); gmsh.finalize()"
+      ],
+      "exit_code": 0,
+      "stdout": "4.15.2\n",
+      "stderr": ""
+    },
+    "cadquery_stack": {
+      "argv": [
+        "/home/jiangjincheng/projects/ansys-agent-harness/.venv-structural-test/bin/python",
+        "-c",
+        "import cadquery, OCP, numpy, scipy, matplotlib, vtk; print('CadQuery',cadquery.__version__,'NumPy',numpy.__version__,'SciPy',scipy.__version__,'Matplotlib',matplotlib.__version__,'VTK',vtk.vtkVersion.GetVTKVersion())"
+      ],
+      "exit_code": 0,
+      "stdout": "CadQuery 2.8.0 NumPy 2.5.3 SciPy 1.18.1 Matplotlib 3.11.2 VTK 9.6.2\n",
+      "stderr": ""
+    },
+    "pyansys_logos": {
+      "argv": [
+        "/home/jiangjincheng/logos-server-20261009/logos-server/logos-agent/integrations/.venv/bin/python",
+        "-c",
+        "import ansys.fluent.core, ansys.mechanical.core; print('PyFluent',ansys.fluent.core.__version__,'PyMechanical',ansys.mechanical.core.__version__)"
+      ],
+      "exit_code": 0,
+      "stdout": "PyFluent 0.38.1 PyMechanical 0.13.3\n",
+      "stderr": ""
+    },
+    "kicad10_python": {
+      "argv": [
+        "/usr/bin/python3",
+        "-c",
+        "import pcbnew; print(pcbnew.GetBuildVersion())"
+      ],
+      "exit_code": 0,
+      "stdout": "10.0.7-10.0.7~ubuntu24.04.1\n",
+      "stderr": "./kicad/include/properties/property.h(607): assert \"m_choices.GetCount() > 0\" failed in PROPERTY_ENUM(): No enum choices defined\n./kicad/include/properties/property.h(607): assert \"m_choices.GetCount() > 0\" failed in PROPERTY_ENUM(): No enum choices defined\n./kicad/include/properties/property.h(607): assert \"m_choices.GetCount() > 0\" failed in PROPERTY_ENUM(): No enum choices defined\n"
+    },
+    "kicad9_python": {
+      "argv": [
+        "/home/jiangjincheng/.local/bin/kicad9-python",
+        "-c",
+        "import pcbnew; print(pcbnew.GetBuildVersion())"
+      ],
+      "exit_code": 0,
+      "stdout": "9.0.9-9.0.9~ubuntu24.04.1\n",
+      "stderr": ""
+    },
+    "gpu": {
+      "argv": [
+        "/usr/bin/nvidia-smi",
+        "--query-gpu=name,driver_version,memory.total",
+        "--format=csv,noheader"
+      ],
+      "exit_code": 0,
+      "stdout": "NVIDIA GeForce RTX 5090 D v2, 595.99.02, 24455 MiB\n",
+      "stderr": ""
+    }
+  },
+  "os_release": {
+    "PRETTY_NAME": "\"Ubuntu 24.04.5 LTS\"",
+    "NAME": "\"Ubuntu\"",
+    "VERSION_ID": "\"24.04\"",
+    "VERSION": "\"24.04.5 LTS (Noble Numbat)\"",
+    "VERSION_CODENAME": "noble",
+    "ID": "ubuntu",
+    "ID_LIKE": "debian",
+    "HOME_URL": "\"https://www.ubuntu.com/\"",
+    "SUPPORT_URL": "\"https://help.ubuntu.com/\"",
+    "BUG_REPORT_URL": "\"https://bugs.launchpad.net/ubuntu/\"",
+    "PRIVACY_POLICY_URL": "\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"",
+    "UBUNTU_CODENAME": "noble",
+    "LOGO": "ubuntu-logo"
+  },
+  "installation_scan": {
+    "roots": [
+      "/opt",
+      "/usr/local",
+      "/usr/bin",
+      "/usr/lib",
+      "/srv/shared/ansys_inc/v261",
+      "/home/jiangjincheng/.local/opt",
+      "/home/jiangjincheng/opt"
+    ],
+    "visited": 39699,
+    "limited": false,
+    "unreadable_count": 0,
+    "executable_matches": {
+      "nvidia-smi": [
+        "/usr/bin/nvidia-smi"
+      ],
+      "git": [
+        "/usr/bin/git",
+        "/usr/lib/git-core/git"
+      ],
+      "cmake": [
+        "/usr/bin/cmake"
+      ],
+      "kicad-cli": [
+        "/usr/bin/kicad-cli",
+        "/home/jiangjincheng/.local/opt/kicad-9.0.9/usr/bin/kicad-cli"
+      ],
+      "python3": [
+        "/usr/bin/python3",
+        "/srv/shared/ansys_inc/v261/ansys/syslib/CPython/3_10/linx64/Release/python/bin/python3",
+        "/srv/shared/ansys_inc/v261/optiSLang/lib/python3.10/bin/python3",
+        "/srv/shared/ansys_inc/v261/commonfiles/CPython/3_10/linx64/Release/python/bin/python3",
+        "/srv/shared/ansys_inc/v261/AnsysEM/commonfiles/CPython/3_10/linx64/Release/python/bin/python3",
+        "/srv/shared/ansys_inc/v261/AnsysEM/helic/share/python/bin/python3",
+        "/srv/shared/ansys_inc/v261/AnsysEM/helic/tools/raptorai/optiSLang/lib/python3.10/bin/python3",
+        "/srv/shared/ansys_inc/v261/CEI/apex261/machines/linux_2.6_64/Python-3.12.11/bin/python3",
+        "/home/jiangjincheng/.local/opt/kicad-mcp-mixelpixx-venv/bin/python3",
+        "/home/jiangjincheng/.local/opt/kicad-mcp-venv/bin/python3",
+        "/home/jiangjincheng/.local/opt/gmsh-venv/bin/python3"
+      ],
+      "gcc": [
+        "/usr/bin/gcc",
+        "/usr/lib/ccache/gcc",
+        "/srv/shared/ansys_inc/v261/AnsysEM/extras/gcc/3.4.6/64bit/bin/gcc"
+      ],
+      "make": [
+        "/usr/bin/make"
+      ],
+      "g++": [
+        "/usr/bin/g++",
+        "/usr/lib/ccache/g++",
+        "/srv/shared/ansys_inc/v261/AnsysEM/extras/gcc/3.4.6/64bit/bin/g++"
+      ],
+      "rg": [
+        "/usr/lib/chatgpt/resources/rg"
+      ],
+      "node": [
+        "/usr/lib/chatgpt/resources/cua_node/bin/node",
+        "/home/jiangjincheng/.local/opt/node-v22.23.3-linux-x64/bin/node"
+      ],
+      "fluent": [
+        "/srv/shared/ansys_inc/v261/fluent/bin/fluent",
+        "/srv/shared/ansys_inc/v261/fluent/bin/archive/fluent",
+        "/srv/shared/ansys_inc/v261/fluent/fluent26.1.0/bin/fluent",
+        "/srv/shared/ansys_inc/v261/icemcfd/linux64_amd/icemcfd/output-interfaces/fluent",
+        "/srv/shared/ansys_inc/v261/AnsysEM/fluent/bin/fluent",
+        "/srv/shared/ansys_inc/v261/AnsysEM/fluent/bin/archive/fluent",
+        "/srv/shared/ansys_inc/v261/AnsysEM/fluent/fluent26.1.0/bin/fluent"
+      ],
+      "mpiexec": [
+        "/srv/shared/ansys_inc/v261/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_rocm/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/fluent/fluent26.1.0/multiport/mpi/lnamd64/intel/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/.bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/commonfiles/multiport/mpi/lnamd64/openmpi_rocm/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/commonfiles/multiport/mpi/lnamd64/intel/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/commonfiles/multiport/mpi/lnamd64/openmpi/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/commonfiles/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/commonfiles/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/.bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/tp/MPI/Intel/2018.3.222/linx64/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/tp/MPI/Intel/2021.14.2/linx64/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/tp/MPI/Intel/2021.16.1/linx64/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/tp/MPI/Intel/2021.8.0/linx64/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/tp/MPI/OpenMPI/5.0.6/linx64/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/tp/MPI/OpenMPI/4.1.8/linx64/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/tp/MPI/OpenMPI/4.0.5/linx64/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/CFX/tools/multiport/mpi/lnamd64/openmpi_rocm/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/CFX/tools/multiport/mpi/lnamd64/intel/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/CFX/tools/multiport/mpi/lnamd64/openmpi/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/CFX/tools/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/CFX/tools/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/.bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/AnsysEM/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_rocm/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/AnsysEM/fluent/fluent26.1.0/multiport/mpi/lnamd64/intel/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/AnsysEM/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/AnsysEM/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/AnsysEM/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/.bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/AnsysEM/CMA/lib/openmpi/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/AnsysEM/common/fluent_mpi/multiport/mpi/lnamd64/intel/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/AnsysEM/common/fluent_mpi/multiport/mpi/lnamd64/openmpi/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/AnsysEM/common/fluent_mpi/multiport/mpi/lnamd64/intel21/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/AnsysEM/common/fluent_mpi/multiport/mpi/lnamd64/hp/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/AnsysEM/mechanical/v261/tp/MPI/Intel/2018.3.222/linx64/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/AnsysEM/mechanical/v261/tp/MPI/Intel/2021.16.1/linx64/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/AnsysEM/mechanical/v261/tp/MPI/OpenMPI/4.1.8/linx64/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/AnsysEM/helic/lib/2026.R1-broken/mpi/intel/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/AnsysEM/helic/lib/mpi/intel/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/SystemCoupling/runTime/linx64/cnlauncher/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_rocm/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/SystemCoupling/runTime/linx64/cnlauncher/fluent/fluent26.1.0/multiport/mpi/lnamd64/intel/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/SystemCoupling/runTime/linx64/cnlauncher/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/SystemCoupling/runTime/linx64/cnlauncher/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/SystemCoupling/runTime/linx64/cnlauncher/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/.bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/CEI/apex261/machines/linux_2.6_64/multiport-26.1/mpi/lnamd64/openmpi_rocm/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/CEI/apex261/machines/linux_2.6_64/multiport-26.1/mpi/lnamd64/intel/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/CEI/apex261/machines/linux_2.6_64/multiport-26.1/mpi/lnamd64/openmpi/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/CEI/apex261/machines/linux_2.6_64/multiport-26.1/mpi/lnamd64/openmpi_cuda/ompi/bin/mpiexec",
+        "/srv/shared/ansys_inc/v261/CEI/apex261/machines/linux_2.6_64/multiport-26.1/mpi/lnamd64/openmpi_cuda/ompi/bin/.bin/mpiexec"
+      ],
+      "mpirun": [
+        "/srv/shared/ansys_inc/v261/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_rocm/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/fluent/fluent26.1.0/multiport/mpi/lnamd64/intel/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/.bin/mpirun",
+        "/srv/shared/ansys_inc/v261/fluent/fluent26.1.0/multiport/mpi/lnamd64/intel2018/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/rocky/bin/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/FluidsOne/meshing/Prime/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/commonfiles/multiport/mpi/lnamd64/openmpi_rocm/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/commonfiles/multiport/mpi/lnamd64/intel/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/commonfiles/multiport/mpi/lnamd64/openmpi/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/commonfiles/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/commonfiles/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/.bin/mpirun",
+        "/srv/shared/ansys_inc/v261/commonfiles/multiport/mpi/lnamd64/intel2018/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/tp/MPI/Intel/2018.3.222/linx64/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/tp/MPI/Intel/2021.14.2/linx64/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/tp/MPI/Intel/2021.16.1/linx64/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/tp/MPI/Intel/2021.8.0/linx64/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/tp/MPI/OpenMPI/5.0.6/linx64/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/tp/MPI/OpenMPI/4.1.8/linx64/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/tp/MPI/OpenMPI/4.0.5/linx64/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/meshing/Prime/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/CFX/tools/multiport/mpi/lnamd64/openmpi_rocm/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/CFX/tools/multiport/mpi/lnamd64/intel/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/CFX/tools/multiport/mpi/lnamd64/openmpi/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/CFX/tools/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/CFX/tools/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/.bin/mpirun",
+        "/srv/shared/ansys_inc/v261/CFX/tools/multiport/mpi/lnamd64/intel2018/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_rocm/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/fluent/fluent26.1.0/multiport/mpi/lnamd64/intel/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/.bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/fluent/fluent26.1.0/multiport/mpi/lnamd64/intel2018/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/CMA/lib/openmpi/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/common/fluent_mpi/multiport/mpi/lnamd64/intel/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/common/fluent_mpi/multiport/mpi/lnamd64/openmpi/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/common/fluent_mpi/multiport/mpi/lnamd64/intel21/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/common/fluent_mpi/multiport/mpi/lnamd64/mvapich/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/common/fluent_mpi/multiport/mpi/lnamd64/hp/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/mechanical/v261/tp/MPI/Intel/2018.3.222/linx64/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/mechanical/v261/tp/MPI/Intel/2021.16.1/linx64/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/mechanical/v261/tp/MPI/OpenMPI/4.1.8/linx64/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/helic/lib/2026.R1-broken/mpi/intel/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/AnsysEM/helic/lib/mpi/intel/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/SystemCoupling/runTime/linx64/cnlauncher/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_rocm/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/SystemCoupling/runTime/linx64/cnlauncher/fluent/fluent26.1.0/multiport/mpi/lnamd64/intel/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/SystemCoupling/runTime/linx64/cnlauncher/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/SystemCoupling/runTime/linx64/cnlauncher/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/SystemCoupling/runTime/linx64/cnlauncher/fluent/fluent26.1.0/multiport/mpi/lnamd64/openmpi_cuda/ompi/bin/.bin/mpirun",
+        "/srv/shared/ansys_inc/v261/SystemCoupling/runTime/linx64/cnlauncher/fluent/fluent26.1.0/multiport/mpi/lnamd64/intel2018/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/CEI/apex261/machines/linux_2.6_64/multiport-26.1/mpi/lnamd64/openmpi_rocm/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/CEI/apex261/machines/linux_2.6_64/multiport-26.1/mpi/lnamd64/intel/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/CEI/apex261/machines/linux_2.6_64/multiport-26.1/mpi/lnamd64/openmpi/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/CEI/apex261/machines/linux_2.6_64/multiport-26.1/mpi/lnamd64/openmpi_cuda/ompi/bin/mpirun",
+        "/srv/shared/ansys_inc/v261/CEI/apex261/machines/linux_2.6_64/multiport-26.1/mpi/lnamd64/openmpi_cuda/ompi/bin/.bin/mpirun",
+        "/srv/shared/ansys_inc/v261/CEI/apex261/machines/linux_2.6_64/multiport-26.1/mpi/lnamd64/intel2018/bin/mpirun"
+      ],
+      "Rocky": [
+        "/srv/shared/ansys_inc/v261/rocky/Rocky",
+        "/srv/shared/ansys_inc/v261/rocky/bin/Rocky"
+      ],
+      "RockySolver": [
+        "/srv/shared/ansys_inc/v261/rocky/RockySolver",
+        "/srv/shared/ansys_inc/v261/rocky/bin/RockySolver"
+      ],
+      "autodyn": [
+        "/srv/shared/ansys_inc/v261/autodyn/bin/autodyn",
+        "/srv/shared/ansys_inc/v261/autodyn/usrsub/linx64/autodyn"
+      ],
+      "fensapMPI": [
+        "/srv/shared/ansys_inc/v261/fensapice/bin/fensapMPI"
+      ],
+      "lsprepost": [
+        "/srv/shared/ansys_inc/v261/ansys/bin/lsprepost",
+        "/srv/shared/ansys_inc/v261/ansys/bin/lsprepost4.13_common/lsprepost"
+      ],
+      "ansys261": [
+        "/srv/shared/ansys_inc/v261/ansys/bin/ansys261",
+        "/srv/shared/ansys_inc/v261/AnsysEM/mechanical/v261/ansys/bin/ansys261"
+      ],
+      "mapdl": [
+        "/srv/shared/ansys_inc/v261/ansys/bin/mapdl",
+        "/srv/shared/ansys_inc/v261/AnsysEM/mechanical/v261/ansys/bin/mapdl"
+      ],
+      "lsrun": [
+        "/srv/shared/ansys_inc/v261/ansys/bin/lsrun",
+        "/srv/shared/ansys_inc/v261/ansys/bin/lsprepost4.13_common/lsrun"
+      ],
+      "optislang": [
+        "/srv/shared/ansys_inc/v261/optiSLang/optislang",
+        "/srv/shared/ansys_inc/v261/AnsysEM/helic/tools/raptorai/optiSLang/optislang"
+      ],
+      "polyflow": [
+        "/srv/shared/ansys_inc/v261/icemcfd/linux64_amd/icemcfd/output-interfaces/polyflow",
+        "/srv/shared/ansys_inc/v261/aisol/CommonFiles/linx64/polyflow",
+        "/srv/shared/ansys_inc/v261/polyflow/polyflow26.1.0/lnamd64/bin/polyflow",
+        "/srv/shared/ansys_inc/v261/polyflow/bin/polyflow",
+        "/srv/shared/ansys_inc/v261/polyflow/bin/old/polyflow"
+      ],
+      "abaqus": [
+        "/srv/shared/ansys_inc/v261/icemcfd/linux64_amd/icemcfd/output-interfaces/abaqus",
+        "/srv/shared/ansys_inc/v261/aisol/CommonFiles/linx64/abaqus"
+      ],
+      "aqwa.sh": [
+        "/srv/shared/ansys_inc/v261/aqwa/bin/linx64/aqwa.sh"
+      ],
+      "Aqwa.exe": [
+        "/srv/shared/ansys_inc/v261/aqwa/bin/linx64/Aqwa.exe"
+      ],
+      "runwb2": [
+        "/srv/shared/ansys_inc/v261/Framework/bin/Linux64/runwb2",
+        "/srv/shared/ansys_inc/v261/AnsysEM/common/Framework/bin/Linux64/runwb2"
+      ],
+      "cfdpost": [
+        "/srv/shared/ansys_inc/v261/CFD-Post/bin/cfdpost",
+        "/srv/shared/ansys_inc/v261/CFX/bin/cfdpost"
+      ],
+      "cfx5solve": [
+        "/srv/shared/ansys_inc/v261/CFD-Post/bin/cfx5solve",
+        "/srv/shared/ansys_inc/v261/CFX/bin/cfx5solve"
+      ],
+      ".workbench": [
+        "/srv/shared/ansys_inc/v261/aisol/.workbench",
+        "/srv/shared/ansys_inc/v261/AnsysEM/mechanical/v261/aisol/.workbench"
+      ],
+      "ansysedt": [
+        "/srv/shared/ansys_inc/v261/AnsysEM/ansysedt"
+      ],
+      "lsopt": [
+        "/srv/shared/ansys_inc/v261/lsopt/bin/lsopt",
+        "/srv/shared/ansys_inc/v261/lsopt/exec/lsopt"
+      ],
+      "cfxtg": [
+        "/srv/shared/ansys_inc/v261/TurboGrid/bin/cfxtg"
+      ],
+      "systemcoupling": [
+        "/srv/shared/ansys_inc/v261/SystemCoupling/bin/systemcoupling"
+      ],
+      "ensight": [
+        "/srv/shared/ansys_inc/v261/CEI/bin/ensight"
+      ],
+      "ensight261": [
+        "/srv/shared/ansys_inc/v261/CEI/bin/ensight261"
+      ],
+      "gmsh": [
+        "/home/jiangjincheng/.local/opt/gmsh-venv/bin/gmsh",
+        "/home/jiangjincheng/.local/opt/freecad-1.1.4/squashfs-root/usr/bin/gmsh",
+        "/home/jiangjincheng/.local/opt/gmsh-4.15.2-Linux64/bin/gmsh"
+      ],
+      "solidcraft-cli": [
+        "/home/jiangjincheng/.local/opt/solidcraft-0.16.2/bin/solidcraft-cli"
+      ],
+      "ccx": [
+        "/home/jiangjincheng/.local/opt/freecad-1.1.4/squashfs-root/usr/bin/ccx"
+      ],
+      "freecadcmd": [
+        "/home/jiangjincheng/.local/opt/freecad-1.1.4/squashfs-root/usr/bin/freecadcmd"
+      ],
+      "blender": [
+        "/home/jiangjincheng/opt/blender-5.2.2-linux-x64/blender"
+      ]
+    }
+  },
+  "ansys_components": [
+    "reaction",
+    "fluent",
+    "PerceiveEM",
+    "rocky",
+    "sherlock",
+    "autodyn",
+    "Electronics",
+    "Images",
+    "fensapice",
+    "FluidsOne",
+    "ansys",
+    "optiSLang",
+    "icemcfd",
+    "commonfiles",
+    "aqwa",
+    "ACP",
+    "tp",
+    "Framework",
+    "meshing",
+    "installer",
+    "CFD-Post",
+    "EM_RSM",
+    "aisol",
+    "Addins",
+    "Tools",
+    "RSM",
+    "Motion",
+    "SEC",
+    "licensingclient",
+    "CFX",
+    "AnsysEM",
+    "lsopt",
+    "TurboGrid",
+    "dpf",
+    "SystemCoupling",
+    "polyflow",
+    "CEI"
+  ],
+  "ansys_launchers": [
+    {
+      "product": "Fluent",
+      "path": "/srv/shared/ansys_inc/v261/fluent/bin/fluent",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "Mechanical",
+      "path": "/srv/shared/ansys_inc/v261/aisol/.workbench",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "MAPDL",
+      "path": "/srv/shared/ansys_inc/v261/ansys/bin/ansys261",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "Workbench",
+      "path": "/srv/shared/ansys_inc/v261/Framework/bin/Linux64/runwb2",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "HFSS / AEDT",
+      "path": "/srv/shared/ansys_inc/v261/AnsysEM/ansysedt",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "CFX solver",
+      "path": "/srv/shared/ansys_inc/v261/CFX/bin/cfx5solve",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "CFX preprocessor",
+      "path": "/srv/shared/ansys_inc/v261/CFX/bin/cfx5pre",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "CFD-Post",
+      "path": "/srv/shared/ansys_inc/v261/CFD-Post/bin/cfdpost",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "ICEM CFD",
+      "path": "/srv/shared/ansys_inc/v261/icemcfd/linux64_amd/bin/icemcfd",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "EnSight",
+      "path": "/srv/shared/ansys_inc/v261/CEI/bin/ensight",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "Polyflow",
+      "path": "/srv/shared/ansys_inc/v261/polyflow/bin/polyflow",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "System Coupling",
+      "path": "/srv/shared/ansys_inc/v261/SystemCoupling/bin/systemcoupling",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "Autodyn",
+      "path": "/srv/shared/ansys_inc/v261/autodyn/bin/autodyn",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "Rocky",
+      "path": "/srv/shared/ansys_inc/v261/rocky/Rocky",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "Rocky solver",
+      "path": "/srv/shared/ansys_inc/v261/rocky/RockySolver",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "FENSAP-ICE solver",
+      "path": "/srv/shared/ansys_inc/v261/fensapice/bin/fensapMPI",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "TurboGrid",
+      "path": "/srv/shared/ansys_inc/v261/TurboGrid/bin/cfxtg",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "optiSLang",
+      "path": "/srv/shared/ansys_inc/v261/optiSLang/optislang",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "LS-OPT",
+      "path": "/srv/shared/ansys_inc/v261/lsopt/bin/lsopt",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "AQWA",
+      "path": "/srv/shared/ansys_inc/v261/aqwa/bin/linx64/aqwa.sh",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    },
+    {
+      "product": "LS-PrePost",
+      "path": "/srv/shared/ansys_inc/v261/ansys/bin/lsprepost",
+      "exists": true,
+      "executable": true,
+      "verification": "path-and-executable-bit-only",
+      "release_hint": "2026 R1 / v261"
+    }
+  ],
+  "additional_checks": {
+    "calculix": {
+      "command": [
+        "/home/jiangjincheng/.local/opt/freecad-1.1.4/squashfs-root/usr/bin/ccx",
+        "-v"
+      ],
+      "returncode": 201,
+      "stdout": "\nThis is Version 2.23\n\n",
+      "stderr": ""
+    },
+    "ripgrep": {
+      "command": [
+        "/usr/lib/chatgpt/resources/rg",
+        "--version"
+      ],
+      "returncode": 0,
+      "stdout": "ripgrep 15.2.0 (rev e89fff89ac)\n\nfeatures:+pcre2\nsimd(compile):+SSE2,-SSSE3,-AVX2\nsimd(runtime):+SSE2,+SSSE3,+AVX2\n\nPCRE2 10.45 is available (JIT is available)\n",
+      "stderr": ""
+    }
+  },
+  "completed_at": "2026-11-07T12:11:50.658052+08:00",
+  "limitations": [
+    "Scoped directory traversal with exclusions; not an exhaustive filesystem/container inventory.",
+    "Version/help/import checks do not validate a solver job.",
+    "Commercial launchers were not started; licenses were not tested.",
+    "MCP configuration was inspected without a handshake.",
+    "CalculiX -v printed 2.23 with exit code 201."
+  ]
+}

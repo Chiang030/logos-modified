@@ -19,3 +19,88 @@ Do not silently replace Gmsh with another mesher when the user asked for Gmsh. D
 When a task involves a KiCad schematic or PCB project, read the `kicad` skill and use the `kicad` MCP server (`mcp__kicad__*`) for analysis, ERC/DRC, netlist tracing, and exports. Its tools are deferred; discover them with the runtime's tool-search capability first. Use `kicad-cli` only as a verified fallback when the MCP server is unavailable.
 
 Analyze the project read-only before editing, back up the project before any mutation, and re-run ERC/DRC after each change. This server is headless, so use the MCP server or `kicad-cli`; do not try to open the KiCad GUI. Schematic editing through S-expressions is experimental and produces drafts, not production-ready design changes. Do not claim electrical function or fabrication readiness from a clean ERC/DRC run alone.
+
+## Server installation snapshot: leadhk01, 2026-11-07
+
+This section records a host-specific preflight for this deployed LOGOS version, performed as `jiangjincheng` on `leadhk01` (Ubuntu 24.04.5 LTS, Asia/Shanghai). Apply these paths only on that host/account; they are not portable defaults. Repository root: `/home/jiangjincheng/logos-server-20261009/logos-server`.
+
+Use the listed absolute entry points before concluding that software is missing. A missing PATH command or an empty automatic-discovery result is not proof of absence. Check the relevant listed path and its execution environment first. More recent direct observations take precedence over this snapshot; report the specific failure instead of silently assuming the installation disappeared. Do not repeat a full installation scan for each task.
+
+Verification levels matter: a successful version/help command or Python import does not prove a solver job works; an executable file does not prove its dependencies, license, or service connection work. No commercial solver was launched by this preflight. Do not launch one solely to rediscover its installation. For an actual user-requested run, use the selected product's documented headless entry and check licensing/runtime errors then.
+
+### Verified CLI entry points
+
+These commands returned their version successfully, except the explicitly qualified CalculiX entry.
+
+| Software | Preferred absolute entry | Observed version / check |
+| --- | --- | --- |
+| Blender | `/home/jiangjincheng/opt/blender-5.2.2-linux-x64/blender` | 5.2.2 LTS |
+| Gmsh | `/home/jiangjincheng/.local/opt/gmsh-4.15.2-Linux64/bin/gmsh` | 4.15.2 |
+| FreeCAD CLI | `/home/jiangjincheng/.local/bin/freecadcmd` | 1.1.4; `--get-config ExeVersion` |
+| KiCad 10 | `/usr/bin/kicad-cli` | 10.0.7 |
+| KiCad 9 | `/home/jiangjincheng/.local/bin/kicad9-cli` | 9.0.9 |
+| SolidCraft CLI | `/home/jiangjincheng/.local/bin/solidcraft-cli` | 0.16.2 |
+| CalculiX (FreeCAD bundle) | `/home/jiangjincheng/.local/opt/freecad-1.1.4/squashfs-root/usr/bin/ccx` | `-v` prints 2.23 but exits 201; no model run verified |
+| Python | `/usr/bin/python3` | 3.12.3 |
+| Node.js | `/home/jiangjincheng/.local/bin/node` | 22.23.3 |
+| GCC | `/usr/bin/gcc` | 13.3.0 |
+| CMake | `/usr/bin/cmake` | 3.28.3 |
+| ripgrep | `/usr/lib/chatgpt/resources/rg` | 15.2.0; not in ordinary PATH |
+
+FreeCAD's wrapper supplies its AppRun environment; prefer it over internal binaries. SolidCraft's installation is `/home/jiangjincheng/.local/opt/solidcraft-0.16.2`. The raw KiCad 9 executable at `/home/jiangjincheng/.local/opt/kicad-9.0.9/usr/bin/kicad-cli` fails with missing `libkicommon.so.9.0.9` when invoked directly. Use `kicad9-cli`, which supplies its libraries and data paths. Keep KiCad CLI, Python bindings, and data from the same major version. FreeCAD also bundles Gmsh 4.15.0; use the explicit standalone 4.15.2 entry when that version is intended.
+
+### ANSYS installations: executable paths verified, solver/license tests pending
+
+Installation root is `/srv/shared/ansys_inc/v261` (release-directory indication: 2026 R1 / 26.1). Every entry below exists and is executable by `jiangjincheng`. Paths in this table are relative to that root; use the full absolute path when launching.
+
+| Product | Entry relative to ANSYS root |
+| --- | --- |
+| Fluent | `fluent/bin/fluent` |
+| Mechanical | `aisol/.workbench` |
+| MAPDL | `ansys/bin/ansys261` |
+| Workbench | `Framework/bin/Linux64/runwb2` |
+| HFSS / AEDT | `AnsysEM/ansysedt` |
+| CFX solver | `CFX/bin/cfx5solve` |
+| CFX preprocessor | `CFX/bin/cfx5pre` |
+| CFD-Post | `CFD-Post/bin/cfdpost` |
+| ICEM CFD | `icemcfd/linux64_amd/bin/icemcfd` |
+| EnSight | `CEI/bin/ensight` |
+| Polyflow | `polyflow/bin/polyflow` |
+| System Coupling | `SystemCoupling/bin/systemcoupling` |
+| Autodyn | `autodyn/bin/autodyn` |
+| Rocky | `rocky/Rocky` |
+| Rocky solver | `rocky/RockySolver` |
+| FENSAP-ICE solver | `fensapice/bin/fensapMPI` |
+| TurboGrid | `TurboGrid/bin/cfxtg` |
+| optiSLang | `optiSLang/optislang` |
+| LS-OPT | `lsopt/bin/lsopt` |
+| AQWA | `aqwa/bin/linx64/aqwa.sh` |
+| LS-PrePost | `ansys/bin/lsprepost` |
+
+In particular, Fluent is installed at `/srv/shared/ansys_inc/v261/fluent/bin/fluent`. Mechanical's Linux entry is `aisol/.workbench`, consistent with the installed PyMechanical path resolver; searching only for `AnsysWBU` misses it. The automatic software panel may still omit this entry. ANSYS export-interface executables named `abaqus`, `fluent`, or `polyflow` are not separate solver installations. Use the canonical entries above. ANSYS bundles MPI under `commonfiles/multiport/mpi/lnamd64` and `tp/MPI`; let each product select its compatible MPI instead of mixing distributions.
+
+### Python environments and integrations
+
+Use each environment's full Python path; system Python does not contain all of these packages.
+
+| Python entry | Evidence |
+| --- | --- |
+| `/home/jiangjincheng/.local/opt/gmsh-venv/bin/python` | Gmsh 4.15.2 import and initialize/finalize passed |
+| `/home/jiangjincheng/projects/ansys-agent-harness/.venv-structural-test/bin/python` | Imports passed: CadQuery 2.8.0, OCP (distribution 7.9.3.1.1), NumPy 2.5.3, SciPy 1.18.1, Matplotlib 3.11.2, VTK 9.6.2 |
+| `/home/jiangjincheng/logos-server-20261009/logos-server/logos-agent/integrations/.venv/bin/python` | PyFluent 0.38.1 and PyMechanical 0.13.3 imports passed; `-m sim --help` passed. NumPy 2.5.4 and pandas 2.3.3 found by package metadata |
+| `/home/jiangjincheng/.local/bin/kicad9-python` | `pcbnew` 9.0.9 import passed |
+| `/usr/bin/python3` | `pcbnew` 10.0.7 imports but emits PROPERTY_ENUM assertions; do not call this a clean check |
+| `/home/jiangjincheng/projects/101402/.venv-fluent/bin/python` | Metadata/spec only: PyFluent 0.43.0, NumPy 2.5.4, pandas 2.3.3 |
+| `/home/jiangjincheng/projects/ansys-agent-harness/.venv/bin/python` | Metadata/spec only: PyFluent 0.38.1, PyMechanical 0.13.3, PyAEDT 0.28.0, NumPy 2.5.3, pandas 2.3.3, sim |
+
+The account MCP configuration `/home/jiangjincheng/.pi/agent/mcp.json` enables SolidCraft, KiCad, and Blender. Their configured launchers are `/home/jiangjincheng/.local/bin/solidcraft-cli`, repository-relative `logos-agent/integrations/kicad-mcp-server/bin/kicad-mcp-server`, and `logos-agent/integrations/blender-mcp/bin/blender-mcp-server`. Configuration presence is not a successful MCP handshake. Discover the current session's tools before claiming connectivity. Two additional MCP Python environments exist at `/home/jiangjincheng/.local/opt/kicad-mcp-venv` and `/home/jiangjincheng/.local/opt/kicad-mcp-mixelpixx-venv`; their service startup was not verified here.
+
+GPU query via `/usr/bin/nvidia-smi` passed: NVIDIA GeForce RTX 5090 D v2, driver 595.99.02, 24455 MiB. This confirms GPU visibility, not CUDA toolkit availability or a particular solver's GPU support/license.
+
+### Scan scope and qualified negative results
+
+The preflight traversed 39,699 directories under `/opt`, `/usr/local`, `/usr/bin`, `/usr/lib`, `/srv/shared/ansys_inc/v261`, `/home/jiangjincheng/.local/opt`, and `/home/jiangjincheng/opt`, with dependency/documentation/test subtree exclusions, plus the selected Python environments above. It was not an exhaustive search of every filesystem or container.
+
+No standalone entries were found in that scope/PATH for OpenFOAM, ParaView/pvpython, Code_Aster, SU2, PyFR, LAMMPS, Elmer, FreeFEM, Scilab, OpenVSP/VSPAERO, STAR-CCM+, COMSOL, an actual Abaqus solver, FDS/Smokeview, DualSPHysics, OpenRadioss, or Nektar++. No dolfin/dolfinx, jax, petsc4py, mpi4py, pyfr, openvsp, or torch modules were found in the selected Python environments. No concrete MOOSE or OpenLB application was verified. System gfortran, mpirun, pandoc, pdflatex, and latexmk were absent from the checked PATH; this does not negate ANSYS's bundled MPI.
+
+Treat these as "not found in the checked scope," not proof that installation elsewhere is impossible. Consult a user-specified installation or module environment before suggesting installation. Detailed evidence: repository-relative `logos-agent/pi-domain/references/hosts/leadhk01-2026-11-07.json`; human-readable report alongside it as `leadhk01-2026-11-07.md`.
