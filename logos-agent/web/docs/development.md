@@ -145,6 +145,16 @@ unknown usage, no-overwrite uploads and CSV escaping. New host-runtime coverage:
 - A selected Gmsh executable wins over a fake CAD-bundled version, including
   installation paths containing spaces and apostrophes.
 
+The folder picker commits its path and directory entries together after a successful
+read, disables navigation/project creation while loading, and preserves the last
+verified location on failure. Browser regression coverage lives in
+tests/browser/folder-navigation.mjs: call its default export with a Playwright
+Page and a running web origin. It intercepts every /api request (including
+mutations), so it does not create live projects or modify user files. It covers
+delayed double-clicks, empty-folder project creation, failed navigation/retry and
+real same-name nested folders. This case is run with a supplied browser; it is
+separate from the Node test suite.
+
 Live browser acceptance displayed five installed software categories. A real
 DeepSeek task successfully called software_discover and bash, confirmed the
 jiangjincheng account and executed Gmsh. Its calls were recorded under the

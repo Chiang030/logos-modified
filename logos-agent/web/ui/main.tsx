@@ -132,20 +132,37 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
 }
 
 function FolderPicker({ preview, onClose, onSelect }: { preview: boolean; onClose: () => void; onSelect: (project: Project) => void }): ReactElement {
-  const [path, setPath] = useState(""), [entries, setEntries] = useState<Entry[]>([]);
-  const [name, setName] = useState(""), [projectName, setProjectName] = useState(""), [error, setError] = useState(""), [busy, setBusy] = useState(false), [revision, setRevision] = useState(0);
-  useEffect(() => {
-    let current = true;
-    if (preview) { setEntries(path ? demoFiles : [{ name: "wing-study", directory: true, size: 0, modified: 0 }]); return; }
-    void api<{ entries: Entry[] }>("/api/files?" + query(path)).then((r) => { if (current) setEntries(r.entries); }).catch((e) => { if (current) setError(message(e)); });
-    return () => { current = false; };
-  }, [path, preview, revision]);
+  const [{ path, entries }, setLocation] = useState<{ path: string; entries: Entry[] }>({ path: "", entries: [] });
+  const [name, setName] = useState(""), [projectName, setProjectName] = useState(""), [error, setError] = useState(""), [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true), [loaded, setLoaded] = useState(false);
+  const request = useRef(0), pending = useRef(false);
+  const load = async (nextPath: string): Promise<void> => {
+    const current = ++request.current;
+    pending.current = true; setLoading(true); setError("");
+    try {
+      const result = preview
+        ? { entries: nextPath === "" ? [{ name: "wing-study", directory: true, size: 0, modified: 0 }] : nextPath === "wing-study" ? demoFiles : [] }
+        : await api<{ entries: Entry[] }>("/api/files?" + query(nextPath));
+      if (current !== request.current) return;
+      // Commit the breadcrumb and its contents together, only after a successful read.
+      setLocation({ path: nextPath, entries: result.entries }); setLoaded(true);
+      if (nextPath !== path) setProjectName("");
+    } catch (e) {
+      if (current === request.current) { setError(message(e)); if (nextPath === path) setLoaded(false); }
+    } finally {
+      if (current === request.current) { pending.current = false; setLoading(false); }
+    }
+  };
+  useEffect(() => { void load(""); return () => { request.current++; }; }, [preview]);
+  const navigate = (nextPath: string): void => { if (!pending.current && !busy) void load(nextPath); };
   const create = async (): Promise<void> => {
+    if (pending.current || busy || !loaded) return;
     setBusy(true); setError("");
-    try { await api("/api/folders", { path: [path, name].filter(Boolean).join("/") }); setName(""); setRevision((n) => n + 1); }
+    try { await api("/api/folders", { path: [path, name].filter(Boolean).join("/") }); setName(""); await load(path); }
     catch (e) { setError(message(e)); } finally { setBusy(false); }
   };
   const choose = async (): Promise<void> => {
+    if (pending.current || busy || !loaded || !path) return;
     if (preview) { onSelect(demoProject); return; }
     setBusy(true); setError("");
     try { const r = await api<{ project: Project }>("/api/projects", { name: projectName.trim() || path.split("/").at(-1), directory: path }); onSelect(r.project); }
@@ -153,12 +170,15 @@ function FolderPicker({ preview, onClose, onSelect }: { preview: boolean; onClos
   };
   return <div className="modal-shade"><section className="folder-dialog" role="dialog" aria-modal="true" aria-label="打开文件夹">
     <header><div><h2>打开文件夹</h2><p>选择个人空间内的目录，建立或打开项目。</p></div><button aria-label="关闭文件夹选择" onClick={onClose}>×</button></header>
-    <div className="folder-path"><button disabled={!path || busy} onClick={() => setPath(parent(path))}>← 上一级</button><span>我的空间 / {path}</span></div>
-    <div className="folder-picker-list">{entries.filter((e) => e.directory).map((e) => <button key={e.name} disabled={busy} onClick={() => { setPath([path, e.name].filter(Boolean).join("/")); setProjectName(""); }}>▸ {e.name}<span>打开 →</span></button>)}{!entries.some((e) => e.directory) ? <p className="empty-note">没有子文件夹，可使用当前目录。</p> : null}</div>
-    <form className="new-folder-form" onSubmit={(e) => { e.preventDefault(); void create(); }}><input aria-label="新文件夹名称" placeholder="新文件夹名称" value={name} onChange={(e) => setName(e.target.value)} /><button disabled={preview || busy || !name.trim()}>新建文件夹</button></form>
+    <div className="folder-path"><button disabled={!path || busy || loading} onClick={() => navigate(parent(path))}>← 上一级</button><span>我的空间 / {path}</span></div>
+    <div className="folder-picker-list" aria-busy={loading}>
+      {loading ? <p className="empty-note" role="status">正在读取文件夹…</p> : entries.filter((e) => e.directory).map((e) => <button key={e.name} disabled={busy || !loaded} onClick={() => navigate([path, e.name].filter(Boolean).join("/"))}>▸ {e.name}<span>打开 →</span></button>)}
+      {!loading && loaded && !entries.some((e) => e.directory) ? <p className="empty-note">没有子文件夹，可使用当前目录。</p> : null}
+    </div>
+    <form className="new-folder-form" onSubmit={(e) => { e.preventDefault(); void create(); }}><input aria-label="新文件夹名称" placeholder="新文件夹名称" value={name} onChange={(e) => setName(e.target.value)} /><button disabled={preview || busy || loading || !loaded || !name.trim()}>新建文件夹</button></form>
     <label className="project-name">项目名称<input aria-label="项目名称" placeholder={path.split("/").at(-1) || "先选择一个文件夹"} value={projectName} onChange={(e) => setProjectName(e.target.value)} /></label>
-    {error ? <p className="dialog-error" role="alert">{error}</p> : null}
-    <footer><span>个人空间根目录不能直接注册为项目</span><button className="primary" disabled={!path || busy} onClick={() => void choose()}>{busy ? "处理中…" : "以此文件夹打开项目"}</button></footer>
+    {error ? <div className="dialog-error"><p role="alert">{error}</p><button disabled={busy || loading} onClick={() => navigate(path)}>重新读取当前目录</button></div> : null}
+    <footer><span>个人空间根目录不能直接注册为项目</span><button className="primary" disabled={!path || busy || loading || !loaded} onClick={() => void choose()}>{busy ? "处理中…" : "以此文件夹打开项目"}</button></footer>
   </section></div>;
 }
 
