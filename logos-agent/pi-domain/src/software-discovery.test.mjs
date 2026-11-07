@@ -76,3 +76,22 @@ test("global scans report incomplete coverage, skip dependencies and honor manua
     assert.equal(invalid.products[0].selected, undefined);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+
+test("discovers executable Linux ANSYS launchers under a shared installation tree", async () => {
+  const root = await mkdtemp(join(tmpdir(), "logos-shared-ansys-"));
+  try {
+    const shared = join(root, "srv", "shared"), version = join(shared, "ansys_inc", "v261");
+    const fluent = join(version, "fluent", "bin", "fluent"), workbench = join(version, "Framework", "bin", "Linux64", "runwb2");
+    for (const path of [fluent, workbench]) {
+      await mkdir(path.slice(0, path.lastIndexOf("/")), { recursive: true });
+      await writeFile(path, "#!/bin/sh\nexit 99\n", { mode: 0o755 });
+    }
+    const options = { platform: "linux", env: {}, roots: [shared], registry: async () => [] };
+    const quick = await discoverSoftware(options);
+    assert.equal(quick.products.find(item => item.product === "fluent").selected, fluent);
+    assert.equal(quick.products.find(item => item.product === "workbench").selected, workbench);
+    const global = await discoverSoftware({ ...options, roots: [], global: true, scanOptions: { roots: [join(root, "srv")] } });
+    assert.equal(global.products.find(item => item.product === "fluent").selected, fluent);
+    assert.equal(global.globalScan.limited, false);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});

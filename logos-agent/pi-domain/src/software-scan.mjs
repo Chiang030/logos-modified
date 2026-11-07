@@ -10,7 +10,7 @@ const execute = promisify(execFile);
 const excluded = new Set(["node_modules", ".git", ".venv", "$recycle.bin", "system volume information", "windows", "proc", "sys", "dev"]);
 
 async function localRoots(platform, env) {
-  if (platform !== "win32") return ["/opt", "/usr", "/Applications", "/snap", homedir(), "/mnt", "/media"];
+  if (platform !== "win32") return ["/opt", "/srv", "/usr", "/Applications", "/snap", homedir(), "/mnt", "/media"];
   const { stdout } = await execute("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command",
     "Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' | Select-Object -ExpandProperty DeviceID | ConvertTo-Json -Compress"],
   { windowsHide: true, timeout: 10_000 });

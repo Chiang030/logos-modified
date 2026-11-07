@@ -60,7 +60,7 @@ export async function discoverSoftware({ overrides = {}, cacheFile, refresh = fa
   const registryRoots = await registry(platform);
   const standard = roots ?? (platform === "win32"
     ? [env.ProgramFiles, env["ProgramFiles(x86)"], env.LOCALAPPDATA && join(env.LOCALAPPDATA, "Programs"), "C:/ANSYS Inc", "D:/Program Files", "D:/ANSYS Inc"].filter(Boolean)
-    : ["/usr/bin", "/usr/local/bin", "/opt", "/usr/ansys_inc", "/ansys_inc", join(homedir(), ".local", "bin"), "/snap/bin"]);
+    : ["/usr/bin", "/usr/local/bin", "/opt", "/srv", "/srv/shared", "/usr/ansys_inc", "/ansys_inc", join(homedir(), ".local", "bin"), "/snap/bin"]);
   const products = [];
   for (const product of SOFTWARE) {
     if (product.windowsOnly && platform !== "win32") { products.push({ product: product.id, host, platform, status: "unsupported", candidates: [], dependency: "unknown", connection: "not-checked" }); continue; }

@@ -79,8 +79,10 @@ directory precedes discovered application directories on PATH, so FreeCAD's
 bundled gmsh cannot silently override the selected Gmsh installation. Wrappers
 preserve arguments and quoted installation paths.
 
-Live discovery found Blender, KiCad, FreeCAD, Gmsh and SolidCraft. Fluent,
-Mechanical, Workbench and HFSS were not found in the scanned paths. Discovery
+Live discovery found Blender, KiCad, FreeCAD, Gmsh, SolidCraft, Fluent,
+Workbench and HFSS. Quick and global discovery now include /srv shared software
+installations. The pilot explicitly selects /srv/shared/ansys_inc/v261/fluent/bin/fluent
+from ANSYS 2026 R1. Mechanical was not found by the supported executable names. Discovery
 is installation evidence, not proof of SDK, license or remote MCP readiness.
 The simulation CLI help command and Gmsh 4.15.2 executed successfully.
 
@@ -155,7 +157,8 @@ delayed double-clicks, empty-folder project creation, failed navigation/retry an
 real same-name nested folders. This case is run with a supplied browser; it is
 separate from the Node test suite.
 
-Live browser acceptance displayed five installed software categories. A real
+Initial browser acceptance displayed five installed software categories; after
+adding /srv discovery, the server inventory contains eight. A real
 DeepSeek task successfully called software_discover and bash, confirmed the
 jiangjincheng account and executed Gmsh. Its calls were recorded under the
 logged-in user. A subsequent direct runtime-environment check verified the
