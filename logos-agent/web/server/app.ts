@@ -1,23 +1,29 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { resolve, join } from "node:path";
 import { Store } from "./store.ts";
 import { WorkspaceFiles, segments } from "./files.ts";
 import { beginLogin, completeLogin, cookie, cookies, equal, ready, identityName, type Config } from "./auth.ts";
 import { HttpError, text } from "./errors.ts";
 import { body, failure, json, sendFile } from "./http.ts";
 
+import { Models } from "./models.ts";
+import { Jobs } from "./jobs.ts";
+import { Meter } from "./usage.ts";
+import { control, prompt, type Control } from "./control.ts";
+
 export interface Services { config: Config; store: Store; files: WorkspaceFiles; assets: string; }
 export function createHandler(services: Services): (req: IncomingMessage, res: ServerResponse) => void {
+  const resources = { ...services, models: new Models(services.store, join(services.config.data,"state")), jobs: new Jobs(services.store), meter: new Meter(services.store) };
   return (request, response) => {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("Referrer-Policy", "same-origin");
     response.setHeader("X-Frame-Options", "SAMEORIGIN");
     response.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'; form-action 'self'");
-    void route(services, request, response).catch((error: unknown) => failure(response, error));
+    void route(resources, request, response).catch((error: unknown) => failure(response, error));
   };
 }
-async function route(s: Services, req: IncomingMessage, res: ServerResponse): Promise<void> {
+async function route(s: Services & Control, req: IncomingMessage, res: ServerResponse): Promise<void> {
   const { config, store } = s;
   if (req.headers.host !== new URL(config.publicUrl).host) throw new HttpError(421, "访问地址不匹配");
   const url = new URL(req.url ?? "/", config.publicUrl), method = req.method ?? "GET";
@@ -25,7 +31,7 @@ async function route(s: Services, req: IncomingMessage, res: ServerResponse): Pr
     let identity: ReturnType<Store["authenticate"]> | undefined;
     try { identity = store.authenticate(cookies(req).logos_session); } catch (error) { if (!(error instanceof HttpError) || error.status !== 401) throw error; }
     json(res, { user: identity?.user ?? null, csrf: identity?.csrf, feishuReady: ready(config), identityLabel: identityName(config), previewEnabled: config.preview,
-      version: "0.3.14", executionReady: false, executionReason: "服务器执行隔离尚未就绪，暂不接受 Agent 任务" });
+      version: "0.3.14", executionReady: s.jobs.health().ready, executionReason: s.jobs.health().reason });
     return;
   }
   if (url.pathname === "/auth/feishu" && method === "GET") {
@@ -45,6 +51,7 @@ async function route(s: Services, req: IncomingMessage, res: ServerResponse): Pr
   if (url.pathname === "/api/logout" && method === "POST") {
     store.logout(cookies(req).logos_session ?? ""); res.setHeader("Set-Cookie", cookie(config, "logos_session", "", 0)); json(res, { ok: true }); return;
   }
+  if (await control(s,auth.user,url,req,res)) return;
   if (url.pathname === "/api/projects" && method === "GET") { json(res, { projects: store.projects(auth.user.id) }); return; }
   if (url.pathname === "/api/projects" && method === "POST") {
     const input = await body(req), directory = text(input.directory, "目录", 2048);
@@ -89,7 +96,14 @@ async function route(s: Services, req: IncomingMessage, res: ServerResponse): Pr
       store.renameSession(auth.user.id, session.id, text(command.title, "会话标题", 100));
       json(res, { ok: true }); return;
     }
-    if (command.type === "chat/send") throw new HttpError(503, "服务器执行隔离尚未就绪，任务未提交，也未调用模型");
+    if (command.type === "chat/send") {
+      if (!s.jobs.health().ready) throw new HttpError(503,s.jobs.health().reason);
+      const connection=s.models.get(text(command.connection,"模型连接"));
+      const thinking=typeof command.thinking==="string"?command.thinking:"off";
+      if (!["off","minimal","low","medium","high"].includes(thinking) || (!connection.reasoning && thinking!=="off")) throw new HttpError(400,"思考档位无效");
+      const run=s.jobs.submit(auth.user.id,project.id,text(command.session,"会话"),connection,text(command.model,"模型"),prompt(command.text),text(command.requestKey,"提交标识",80),thinking);
+      json(res,{run},202);return;
+    }
     throw new HttpError(400, "此操作尚未启用");
   }
   throw new HttpError(404, "接口不存在");

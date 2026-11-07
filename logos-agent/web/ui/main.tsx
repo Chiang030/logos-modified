@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { App } from "../../vscode-extension/webview-ui/src/App";
 import logo from "../../vscode-extension/resources/logos_full_restored_transparent.png";
 import { BrowserBridge } from "./bridge";
+import { AdminPanel } from "./admin";
 import { api, query, setCsrf, upload, type Bootstrap, type Entry, type Project, type Conversation } from "./api";
 
 const demoProject: Project = { id: "preview-project", name: "机翼设计 · 示例项目", directory: "wing-study" };
@@ -47,10 +48,14 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
   const [tab, setTab] = useState("files"), [sessions, setSessions] = useState<Conversation[]>([]);
   const [notice, setNotice] = useState(""), [selected, setSelected] = useState<string>();
   const [refresh, setRefresh] = useState(0), [picker, setPicker] = useState(false), [uploading, setUploading] = useState("");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(""), [adminOpen, setAdminOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null), folderInput = useRef<HTMLInputElement>(null);
-  const bridge = useMemo(() => project ? new BrowserBridge(project, user, preview, boot.version, setNotice, setSelected) : undefined, [project, user, preview, boot.version]);
-  useEffect(() => { if (!preview) void api<{ projects: Project[] }>("/api/projects").then((r) => setProjects(r.projects)).catch((e) => setNotice(message(e))); }, [preview, refresh]);
+  const bridge = useMemo(() => project ? new BrowserBridge(project, user, preview, boot.version, setNotice, setSelected, () => setAdminOpen(true)) : undefined, [project, user, preview, boot.version]);
+  useEffect(() => { if (!preview) void api<{ projects: Project[] }>("/api/projects").then((r) => {
+    setProjects(r.projects);
+    setProject(current=>current??r.projects.find(p=>p.id===localStorage.getItem("logos-project-"+user.id)));
+  }).catch((e) => setNotice(message(e))); }, [preview, refresh, user.id]);
+  useEffect(() => {const update=():void=>setRefresh(n=>n+1);window.addEventListener("logos-files-refresh",update);return ()=>window.removeEventListener("logos-files-refresh",update);},[]);
   useEffect(() => {
     let current = true;
     if (!project) { setEntries([]); return; }
@@ -64,7 +69,7 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
       if (event.type === "session/list") setSessions(event.sessions.map((s) => ({ id: s.sessionId, title: s.title, project: project!.id })));
     });
   }, [bridge, project]);
-  const select = (value: Project | undefined): void => { setProject(value); setFolder(""); setSelected(undefined); setNotice(""); setSearch(""); };
+  const select = (value: Project | undefined): void => { if (!preview) {if(value)localStorage.setItem("logos-project-"+user.id,value.id);else localStorage.removeItem("logos-project-"+user.id);} setProject(value); setFolder(""); setSelected(undefined); setNotice(""); setSearch(""); };
   const transfer = async (files: FileList | null): Promise<void> => {
     if (!files?.length || !project || preview) return;
     let completed = 0;
@@ -82,6 +87,7 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
     <header className="web-topbar"><button className="brand" aria-label="返回项目首页" onClick={() => select(undefined)}><img src={logo} alt="LOGOS" /></button>
       <span className="top-divider" /><span className="workspace-name">工作台</span><span className="crumb">/</span><strong>{project?.name ?? "我的项目"}</strong>
       <div className="top-right">{preview ? <span className="preview-badge">只读界面预览</span> : <span className="private-badge">个人空间</span>}
+        {user.admin && !preview ? <button className="text-button" onClick={()=>setAdminOpen(true)}>管理后台</button> : null}
         <span className="avatar">{user.name.slice(0, 1)}</span><span>{user.name}</span>
         <button className="text-button" onClick={() => { if (preview) { location.href = "/"; return; } void api("/api/logout", {}).then(() => { location.href = "/"; }).catch((e) => setNotice(message(e))); }}>退出</button>
       </div>
@@ -109,13 +115,14 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
         <div className="explorer-footer"><span className="status-dot" />{preview ? "示例资料 · 不保存操作" : "个人文件 · 仅当前账号可见"}</div>
       </aside>
       <section className="main-workspace">
-        {preview ? <div className="stage-banner">界面预览：示例资料不属于真实账号，上传与模型调用未启用。</div> : <div className="stage-banner">{boot.executionReason}。项目与文件操作可以独立使用。</div>}
+        {preview ? <div className="stage-banner">界面预览：示例资料不属于真实账号，上传与模型调用未启用。</div> : <div className="stage-banner">{boot.executionReady ? "模型由管理员统一配置，用量按你的账号记录。全站最多同时运行 5 个任务。" : boot.executionReason}</div>}
         {notice || uploading ? <div className="notice" role="status"><span>{uploading || notice}</span><button aria-label="关闭提示" onClick={() => setNotice("")}>×</button></div> : null}
-        {project && bridge ? <div className="workbench-panels"><div className="chat-panel"><App key={project.id} host={bridge} web /></div>{selected ? <FilePreview key={project.id + ":" + selected} path={selected} project={project} preview={preview} close={() => setSelected(undefined)} reference={() => {
+        {project && bridge ? <div className="workbench-panels"><div className="chat-panel"><App key={project.id} host={bridge} web /></div>{selected ? <FilePreview key={project.id + ":" + selected + ":" + refresh} path={selected} project={project} preview={preview} close={() => setSelected(undefined)} reference={() => {
           void navigator.clipboard.writeText(selected).then(() => setNotice("已复制项目相对路径，可粘贴到对话中引用")).catch(() => setNotice("请复制文件标签中的相对路径"));
         }} /> : null}</div> : <div className="project-home"><div className="eyebrow">YOUR WORKSPACE</div><h1>让设计与仿真，<br /><span>从这里开始。</span></h1><p>选择自己的文件夹，整理资料，建立项目。<br />项目文件和对话会保存在服务器个人空间中。</p><button className="primary" onClick={() => setPicker(true)}>打开文件夹 →</button><div className="home-projects">{projects.map((item) => <button key={item.id} onClick={() => select(item)}><span>◇</span><strong>{item.name}</strong><small>{item.directory}</small></button>)}</div></div>}
       </section>
     </div>
+    {adminOpen && user.admin ? <AdminPanel close={()=>{setAdminOpen(false);void bridge?.catalog();}} /> : null}
     {picker ? <FolderPicker preview={preview} onClose={() => setPicker(false)} onSelect={(value) => { select(value); setPicker(false); setRefresh((n) => n + 1); }} /> : null}
   </div>;
 }

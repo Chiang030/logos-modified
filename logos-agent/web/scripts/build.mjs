@@ -9,3 +9,5 @@ execFileSync(process.execPath, ["../vscode-extension/node_modules/tailwindcss/li
 await build({ entryPoints: ["ui/main.tsx"], bundle: true, outfile: "dist/app.js", platform: "browser", format: "iife",
   loader: { ".png": "dataurl" }, alias: { react: resolve("node_modules/react"), "react-dom": resolve("node_modules/react-dom") } });
 await copyFile("ui/index.html", "dist/index.html");
+
+await build({entryPoints:["worker/main.ts"],bundle:true,outfile:"dist/worker.mjs",platform:"node",format:"esm",packages:"external"});

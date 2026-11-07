@@ -1,0 +1,17 @@
+[Unit]
+Description=LOGOS web workspace with Lark login
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=@REPOSITORY@/logos-agent/web
+EnvironmentFile=%h/.config/logos-web-pilot/server.env
+ExecStart=%h/.local/bin/node --experimental-strip-types server/main.ts
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+UMask=0077
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

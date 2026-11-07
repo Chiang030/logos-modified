@@ -20,6 +20,7 @@
     "ui/**/*.ts",
     "ui/**/*.tsx",
     "tests/**/*.ts",
-    "../vscode-extension/webview-ui/src/assets.d.ts"
+    "../vscode-extension/webview-ui/src/assets.d.ts",
+    "worker/**/*.ts"
   ]
 }

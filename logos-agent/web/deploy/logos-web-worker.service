@@ -1,0 +1,21 @@
+[Unit]
+Description=LOGOS isolated task queue and model usage service
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=@REPOSITORY@/logos-agent/web
+EnvironmentFile=%h/.config/logos-web-pilot/server.env
+ExecStart=/usr/bin/flock --no-fork --nonblock %h/.local/state/logos-web-pilot/worker.lock %h/.local/bin/node @REPOSITORY@/logos-agent/web/dist/worker.mjs
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=20
+UMask=0077
+NoNewPrivileges=true
+CPUQuota=800%
+MemoryMax=12G
+TasksMax=512
+
+[Install]
+WantedBy=default.target
