@@ -1,8 +1,0 @@
-# Allow user namespaces only for the root-owned LOGOS sandbox launcher.
-# Filesystem and network confinement is supplied by bubblewrap at each launch.
-abi <abi/4.0>,
-include <tunables/global>
-
-profile logos-web-bwrap /usr/local/libexec/logos-web-bwrap flags=(unconfined) {
-  userns,
-}

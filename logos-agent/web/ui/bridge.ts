@@ -5,11 +5,11 @@ import { api, type Conversation, type Project, type User } from "./api";
 interface Run {id:string;status:string;error?:string;created:number;}
 export class BrowserBridge implements HostBridge {
   listeners=new Set<(message:ExtensionToWebviewMessage)=>void>();
-  project:Project;user:User;preview:boolean;version:string;notice:(message:string)=>void;openFile:(path:string)=>void;openAdmin:()=>void;
+  project:Project;user:User;preview:boolean;version:string;notice:(message:string)=>void;openFile:(path:string)=>void;openAdmin:()=>void;openSoftware:()=>void;
   active?:string;private models:ModelOption[]=[];private selected?:ModelOption;private thinking="off";
   private generation=0;private sequence=0;private timer?:number;private run?:Run;private healthy=false;
-  constructor(project:Project,user:User,preview:boolean,version:string,notice:(message:string)=>void,openFile:(path:string)=>void,openAdmin:()=>void){
-    this.project=project;this.user=user;this.preview=preview;this.version=version;this.notice=notice;this.openFile=openFile;this.openAdmin=openAdmin;
+  constructor(project:Project,user:User,preview:boolean,version:string,notice:(message:string)=>void,openFile:(path:string)=>void,openAdmin:()=>void,openSoftware:()=>void){
+    this.project=project;this.user=user;this.preview=preview;this.version=version;this.notice=notice;this.openFile=openFile;this.openAdmin=openAdmin;this.openSoftware=openSoftware;
   }
   subscribe(listener:(message:ExtensionToWebviewMessage)=>void):()=>void{
     this.listeners.add(listener);return ()=>{this.listeners.delete(listener);if(!this.listeners.size){this.generation++;window.clearTimeout(this.timer);}};
@@ -31,13 +31,14 @@ export class BrowserBridge implements HostBridge {
       }
       case "identity/load":this.identity();this.notice("当前身份来自企业登录，用量按此账号记录");return;
       case "settings/load":if(this.user.admin && !this.preview)this.openAdmin();else this.notice("模型 API 由管理员统一设置，请联系管理员维护");return;
-      case "software/scan":this.emit({type:"software/error",message:"工具在服务器隔离环境中运行"});this.notice("工具在服务器隔离环境中运行；可让助手检查当前任务可用的命令");return;
+      case "software/scan":if(this.preview){this.notice("只读预览不执行软件扫描");return;}this.openSoftware();return;
       case "diagnostics/open":this.notice(this.run?"任务状态："+this.run.status:"当前没有运行中的任务");return;
       case "link/open":{
         const href=String(command.href??"");
         if(/^https?:\/\//i.test(href)){window.open(href,"_blank","noopener,noreferrer");return;}
         if(/^[a-z][a-z\d+.-]*:/i.test(href)||href.startsWith("//"))throw new Error("该文件链接不支持打开");
-        this.openFile(href.replace(/^\/workspace\//,"").replace(/^\.\//,""));return;
+        const path=this.project.absolutePath && href.startsWith(this.project.absolutePath+"/")?href.slice(this.project.absolutePath.length+1):href;
+        this.openFile(path.replace(/^\/workspace\//,"").replace(/^\.\//,""));return;
       }
       case "model/select":{
         const selected=this.models.find(m=>m.provider===command.provider && m.id===command.modelId);

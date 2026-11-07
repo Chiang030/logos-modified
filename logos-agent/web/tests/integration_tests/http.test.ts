@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AddressInfo } from "node:net";
@@ -49,6 +49,12 @@ test("authenticated file/project workflow enforces users, CSRF and unavailable e
     assert.equal(runtime.status, 503);
     assert.equal((await request("/api/bridge", b, { project: project.id, command: { type: "session/rename", sessionId: session.id, title: "hijacked" } })).status, 404);
     assert.deepEqual((await (await request("/api/projects", b)).json()).projects, []);
+    const executable=join(root,"blender-test");await writeFile(executable,"#!/bin/sh\nexit 0\n",{mode:0o755});
+    assert.equal((await fetch(config.publicUrl+"/api/software")).status,401);
+    assert.equal((await request("/api/software/path",a,{product:"blender",path:executable})).status,200);
+    const software=await (await request("/api/software",b)).json();
+    assert.equal(software.result.products.find((p:{product:string})=>p.product==="blender").selected,executable);
+    assert.equal((await request("/api/software/path",b,{product:"not-a-product",path:executable})).status,400);
     const administrator = store.login(store.user("administrator", "Admin", true));
     const configInput = { name: "Central API", baseUrl: "https://provider.example.test/v1", protocol: "openai-completions", models: ["fixture"], apiKey: "not-for-browsers" };
     assert.equal((await request("/api/admin/models", a, configInput)).status, 403);

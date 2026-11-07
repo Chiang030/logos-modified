@@ -1,5 +1,5 @@
 export interface User { id: string; name: string; admin: boolean; }
-export interface Project { id: string; name: string; directory: string; }
+export interface Project { id: string; name: string; directory: string; absolutePath?: string; }
 export interface Conversation { id: string; title: string; project: string; }
 export interface Entry { name: string; directory: boolean; size: number; modified: number; }
 export interface Bootstrap { user: User | null; csrf?: string; feishuReady: boolean; identityLabel?: string; previewEnabled: boolean; version: string; executionReady: boolean; executionReason: string; }

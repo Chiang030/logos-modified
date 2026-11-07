@@ -6,7 +6,7 @@ import { Store } from "../server/store.ts";
 import { Models } from "../server/models.ts";
 import { Jobs } from "../server/jobs.ts";
 import { Meter } from "../server/usage.ts";
-import { probe } from "./sandbox.ts";
+import { probe } from "./runtime.ts";
 import { executeRun } from "./runner.ts";
 process.umask(0o077);
 const data=resolve(process.env.LOGOS_WEB_DATA_DIR??join(homedir(),".local/share/logos-web"));

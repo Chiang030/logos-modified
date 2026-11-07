@@ -4,6 +4,7 @@ import { App } from "../../vscode-extension/webview-ui/src/App";
 import logo from "../../vscode-extension/resources/logos_full_restored_transparent.png";
 import { BrowserBridge } from "./bridge";
 import { AdminPanel } from "./admin";
+import { SoftwareDialog } from "./software";
 import { api, query, setCsrf, upload, type Bootstrap, type Entry, type Project, type Conversation } from "./api";
 
 const demoProject: Project = { id: "preview-project", name: "机翼设计 · 示例项目", directory: "wing-study" };
@@ -49,8 +50,9 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
   const [notice, setNotice] = useState(""), [selected, setSelected] = useState<string>();
   const [refresh, setRefresh] = useState(0), [picker, setPicker] = useState(false), [uploading, setUploading] = useState("");
   const [search, setSearch] = useState(""), [adminOpen, setAdminOpen] = useState(false);
+  const [softwareOpen,setSoftwareOpen]=useState<false|"load"|"scan">(false);
   const fileInput = useRef<HTMLInputElement>(null), folderInput = useRef<HTMLInputElement>(null);
-  const bridge = useMemo(() => project ? new BrowserBridge(project, user, preview, boot.version, setNotice, setSelected, () => setAdminOpen(true)) : undefined, [project, user, preview, boot.version]);
+  const bridge = useMemo(() => project ? new BrowserBridge(project, user, preview, boot.version, setNotice, setSelected, () => setAdminOpen(true), () => setSoftwareOpen("scan")) : undefined, [project, user, preview, boot.version]);
   useEffect(() => { if (!preview) void api<{ projects: Project[] }>("/api/projects").then((r) => {
     setProjects(r.projects);
     setProject(current=>current??r.projects.find(p=>p.id===localStorage.getItem("logos-project-"+user.id)));
@@ -87,6 +89,7 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
     <header className="web-topbar"><button className="brand" aria-label="返回项目首页" onClick={() => select(undefined)}><img src={logo} alt="LOGOS" /></button>
       <span className="top-divider" /><span className="workspace-name">工作台</span><span className="crumb">/</span><strong>{project?.name ?? "我的项目"}</strong>
       <div className="top-right">{preview ? <span className="preview-badge">只读界面预览</span> : <span className="private-badge">个人空间</span>}
+        {!preview ? <button className="text-button" onClick={()=>setSoftwareOpen("load")}>服务器工具</button> : null}
         {user.admin && !preview ? <button className="text-button" onClick={()=>setAdminOpen(true)}>管理后台</button> : null}
         <span className="avatar">{user.name.slice(0, 1)}</span><span>{user.name}</span>
         <button className="text-button" onClick={() => { if (preview) { location.href = "/"; return; } void api("/api/logout", {}).then(() => { location.href = "/"; }).catch((e) => setNotice(message(e))); }}>退出</button>
@@ -112,7 +115,7 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
               {!entries.length ? <div className="empty-note">此目录为空<br />上传资料后即可在这里查看。</div> : null}</div>
           </> : <div className="session-list-web"><button className="new-session-button" onClick={() => bridge?.postMessage({ type: "session/new" })}>＋ 新建会话</button>{sessions.map((item) => <button key={item.id} onClick={() => bridge?.postMessage({ type: "session/select", sessionId: item.id })}>{item.title}</button>)}{!sessions.length ? <p className="empty-note">尚无历史会话</p> : null}</div>}
         </> : <div className="empty-note">先选择个人文件夹，再建立项目。<br />每个项目独立保存会话。</div>}
-        <div className="explorer-footer"><span className="status-dot" />{preview ? "示例资料 · 不保存操作" : "个人文件 · 仅当前账号可见"}</div>
+        <div className="explorer-footer"><span className="status-dot" />{preview ? "示例资料 · 不保存操作" : "文件列表 · 按登录账号显示"}</div>
       </aside>
       <section className="main-workspace">
         {preview ? <div className="stage-banner">界面预览：示例资料不属于真实账号，上传与模型调用未启用。</div> : <div className="stage-banner">{boot.executionReady ? "模型由管理员统一配置，用量按你的账号记录。全站最多同时运行 5 个任务。" : boot.executionReason}</div>}
@@ -122,6 +125,7 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
         }} /> : null}</div> : <div className="project-home"><div className="eyebrow">YOUR WORKSPACE</div><h1>让设计与仿真，<br /><span>从这里开始。</span></h1><p>选择自己的文件夹，整理资料，建立项目。<br />项目文件和对话会保存在服务器个人空间中。</p><button className="primary" onClick={() => setPicker(true)}>打开文件夹 →</button><div className="home-projects">{projects.map((item) => <button key={item.id} onClick={() => select(item)}><span>◇</span><strong>{item.name}</strong><small>{item.directory}</small></button>)}</div></div>}
       </section>
     </div>
+    {softwareOpen ? <SoftwareDialog scan={softwareOpen==="scan"} close={()=>setSoftwareOpen(false)} /> : null}
     {adminOpen && user.admin ? <AdminPanel close={()=>{setAdminOpen(false);void bridge?.catalog();}} /> : null}
     {picker ? <FolderPicker preview={preview} onClose={() => setPicker(false)} onSelect={(value) => { select(value); setPicker(false); setRefresh((n) => n + 1); }} /> : null}
   </div>;

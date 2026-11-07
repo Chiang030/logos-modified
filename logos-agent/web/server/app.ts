@@ -11,10 +11,11 @@ import { Models } from "./models.ts";
 import { Jobs } from "./jobs.ts";
 import { Meter } from "./usage.ts";
 import { control, prompt, type Control } from "./control.ts";
+import { Software } from "./software.ts";
 
 export interface Services { config: Config; store: Store; files: WorkspaceFiles; assets: string; }
 export function createHandler(services: Services): (req: IncomingMessage, res: ServerResponse) => void {
-  const resources = { ...services, models: new Models(services.store, join(services.config.data,"state")), jobs: new Jobs(services.store), meter: new Meter(services.store) };
+  const resources = { ...services, models: new Models(services.store, join(services.config.data,"state")), jobs: new Jobs(services.store), meter: new Meter(services.store), software: new Software(services.config.data) };
   return (request, response) => {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("Referrer-Policy", "same-origin");
@@ -52,11 +53,12 @@ async function route(s: Services & Control, req: IncomingMessage, res: ServerRes
     store.logout(cookies(req).logos_session ?? ""); res.setHeader("Set-Cookie", cookie(config, "logos_session", "", 0)); json(res, { ok: true }); return;
   }
   if (await control(s,auth.user,url,req,res)) return;
-  if (url.pathname === "/api/projects" && method === "GET") { json(res, { projects: store.projects(auth.user.id) }); return; }
+  if (url.pathname === "/api/projects" && method === "GET") { json(res, { projects: store.projects(auth.user.id).map(project=>({...project,absolutePath:join(config.data,"users",auth.user.id,"workspace",project.directory)})) }); return; }
   if (url.pathname === "/api/projects" && method === "POST") {
     const input = await body(req), directory = text(input.directory, "目录", 2048);
     const handle = await s.files.directory(auth.user.id, directory); await handle.close();
-    json(res, { project: store.createProject(auth.user.id, text(input.name, "项目名称", 80), directory) }, 201); return;
+    const project=store.createProject(auth.user.id,text(input.name,"项目名称",80),directory);
+    json(res,{project:{...project,absolutePath:join(config.data,"users",auth.user.id,"workspace",project.directory)}},201); return;
   }
   if (url.pathname === "/api/files" && method === "GET") { json(res, { entries: await s.files.list(auth.user.id, scopedPath(s, auth.user.id, url)) }); return; }
   if (url.pathname === "/api/folders" && method === "POST") {

@@ -1,5 +1,5 @@
 [Unit]
-Description=LOGOS isolated task queue and model usage service
+Description=LOGOS host task queue and model usage service
 After=network-online.target
 
 [Service]
@@ -12,10 +12,6 @@ RestartSec=5
 KillMode=control-group
 TimeoutStopSec=20
 UMask=0077
-NoNewPrivileges=true
-CPUQuota=800%
-MemoryMax=12G
-TasksMax=512
 
 [Install]
 WantedBy=default.target

@@ -1,4 +1,5 @@
 import type { IncomingMessage,ServerResponse } from "node:http";
+import type { Software } from "./software.ts";
 import type { Store,User } from "./store.ts";
 import { Models } from "./models.ts";
 import { Jobs } from "./jobs.ts";
@@ -6,10 +7,19 @@ import { Meter,csv } from "./usage.ts";
 import { body,json } from "./http.ts";
 import { HttpError,text } from "./errors.ts";
 
-export interface Control {store:Store;models:Models;jobs:Jobs;meter:Meter;}
+export interface Control {store:Store;models:Models;jobs:Jobs;meter:Meter;software:Software;}
 export async function control(s:Control,user:User,url:URL,req:IncomingMessage,res:ServerResponse):Promise<boolean>{
   const path=url.pathname,method=req.method;
   if(path.startsWith("/api/admin/") && !user.admin)throw new HttpError(403,"此功能仅管理员可用");
+  if(path==="/api/software" && method==="GET"){json(res,await s.software.status());return true;}
+  if(path==="/api/software/scan" && method==="POST"){
+    const input=await body(req);void s.software.scan(input.global===true);json(res,{scanning:true},202);return true;
+  }
+  if(path==="/api/software/path" && method==="POST"){
+    const input=await body(req);
+    if(typeof input.path!=="string")throw new HttpError(400,"程序路径无效");
+    await s.software.setPath(text(input.product,"软件类型"),input.path);json(res,await s.software.status());return true;
+  }
   if(path==="/api/models" && method==="GET"){
     json(res,{models:s.models.list().filter(c=>c.enabled).flatMap(c=>c.models.map(id=>({provider:c.id,id,name:id,connectionId:c.id,connectionName:c.name,contextWindow:c.contextWindow,reasoning:c.reasoning}))),...s.jobs.health()});return true;
   }
