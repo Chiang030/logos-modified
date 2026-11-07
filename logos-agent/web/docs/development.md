@@ -157,6 +157,14 @@ delayed double-clicks, empty-folder project creation, failed navigation/retry an
 real same-name nested folders. This case is run with a supplied browser; it is
 separate from the Node test suite.
 
+The main file explorer also commits the project, path, and entries together only
+after a successful read. Pending navigation blocks stale row clicks and uploads;
+failed navigation retains the verified parent, failed refresh requires retry, and
+responses from previous projects are ignored. Browser coverage in
+`tests/browser/file-navigation.mjs` mocks every API route and checks rapid clicks,
+file previews, failed reads/retry, empty and real same-name directories, selecting
+the current project again, and project switching during a delayed response.
+
 Initial browser acceptance displayed five installed software categories; after
 adding /srv discovery, the server inventory contains eight. A real
 DeepSeek task successfully called software_discover and bash, confirmed the

@@ -45,7 +45,12 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
   const user = useMemo(() => boot.user ?? { id: "preview", name: "界面预览", admin: false }, [boot.user]);
   const [projects, setProjects] = useState<Project[]>(preview ? [demoProject] : []);
   const [project, setProject] = useState<Project | undefined>(preview ? demoProject : undefined);
-  const [folder, setFolder] = useState(""), [entries, setEntries] = useState<Entry[]>([]);
+  const [fileLocation, setFileLocation] = useState<{ project: string; path: string; entries: Entry[] }>({ project: "", path: "", entries: [] });
+  const [filesLoading, setFilesLoading] = useState(false), [filesLoaded, setFilesLoaded] = useState(false);
+  const fileRequest = useRef(0), filePending = useRef(false);
+  const folder = fileLocation.project === project?.id ? fileLocation.path : "";
+  const entries = fileLocation.project === project?.id ? fileLocation.entries : [];
+  const filesReady = filesLoaded && fileLocation.project === project?.id;
   const [tab, setTab] = useState("files"), [sessions, setSessions] = useState<Conversation[]>([]);
   const [notice, setNotice] = useState(""), [selected, setSelected] = useState<string>();
   const [refresh, setRefresh] = useState(0), [picker, setPicker] = useState(false), [uploading, setUploading] = useState("");
@@ -58,22 +63,40 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
     setProject(current=>current??r.projects.find(p=>p.id===localStorage.getItem("logos-project-"+user.id)));
   }).catch((e) => setNotice(message(e))); }, [preview, refresh, user.id]);
   useEffect(() => {const update=():void=>setRefresh(n=>n+1);window.addEventListener("logos-files-refresh",update);return ()=>window.removeEventListener("logos-files-refresh",update);},[]);
+  const loadFiles = async (target: Project, path: string): Promise<void> => {
+    const request = ++fileRequest.current;
+    filePending.current = true; setFilesLoading(true);
+    try {
+      const result = preview ? { entries: path ? [] : demoFiles }
+        : await api<{ entries: Entry[] }>("/api/files?" + query(path, target.id));
+      if (request !== fileRequest.current) return;
+      // A breadcrumb and its entries must always describe the same successful read.
+      setFileLocation({ project: target.id, path, entries: result.entries }); setFilesLoaded(true);
+      setSearch("");
+    } catch (error) {
+      if (request !== fileRequest.current) return;
+      setNotice(message(error));
+      if (target.id === fileLocation.project && path === fileLocation.path) setFilesLoaded(false);
+    } finally {
+      if (request === fileRequest.current) { filePending.current = false; setFilesLoading(false); }
+    }
+  };
   useEffect(() => {
-    let current = true;
-    if (!project) { setEntries([]); return; }
-    if (preview) { setEntries(folder ? [] : demoFiles); return; }
-    void api<{ entries: Entry[] }>("/api/files?" + query(folder, project.id)).then((r) => { if (current) setEntries(r.entries); }).catch((e) => { if (current) setNotice(message(e)); });
-    return () => { current = false; };
-  }, [project, folder, refresh, preview]);
+    if (project) void loadFiles(project, folder);
+    return () => { fileRequest.current++; filePending.current = false; };
+  }, [project, refresh, preview]);
+  const navigateFiles = (path: string): void => {
+    if (project && filesReady && !filePending.current) void loadFiles(project, path);
+  };
   useEffect(() => {
     setSessions([]);
     return bridge?.subscribe((event) => {
       if (event.type === "session/list") setSessions(event.sessions.map((s) => ({ id: s.sessionId, title: s.title, project: project!.id })));
     });
   }, [bridge, project]);
-  const select = (value: Project | undefined): void => { if (!preview) {if(value)localStorage.setItem("logos-project-"+user.id,value.id);else localStorage.removeItem("logos-project-"+user.id);} setProject(value); setFolder(""); setSelected(undefined); setNotice(""); setSearch(""); };
+  const select = (value: Project | undefined): void => { if (!preview) {if(value)localStorage.setItem("logos-project-"+user.id,value.id);else localStorage.removeItem("logos-project-"+user.id);} fileRequest.current++; filePending.current = false; setFilesLoaded(false); setFileLocation({ project: "", path: "", entries: [] }); setProject(value); if (value && value === project) void loadFiles(value, ""); setSelected(undefined); setNotice(""); setSearch(""); };
   const transfer = async (files: FileList | null): Promise<void> => {
-    if (!files?.length || !project || preview) return;
+    if (!files?.length || !project || preview || filePending.current || !filesReady) return;
     let completed = 0;
     try {
       for (const file of Array.from(files)) {
@@ -103,16 +126,17 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
         {project ? <>
           <div className="explorer-tabs"><button className={tab === "files" ? "active" : ""} onClick={() => setTab("files")}>文件</button><button className={tab === "sessions" ? "active" : ""} onClick={() => setTab("sessions")}>会话</button></div>
           {tab === "files" ? <>
-            <div className="file-actions"><button title="上传文件" disabled={preview || Boolean(uploading)} onClick={() => fileInput.current?.click()}>↑ 文件</button><button title="上传文件夹" disabled={preview || Boolean(uploading)} onClick={() => folderInput.current?.click()}>↑ 文件夹</button><button title="刷新文件" aria-label="刷新文件" onClick={() => setRefresh((n) => n + 1)}>↻</button></div>
+            <div className="file-actions"><button title="上传文件" disabled={preview || Boolean(uploading) || filesLoading || !filesReady} onClick={() => fileInput.current?.click()}>↑ 文件</button><button title="上传文件夹" disabled={preview || Boolean(uploading) || filesLoading || !filesReady} onClick={() => folderInput.current?.click()}>↑ 文件夹</button><button title="刷新文件" aria-label="刷新文件" disabled={filesLoading} onClick={() => setRefresh((n) => n + 1)}>↻</button></div>
             <input hidden multiple type="file" ref={fileInput} onChange={(event) => void transfer(event.target.files)} />
             <input hidden multiple type="file" ref={folderInput} {...{ webkitdirectory: "" }} onChange={(event) => void transfer(event.target.files)} />
             <input className="file-search" aria-label="筛选当前目录文件" placeholder="查找当前目录文件…" value={search} onChange={(event) => setSearch(event.target.value)} />
-            <div className="file-location"><button disabled={!folder} title="上一级" onClick={() => setFolder(parent(folder))}>←</button><span title={folder}>{folder || project.directory}</span></div>
-            <div className="file-list">{entries.filter((entry) => entry.name.toLowerCase().includes(search.toLowerCase())).map((entry) => <button key={entry.name} className={selected === [folder, entry.name].filter(Boolean).join("/") ? "selected" : ""} onClick={() => {
+            <div className="file-location"><button disabled={!folder || filesLoading || !filesReady} title="上一级" onClick={() => navigateFiles(parent(folder))}>←</button><span title={folder}>{folder || project.directory}</span></div>
+            <div className="file-list" aria-busy={filesLoading}>{filesLoading ? <div className="empty-note" role="status">正在读取文件夹…</div> : !filesReady ? <div className="empty-note">目录尚未读取成功，请点击刷新重试。</div> : entries.filter((entry) => entry.name.toLowerCase().includes(search.toLowerCase())).map((entry) => <button key={entry.name} className={selected === [folder, entry.name].filter(Boolean).join("/") ? "selected" : ""} onClick={() => {
+              if (filePending.current || !filesReady) return;
               const path = [folder, entry.name].filter(Boolean).join("/");
-              if (entry.directory) { setFolder(path); setSearch(""); } else setSelected(path);
+              if (entry.directory) navigateFiles(path); else setSelected(path);
             }}><span className={entry.directory ? "folder-icon" : "document-icon"}>{entry.directory ? "▸" : "≡"}</span><span>{entry.name}</span><small>{entry.directory ? "" : bytes(entry.size)}</small></button>)}
-              {!entries.length ? <div className="empty-note">此目录为空<br />上传资料后即可在这里查看。</div> : null}</div>
+              {!filesLoading && filesReady && !entries.length ? <div className="empty-note">此目录为空<br />上传资料后即可在这里查看。</div> : null}</div>
           </> : <div className="session-list-web"><button className="new-session-button" onClick={() => bridge?.postMessage({ type: "session/new" })}>＋ 新建会话</button>{sessions.map((item) => <button key={item.id} onClick={() => bridge?.postMessage({ type: "session/select", sessionId: item.id })}>{item.title}</button>)}{!sessions.length ? <p className="empty-note">尚无历史会话</p> : null}</div>}
         </> : <div className="empty-note">先选择个人文件夹，再建立项目。<br />每个项目独立保存会话。</div>}
         <div className="explorer-footer"><span className="status-dot" />{preview ? "示例资料 · 不保存操作" : "文件列表 · 按登录账号显示"}</div>
