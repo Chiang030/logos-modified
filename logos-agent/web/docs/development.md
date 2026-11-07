@@ -9,7 +9,7 @@ This is a development milestone, not a deployable multi-user Agent service.
 | Area | Implemented | Still required |
 | --- | --- | --- |
 | Shared interface | Browser imports extension App through HostBridge; sidebar and preview | Live runtime interactions |
-| Identity | Feishu OAuth code, tenant check, hashed sessions, one-use state, CSRF | Enterprise application and real two-account login acceptance |
+| Identity | Feishu/Lark OAuth, tenant check, hashed sessions, one-use state, CSRF; one real Lark account verified | Real second-account isolation and logout/relogin acceptance |
 | Projects | Personal folders, folder-based projects, duplicate/overlap checks | Recent-project restoration and lifecycle controls |
 | Files | Browse/filter, mkdir, file/folder upload, download, text/image/PDF preview, copy relative path | Rich previews, retry/overwrite choices, quotas and configurable limits |
 | Conversations | Persistent empty conversation records and titles | Messages, transcripts and runtime recovery |
@@ -212,3 +212,24 @@ response. Do not paste access tokens into chat or the web configuration file.
 The application must be published/approved and available to the test users.
 Current tests use simulated OAuth responses, including string/numeric success,
 upstream failure and enterprise mismatch. They do not prove a real Lark login.
+
+
+## Live Lark login acceptance (2026-11-07)
+
+After the application administrator enabled tenant:tenant:readonly, the server
+successfully called the official tenant information API using the application's
+tenant_access_token. The returned tenant_key was saved in the protected pilot
+environment file. No token or application secret was stored in this repository.
+
+The pilot backend was restarted without restarting the Cloudflare tunnel.
+Verified the authorization redirect, exact configured callback, correct app ID,
+state parameter and Secure/HttpOnly OAuth cookie. The browser reached the Lark
+authorization page and returned to the workspace. A real application session
+was established; /api/bootstrap reported an authenticated Lark identity, and
+the current user's /api/projects and /api/files returned 200 with empty lists.
+The first login retained the ordinary user role; no administrator was inferred
+from login order. No sample project or file was created in the real user space.
+
+This verifies a single real Lark login, not a two-user acceptance test, token
+accounting or Agent execution. The browser remains logged in for the user.
+The temporary HTTPS hostname still depends on the running Quick Tunnel process.
