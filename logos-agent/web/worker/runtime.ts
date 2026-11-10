@@ -24,7 +24,7 @@ export async function launch(options:{repo:string;directory:string;home:string;t
   const sharedMcp=join(source.PI_CODING_AGENT_DIR??join(homedir(),".pi/agent"),"mcp.json");
   try{await copyFile(sharedMcp,join(profile,"mcp.json"));}
   catch(error){if((error as NodeJS.ErrnoException).code!=="ENOENT")throw error;await rm(join(profile,"mcp.json"),{force:true});}
-  const env:NodeJS.ProcessEnv={...source,PATH:dirname(process.execPath)+":"+source.PATH,PI_CODING_AGENT_DIR:profile};
+  const env:NodeJS.ProcessEnv={...source,PATH:dirname(process.execPath)+":"+source.PATH,PI_CODING_AGENT_DIR:profile,LOGOS_TASK_ID:run.id};
   for(const name of Object.keys(env))if(/^(LARK_|FEISHU_|LOGOS_WEB_)/.test(name))delete env[name];
   await writeFile(join(profile,"models.json"),JSON.stringify({providers:{[provider]:{
     baseUrl:"http://127.0.0.1:0",api:connection.protocol,apiKey:"web-metered-broker",

@@ -1,0 +1,16 @@
+[Unit]
+Description=LOGOS fixed ngrok development endpoint
+After=network-online.target logos-web-pilot.service
+Wants=logos-web-pilot.service
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/logos-web-pilot/server.env
+ExecStart=%h/.local/bin/ngrok http http://127.0.0.1:${LOGOS_WEB_PORT} --url=${LOGOS_WEB_PUBLIC_URL} --config=%h/.config/ngrok/ngrok.yml --inspect=false --log=stdout --log-format=json
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=20
+UMask=0077
+
+[Install]
+WantedBy=default.target

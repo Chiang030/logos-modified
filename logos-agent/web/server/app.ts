@@ -1,3 +1,4 @@
+import { projectWorkspace, WorkspaceError } from "../../pi-domain/src/workspace.mjs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
@@ -52,12 +53,27 @@ async function route(s: Services & Control, req: IncomingMessage, res: ServerRes
   if (url.pathname === "/api/logout" && method === "POST") {
     store.logout(cookies(req).logos_session ?? ""); res.setHeader("Set-Cookie", cookie(config, "logos_session", "", 0)); json(res, { ok: true }); return;
   }
+  if (url.pathname === "/api/workspace" && ["GET", "POST"].includes(method)) {
+    const input = method === "GET" ? { project: url.searchParams.get("project"), action: "list" } : await body(req);
+    const project = store.project(auth.user.id, text(input.project, "项目"));
+    const handle = await s.files.directory(auth.user.id, project.directory);
+    try { json(res, await projectWorkspace(handle, input)); }
+    catch (error) { if (error instanceof WorkspaceError) throw new HttpError(error.status, error.message); throw error; }
+    finally { await handle.close(); }
+    return;
+  }
   if (await control(s,auth.user,url,req,res)) return;
   if (url.pathname === "/api/projects" && method === "GET") { json(res, { projects: store.projects(auth.user.id).map(project=>({...project,absolutePath:join(config.data,"users",auth.user.id,"workspace",project.directory)})) }); return; }
   if (url.pathname === "/api/projects" && method === "POST") {
     const input = await body(req), directory = text(input.directory, "目录", 2048);
     const handle = await s.files.directory(auth.user.id, directory); await handle.close();
+    const existing = store.projects(auth.user.id).some(p => p.directory === directory);
     const project=store.createProject(auth.user.id,text(input.name,"项目名称",80),directory);
+    if (!existing && !(await s.files.list(auth.user.id, directory)).length) {
+      const root = await s.files.directory(auth.user.id, directory);
+      try { await projectWorkspace(root, { action: "initialize", name: project.name }); }
+      finally { await root.close(); }
+    }
     json(res,{project:{...project,absolutePath:join(config.data,"users",auth.user.id,"workspace",project.directory)}},201); return;
   }
   if (url.pathname === "/api/files" && method === "GET") { json(res, { entries: await s.files.list(auth.user.id, scopedPath(s, auth.user.id, url)) }); return; }

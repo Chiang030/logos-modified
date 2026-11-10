@@ -27,6 +27,8 @@ export function registerSimulationTool(pi) {
       host: Type.Optional(Type.String()),
       port: Type.Optional(Type.Integer({ minimum: 1, maximum: 65535 })),
       session: Type.Optional(Type.String({ description: "Explicit sim session ID for multi-session routing" })),
+      study: Type.Optional(Type.String({ description: "LOGOS study ID. Required with run_id for run/exec in managed projects." })),
+      run_id: Type.Optional(Type.String({ description: "Prepared run ID from project_workspace. Execution cwd is this run directory; use copied inputs and write results there. Remote sessions need explicit remote output paths." })),
       installation: Type.Optional(Type.String({ description: "Installation ID returned by simulation_discover, for launch or probe" })),
       timeout_ms: Type.Optional(Type.Integer({ minimum: 100, maximum: 3600000 })),
     }),

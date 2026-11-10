@@ -5,6 +5,8 @@ description: Use for simulation-case execution or solver/UDF development, includ
 
 # LOGOS Simulation Workflow
 
+First read [LOGOS project layout](../logos-project-layout/SKILL.md) and determine whether this is a managed project. In managed projects, study.json and the project/study/run paths replace all legacy caseDict and stage-directory paths below. Existing projects retain their organization. Studio-specific automatic execution is not implemented by the web workspace.
+
 Read [general rules](references/general.md) first, then choose the relevant mode:
 
 For installation selection, session lifecycle and shared execution decisions,

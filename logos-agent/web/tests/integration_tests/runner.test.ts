@@ -59,7 +59,7 @@ test("real host Pi executes tools through the metered broker and retains convers
     const done=jobs.get(user.id,run.id);assert.equal(done.status,"completed",done.error??"run failed");
     assert.equal(await readFile(join(root,"users",user.id,"workspace/case/result.txt"),"utf8"),"sandbox tool success");
     assert.equal(calls,3);
-    for(const name of ["software_discover","simulation_discover","simulation","web_search"])assert.ok(JSON.stringify(prompts[0].tools).includes(name),"Missing tool: "+name);
+    for(const name of ["software_discover","simulation_discover","simulation","web_search","project_workspace"])assert.ok(JSON.stringify(prompts[0].tools).includes(name),"Missing tool: "+name);
     assert.ok(JSON.stringify(prompts[1]).includes("host-access-ok"));assert.ok(JSON.stringify(prompts[1]).includes("network-access-ok"));
     assert.deepEqual(store.db.prepare("SELECT status FROM model_requests WHERE run=?").all(run.id).map(row=>row.status),["completed","completed","completed"]);
     const report=meter.report(0,Date.now()+1000) as {rows:{calls:number;total:number;unknown:number}[]};

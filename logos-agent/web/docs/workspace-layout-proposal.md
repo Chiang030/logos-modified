@@ -1,7 +1,7 @@
 # LOGOS workspace layout proposal
 
-Draft for discussion, 2026-11-10. No project migration or runtime change is
-implemented by this document.
+Approved and implemented initial layout, 2026-11-10. Existing projects are not
+migrated automatically. See workspace-layout.md for the current implementation.
 
 ## Structure
 

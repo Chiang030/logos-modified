@@ -77,7 +77,7 @@ export default async function verifyFileNavigation(page, origin) {
     check(await breadcrumb() === "nested" && await row("nested").isVisible(), "Parent navigation is inconsistent");
 
     await reset(); await row("empty").click(); await idle();
-    check(await breadcrumb() === "empty" && await list.getByText("此目录为空", { exact: false }).isVisible(), "Empty directories must be navigable");
+    check(await breadcrumb() === "empty" && await list.getByText("此目录暂无可见文件", { exact: false }).isVisible(), "Empty directories must be navigable");
 
     await reset(); failRoot = true;
     await page.getByRole("button", { name: "刷新文件", exact: true }).click(); await idle();

@@ -1,3 +1,4 @@
+import { projectWorkspace } from "../workspace.mjs";
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -31,6 +32,18 @@ export async function runSimulation(params, { cwd, signal, command, timeoutMs = 
   if (params.session) argv.push("--session", params.session);
   argv.push(...(params.action === "help" ? ["--help"] : [params.action]));
   argv.push(...(params.args ?? []));
+  let executionCwd = cwd;
+  const recordsExecution = ["run", "exec"].includes(params.action);
+  const managed = process.platform === "linux" && recordsExecution ? (await projectWorkspace(cwd,{action:"list"})).managed : false;
+  if (params.run_id || managed) {
+    if (!recordsExecution || !params.study || !params.run_id) throw new Error("Managed execution requires study and run_id from project_workspace prepare_run");
+    if (signal?.aborted) {
+      await projectWorkspace(cwd,{action:"update_run",study:params.study,run:params.run_id,status:"cancelled"});
+      throw new Error("Execution cancelled before launch");
+    }
+    const record = await projectWorkspace(cwd,{action:"update_run",study:params.study,run:params.run_id,status:"running",command:[configured[0],...argv],software:"sim CLI; installed product version must be recorded by the execution script"});
+    executionCwd = join(cwd,record.path);
+  }
   const limit = params.timeout_ms ?? timeoutMs;
   let stdout = "", stderr = "", stopReason, processError, truncated = false;
   const cap = 1024 * 1024;
@@ -41,7 +54,7 @@ export async function runSimulation(params, { cwd, signal, command, timeoutMs = 
   };
   const status = await new Promise((resolve) => {
     if (signal?.aborted) { stopReason = "Cancelled"; resolve({ code: null, signal: null }); return; }
-    const child = spawn(configured[0], argv, { cwd, shell: false, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(configured[0], argv, { cwd: executionCwd, shell: false, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
     const stop = (reason) => { stopReason ??= reason; child.kill("SIGKILL"); };
     const abort = () => stop("Cancelled");
     const timer = setTimeout(() => stop("Timeout"), limit);
@@ -73,5 +86,9 @@ export async function runSimulation(params, { cwd, signal, command, timeoutMs = 
     remote_state: stopReason ? "unknown" : "not_inferred",
   };
   await Promise.all([writeFile(result.artifacts[0], stdout), writeFile(result.artifacts[1], stderr), writeFile(result.artifacts[2], JSON.stringify(result, null, 2))]);
+  if (params.run_id) {
+    await projectWorkspace(cwd,{action:"record_operation",study:params.study,run:params.run_id,result});
+    result.project_run = { study: params.study, id: params.run_id, directory: executionCwd };
+  }
   return result;
 }

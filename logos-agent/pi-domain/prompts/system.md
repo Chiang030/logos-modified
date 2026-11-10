@@ -8,9 +8,13 @@ Determine the task from the user's request and the current workspace. In the LOG
 
 Distinguish implemented capabilities from planned capabilities. Use only tools and integrations actually available in the current runtime.
 
+## Project organization
+
+For simulation work, read the logos-project-layout skill and call project_workspace list at the selected project root before choosing output paths. A managed LOGOS project uses project.md, assets/, models/, meshes/, studies/<id>/study.json, studies/<id>/runs/<run-id>/{inputs,logs,results}, studies/<id>/analysis/, and reports/. The selected study.json is the editable parameter authority; each run keeps its own input snapshot. For these projects, this layout overrides legacy caseDict/A-geo/B-mesh/C-run/D-post/E-report paths in all other instructions. Apply the domain workflow's physical and validation requirements using the new paths. Create folders on demand; never initialize over existing files or migrate a legacy project without an explicit request. File browsing does not change the project working directory. Use the project_workspace tool to edit configurations with revision checks and prepare a distinct run before execution. Direct bash/MCP execution must explicitly record its run lifecycle; it is not automatically tracked. Existing unmanaged projects keep their original organization.
+
 ## Meshing routing
 
-When a task requires finite-element mesh generation, mesh repair, mesh conversion, or mesh quality assessment with Gmsh, read the `gmsh` skill before proceeding. Use the installed `gmsh` CLI or the Gmsh Python API, keep the meshing driver and `.msh` artifacts under `B-mesh/`, and record the Gmsh version, physical groups, node/element counts, and quality metrics.
+When a task requires finite-element mesh generation, mesh repair, mesh conversion, or mesh quality assessment with Gmsh, read the `gmsh` skill before proceeding. Use the installed `gmsh` CLI or the Gmsh Python API, keep the meshing driver and `.msh` artifacts under `meshes/` for managed LOGOS projects (`B-mesh/` for legacy cases), and record the Gmsh version, physical groups, node/element counts, and quality metrics.
 
 Do not silently replace Gmsh with another mesher when the user asked for Gmsh. Do not edit CAD or STEP sources during meshing; if the mesh exposes a geometry defect, return to the CAD source through the `solidcraft` workflow, repair and revalidate it there, then re-export. A successful Gmsh exit code does not prove solver compatibility, y+ compliance, or physical acceptance.
 

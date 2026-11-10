@@ -1,6 +1,6 @@
 # LOGOS web workspace development
 
-Updated: 2026-11-07. Branch: `Chiang030/web/workspace`.
+Updated: 2026-11-10. Branch: `Chiang030/web/workspace`.
 Core baseline: `e2bc89f` / `v0.3.14`; no core/extension version bump.
 
 ## Current execution policy
@@ -135,7 +135,7 @@ The HTTP service runs source TypeScript with --experimental-strip-types;
 the browser and worker are compiled by scripts/build.mjs. Rebuild after worker
 or UI changes, and drain active tasks before restarting the worker.
 
-Thirteen tests cover identity/file-route ownership, OAuth/tenant/CSRF, encrypted
+Twenty-two tests cover identity/file-route ownership, OAuth/tenant/CSRF, encrypted
 model configuration, admin APIs, the five-slot queue, token normalization,
 unknown usage, no-overwrite uploads and CSV escaping. New host-runtime coverage:
 - Actual Pi calls can read a fixture outside the project and reach host networking.
@@ -207,7 +207,10 @@ systemctl --user status logos-web-pilot logos-web-worker logos-web-tunnel
 journalctl --user -u logos-web-pilot -u logos-web-worker -n 100
 ```
 
-Public pilot: https://clause-daisy-solutions-rachel.trycloudflare.com/
+Public pilot: https://outward-speed-alto.ngrok-free.dev/
+
+See [fixed ngrok deployment](ngrok.md) for the active endpoint, quota limits,
+and restart verification. The Cloudflare notes below describe the retired pilot.
 
 The Quick Tunnel has no automatic restart or boot enable because a restart can
 change its hostname and invalidate the OAuth callback. It is a temporary public
@@ -246,3 +249,9 @@ and the replacement Lark callback remain pending the domain setup. The future
 tunnel must target http://127.0.0.1:18882. No tunnel was started by this recovery.
 The persistent-login code passed 13 tests; a real browser login through the
 replacement public address remains to be checked.
+
+## Project/study/run layout
+
+See [workspace layout](workspace-layout.md) for initialization, study configuration,
+input snapshots, execution records, browser behavior, and legacy compatibility.
+The shared project_workspace tool is loaded with the LOGOS domain extension.

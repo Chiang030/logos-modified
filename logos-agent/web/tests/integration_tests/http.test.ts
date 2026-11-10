@@ -44,6 +44,21 @@ test("authenticated file/project workflow enforces users, CSRF and unavailable e
     assert.equal((await request("/api/folders", a, { path: "wing" })).status, 201);
     const project = (await (await request("/api/projects", a, { name: "Wing", directory: "wing", owner: bob.id })).json()).project;
     assert.equal(project.owner, alice.id);
+    const workspace = await (await request("/api/workspace?project=" + project.id)).json();
+    assert.equal(workspace.managed, true); assert.equal(workspace.studies[0].config.id, "baseline");
+    assert.equal((await request("/api/workspace?project=" + project.id, b)).status, 404);
+    assert.equal((await request("/api/workspace", b, { project: project.id, action: "create_study", study: "stolen", name: "Bad" })).status, 404);
+    assert.equal((await request("/api/workspace", a, { project: project.id, action: "create_study", study: "wind-10", name: "Wind 10" })).status, 200);
+    assert.equal((await request("/api/workspace", a, { project: project.id, action: "create_study", study: "wind-10", name: "Duplicate" })).status, 409);
+    assert.equal((await request("/api/workspace", a, { project: project.id, action: "prepare_run", study: "baseline" })).status, 400);
+    const initial = workspace.studies[0]; initial.config.physics = { type: "fluid" }; initial.config.solver.name = "fixture";
+    assert.equal((await request("/api/workspace", a, { project: project.id, action: "save_study", study: "baseline", revision: initial.revision, config: initial.config })).status, 200);
+    assert.equal((await request("/api/workspace", a, { project: project.id, action: "save_study", study: "baseline", revision: initial.revision, config: initial.config })).status, 409);
+    const prepared = await (await request("/api/workspace", a, { project: project.id, action: "prepare_run", study: "baseline" })).json();
+    assert.equal(prepared.status, "prepared");
+    const snapshot = await (await request("/api/preview?project="+project.id+"&path="+encodeURIComponent(prepared.path+"/inputs/study.json"))).json();
+    assert.equal(JSON.parse(snapshot.text).solver.name, "fixture");
+
     assert.equal((await request("/api/upload?project=" + project.id + "&path=case.txt", a, "case-data", "PUT")).status, 201);
     assert.equal((await request("/api/upload?project=" + project.id + "&path=case.txt", a, "overwrite", "PUT")).status, 409);
     assert.equal((await request("/api/preview?project=" + project.id + "&path=case.txt", b)).status, 404);

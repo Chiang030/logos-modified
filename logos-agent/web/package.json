@@ -10,7 +10,7 @@
     "build": "node scripts/build.mjs",
     "start": "node --experimental-strip-types server/main.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/unit_tests/*.test.ts tests/integration_tests/*.test.ts"
+    "test": "node --experimental-strip-types --test tests/unit_tests/*.test.ts tests/integration_tests/*.test.ts ../pi-domain/src/workspace.test.mjs ../pi-domain/src/simulation/runner.test.mjs"
   },
   "dependencies": {
     "react": "^19.1.0",

@@ -1,3 +1,4 @@
+import { registerProjectWorkspace } from "./workspace.mjs";
 import { createLogoComponent, logoOptions } from "../src/ui/logo.mjs";
 import { registerSimulationTool } from "./simulation.mjs";
 import { registerObservability } from "./observability.mjs";
@@ -9,6 +10,7 @@ import registerModelErrorPolicy from "./model-errors.mjs";
 export default async function logosExtension(pi) {
   registerModelErrorPolicy(pi);
   registerSimulationTool(pi);
+  registerProjectWorkspace(pi);
   registerWebSearch(pi);
   registerSoftwareDiscovery(pi);
   await registerObservability(pi);

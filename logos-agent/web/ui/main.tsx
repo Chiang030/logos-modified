@@ -1,3 +1,4 @@
+import { StudyPanel, fileLabel, type WorkspaceOverview } from "./workspace";
 import { StrictMode, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "../../vscode-extension/webview-ui/src/App";
@@ -53,10 +54,18 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
   const entries = fileLocation.project === project?.id ? fileLocation.entries : [];
   const filesReady = filesLoaded && fileLocation.project === project?.id;
   const [tab, setTab] = useState("files"), [sessions, setSessions] = useState<Conversation[]>([]);
+  const [overview, setOverview] = useState<WorkspaceOverview>(), [showInternal, setShowInternal] = useState(false), [organized, setOrganized] = useState(true);
+
   const [notice, setNotice] = useState(""), [selected, setSelected] = useState<string>();
   const [refresh, setRefresh] = useState(0), [picker, setPicker] = useState(false), [uploading, setUploading] = useState("");
   const [search, setSearch] = useState(""), [adminOpen, setAdminOpen] = useState(false);
   const [softwareOpen,setSoftwareOpen]=useState<false|"load"|"scan">(false);
+  useEffect(() => {
+    let current = true;
+    if (!project || preview) { setOverview(preview ? { managed:false,studies:[] } : undefined); return; }
+    void api<WorkspaceOverview>("/api/workspace?project="+encodeURIComponent(project.id)).then(value=>{if(current)setOverview(value);}).catch(error=>{if(current)setNotice(message(error));});
+    return ()=>{current=false;};
+  }, [project, refresh, preview]);
   const fileInput = useRef<HTMLInputElement>(null), folderInput = useRef<HTMLInputElement>(null);
   const bridge = useMemo(() => project ? new BrowserBridge(project, user, preview, boot.version, setNotice, setSelected, () => setAdminOpen(true), () => setSoftwareOpen("scan")) : undefined, [project, user, preview, boot.version]);
   useEffect(() => { if (!preview) void api<{ projects: Project[] }>("/api/projects").then((r) => {
@@ -95,14 +104,14 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
       if (event.type === "session/list") setSessions(event.sessions.map((s) => ({ id: s.sessionId, title: s.title, project: project!.id })));
     });
   }, [bridge, project]);
-  const select = (value: Project | undefined): void => { if (!preview) {if(value)localStorage.setItem("logos-project-"+user.id,value.id);else localStorage.removeItem("logos-project-"+user.id);} fileRequest.current++; filePending.current = false; setFilesLoaded(false); setFileLocation({ project: "", path: "", entries: [] }); setProject(value); if (value && value === project) void loadFiles(value, ""); setSelected(undefined); setNotice(""); setSearch(""); };
+  const select = (value: Project | undefined): void => { if (!preview) {if(value)localStorage.setItem("logos-project-"+user.id,value.id);else localStorage.removeItem("logos-project-"+user.id);} fileRequest.current++; filePending.current = false; setFilesLoaded(false); setFileLocation({ project: "", path: "", entries: [] }); if(value !== project)setOverview(undefined); setProject(value); if (value && value === project) void loadFiles(value, ""); setSelected(undefined); setNotice(""); setSearch(""); };
   const transfer = async (files: FileList | null): Promise<void> => {
     if (!files?.length || !project || preview || filePending.current || !filesReady) return;
     let completed = 0;
     try {
       for (const file of Array.from(files)) {
         setUploading("上传 " + (completed + 1) + "/" + files.length + " · " + file.name);
-        await upload([project.directory, folder, file.webkitRelativePath || file.name].filter(Boolean).join("/"), file);
+        await upload([project.directory, folder || (overview?.managed ? "assets" : ""), file.webkitRelativePath || file.name].filter(Boolean).join("/"), file);
         completed++;
       }
       setNotice("已上传 " + completed + " 个文件");
@@ -125,20 +134,22 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
         <div className="section-label">我的项目 <span>{projects.length}</span></div>
         <div className="project-switcher">{projects.map((item) => <button key={item.id} className={project?.id === item.id ? "selected" : ""} onClick={() => select(item)}><span>◇</span><span>{item.name}</span></button>)}</div>
         {project ? <>
-          <div className="explorer-tabs"><button className={tab === "files" ? "active" : ""} onClick={() => setTab("files")}>文件</button><button className={tab === "sessions" ? "active" : ""} onClick={() => setTab("sessions")}>会话</button></div>
+          <div className="explorer-tabs"><button className={tab === "files" ? "active" : ""} onClick={() => setTab("files")}>文件</button><button className={tab === "studies" ? "active" : ""} onClick={() => setTab("studies")}>方案</button><button className={tab === "sessions" ? "active" : ""} onClick={() => setTab("sessions")}>会话</button></div>
           {tab === "files" ? <>
-            <div className="file-actions"><button title="上传文件" disabled={preview || Boolean(uploading) || filesLoading || !filesReady} onClick={() => fileInput.current?.click()}>↑ 文件</button><button title="上传文件夹" disabled={preview || Boolean(uploading) || filesLoading || !filesReady} onClick={() => folderInput.current?.click()}>↑ 文件夹</button><button title="刷新文件" aria-label="刷新文件" disabled={filesLoading} onClick={() => setRefresh((n) => n + 1)}>↻</button></div>
+            <div className="file-actions"><button title="上传文件" disabled={preview || Boolean(uploading) || filesLoading || !filesReady} onClick={() => fileInput.current?.click()}>↑ 文件</button><button title="上传文件夹" disabled={preview || Boolean(uploading) || filesLoading || !filesReady} onClick={() => folderInput.current?.click()}>↑ 文件夹</button><button title="刷新文件" aria-label="刷新文件" disabled={filesLoading} onClick={() => { filePending.current = true; setFilesLoading(true); setRefresh((n) => n + 1); }}>↻</button></div>
             <input hidden multiple type="file" ref={fileInput} onChange={(event) => void transfer(event.target.files)} />
             <input hidden multiple type="file" ref={folderInput} {...{ webkitdirectory: "" }} onChange={(event) => void transfer(event.target.files)} />
+            <div className="file-view-options"><label><input type="checkbox" checked={showInternal} onChange={e=>setShowInternal(e.target.checked)}/>显示内部文件</label>{overview?.managed?<label><input type="checkbox" checked={organized} onChange={e=>setOrganized(e.target.checked)}/>中文分类</label>:null}</div>
+            {overview?.managed && !folder ? <div className="asset-actions">{["assets","models","meshes","reports"].filter(name=>!entries.some(e=>e.name===name)).map(name=><button key={name} disabled={filesLoading || !filesReady || preview} onClick={()=>void api("/api/workspace",{project:project.id,action:"create_folder",name}).then(()=>setRefresh(n=>n+1)).catch(e=>setNotice(message(e)))}>＋{fileLabel("",name)}</button>)}</div>:null}
             <input className="file-search" aria-label="筛选当前目录文件" placeholder="查找当前目录文件…" value={search} onChange={(event) => setSearch(event.target.value)} />
             <div className="file-location"><button disabled={!folder || filesLoading || !filesReady} title="上一级" onClick={() => navigateFiles(parent(folder))}>←</button><span title={folder}>{folder || project.directory}</span></div>
-            <div className="file-list" aria-busy={filesLoading}>{filesLoading ? <div className="empty-note" role="status">正在读取文件夹…</div> : !filesReady ? <div className="empty-note">目录尚未读取成功，请点击刷新重试。</div> : entries.filter((entry) => entry.name.toLowerCase().includes(search.toLowerCase())).map((entry) => <button key={entry.name} className={selected === [folder, entry.name].filter(Boolean).join("/") ? "selected" : ""} onClick={() => {
+            <div className="file-list" aria-busy={filesLoading}>{filesLoading ? <div className="empty-note" role="status">正在读取文件夹…</div> : !filesReady ? <div className="empty-note">目录尚未读取成功，请点击刷新重试。</div> : entries.filter((entry) => (showInternal || !entry.name.startsWith(".")) && (entry.name+" "+(overview?.managed ? fileLabel(folder,entry.name) : "")).toLowerCase().includes(search.toLowerCase())).map((entry) => <button key={entry.name} className={selected === [folder, entry.name].filter(Boolean).join("/") ? "selected" : ""} onClick={() => {
               if (filePending.current || !filesReady) return;
               const path = [folder, entry.name].filter(Boolean).join("/");
               if (entry.directory) navigateFiles(path); else setSelected(path);
-            }}><span className={entry.directory ? "folder-icon" : "document-icon"}>{entry.directory ? "▸" : "≡"}</span><span>{entry.name}</span><small>{entry.directory ? "" : bytes(entry.size)}</small></button>)}
-              {!filesLoading && filesReady && !entries.length ? <div className="empty-note">此目录为空<br />上传资料后即可在这里查看。</div> : null}</div>
-          </> : <div className="session-list-web"><button className="new-session-button" onClick={() => bridge?.postMessage({ type: "session/new" })}>＋ 新建会话</button>{sessions.map((item) => <button key={item.id} onClick={() => bridge?.postMessage({ type: "session/select", sessionId: item.id })}>{item.title}</button>)}{!sessions.length ? <p className="empty-note">尚无历史会话</p> : null}</div>}
+            }}><span className={entry.directory ? "folder-icon" : "document-icon"}>{entry.directory ? "▸" : "≡"}</span><span title={entry.name}>{overview?.managed && organized ? fileLabel(folder,entry.name) : entry.name}</span><small>{entry.directory ? "" : bytes(entry.size)}</small></button>)}
+              {!filesLoading && filesReady && !entries.some(e=>showInternal || !e.name.startsWith(".")) ? <div className="empty-note">此目录暂无可见文件<br />上传资料后即可在这里查看。</div> : null}</div>
+          </> : tab === "studies" ? <StudyPanel key={project.id} project={project} overview={overview} refresh={()=>setRefresh(n=>n+1)} notice={setNotice} browse={(path,file)=>{if(file)setSelected(path);else{setTab("files");navigateFiles(path);}}}/> : <div className="session-list-web"><button className="new-session-button" onClick={() => bridge?.postMessage({ type: "session/new" })}>＋ 新建会话</button>{sessions.map((item) => <button key={item.id} onClick={() => bridge?.postMessage({ type: "session/select", sessionId: item.id })}>{item.title}</button>)}{!sessions.length ? <p className="empty-note">尚无历史会话</p> : null}</div>}
         </> : <div className="empty-note">先选择个人文件夹，再建立项目。<br />每个项目独立保存会话。</div>}
         <div className="explorer-footer"><span className="status-dot" />{preview ? "示例资料 · 不保存操作" : "文件列表 · 按登录账号显示"}</div>
       </aside>
