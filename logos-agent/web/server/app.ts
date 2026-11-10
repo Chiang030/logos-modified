@@ -14,6 +14,8 @@ import { Meter } from "./usage.ts";
 import { control, prompt, type Control } from "./control.ts";
 import { Software } from "./software.ts";
 
+const productVersion: string = JSON.parse(await readFile(new URL("../../package.json", import.meta.url), "utf8")).version;
+
 export interface Services { config: Config; store: Store; files: WorkspaceFiles; assets: string; }
 export function createHandler(services: Services): (req: IncomingMessage, res: ServerResponse) => void {
   const resources = { ...services, models: new Models(services.store, join(services.config.data,"state")), jobs: new Jobs(services.store), meter: new Meter(services.store), software: new Software(services.config.data) };
@@ -33,7 +35,7 @@ async function route(s: Services & Control, req: IncomingMessage, res: ServerRes
     let identity: ReturnType<Store["authenticate"]> | undefined;
     try { identity = store.refreshLogin(cookies(req).logos_session); res.setHeader("Set-Cookie", cookie(config, "logos_session", cookies(req).logos_session!, LOGIN_MAX_AGE_SECONDS)); } catch (error) { if (!(error instanceof HttpError) || error.status !== 401) throw error; }
     json(res, { user: identity?.user ?? null, csrf: identity?.csrf, feishuReady: ready(config), identityLabel: identityName(config), previewEnabled: config.preview,
-      version: "0.3.14", executionReady: s.jobs.health().ready, executionReason: s.jobs.health().reason });
+      version: productVersion, executionReady: s.jobs.health().ready, executionReason: s.jobs.health().reason });
     return;
   }
   if (url.pathname === "/auth/feishu" && method === "GET") {

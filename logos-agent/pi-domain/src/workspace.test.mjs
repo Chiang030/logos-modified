@@ -63,8 +63,10 @@ test("run snapshots preserve input contents and are distinct across retries; exe
 test("snapshot rejects symlinks and leaves a visible preparation failure without reading outside the project",async t=>{
   const root=await initialized(t);await configured(root);
   const outside=await fixture(t);await writeFile(join(outside,"secret"),"not-project-data");
-  await symlink(join(outside,"secret"),join(root,"models/link"));
-  const info=(await projectWorkspace(root,{action:"list"})).studies[0];info.config.inputs=["models/link"];
+  const linkedInput = process.platform === "win32" ? "models/link/secret" : "models/link";
+  if (process.platform === "win32") await symlink(outside,join(root,"models/link"),"junction");
+  else await symlink(join(outside,"secret"),join(root,"models/link"));
+  const info=(await projectWorkspace(root,{action:"list"})).studies[0];info.config.inputs=[linkedInput];
   await projectWorkspace(root,{action:"save_study",study:"baseline",revision:info.revision,config:info.config});
   await assert.rejects(projectWorkspace(root,{action:"prepare_run",study:"baseline"}));
   const overview=await projectWorkspace(root,{action:"list"});assert.equal(overview.studies[0].runs[0].status,"preparation_failed");

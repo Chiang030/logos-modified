@@ -1,7 +1,8 @@
 # LOGOS web workspace development
 
 Updated: 2026-11-10. Branch: `Chiang030/web/workspace`.
-Core baseline: `e2bc89f` / `v0.3.14`; no core/extension version bump.
+Integrated release: `v0.3.15`, including web, CLI/domain, and VS Code sources.
+The pre-web baseline was `e2bc89f` / `v0.3.14`.
 
 ## Current execution policy
 
@@ -117,7 +118,7 @@ preview, editor, user quota, project-deletion UI or automatic backup scheduler.
 
 ## Build and tests
 
-Linux and Node.js 22.23.3 are required. Node's SQLite experimental warning is
+Linux and Node.js >=22.19 are required. Node's SQLite experimental warning is
 retained. No backend framework or ORM was added.
 
 ```sh
@@ -199,11 +200,11 @@ Expired or logged-out sessions cannot be renewed; admin status refreshes at logi
 platform/application, tenant and open ID. A second real employee login remains
 an operational rollout check.
 
-Services: logos-web-pilot (HTTP), logos-web-worker (tasks), logos-web-tunnel.
+Services: logos-web-pilot (HTTP), logos-web-worker (tasks), logos-web-ngrok.
 The deploy templates use @REPOSITORY@ as an absolute-path placeholder.
 
 ```sh
-systemctl --user status logos-web-pilot logos-web-worker logos-web-tunnel
+systemctl --user status logos-web-pilot logos-web-worker logos-web-ngrok
 journalctl --user -u logos-web-pilot -u logos-web-worker -n 100
 ```
 
@@ -244,11 +245,9 @@ The old pilot port 18881 was occupied by another service. LOGOS now listens on
 127.0.0.1:18882. The HTTP and task units are enabled under the account user
 manager, with lingering already enabled and Restart=on-failure. Local bootstrap
 responds successfully and reports the task worker ready. The old Quick Tunnel
-is inactive and its previous public hostname does not resolve; public access
-and the replacement Lark callback remain pending the domain setup. The future
-tunnel must target http://127.0.0.1:18882. No tunnel was started by this recovery.
-The persistent-login code passed 13 tests; a real browser login through the
-replacement public address remains to be checked.
+is inactive. The fixed ngrok endpoint now targets port 18882, and its Lark
+callback has been added by the administrator. Persistent-login tests pass;
+a real browser session should retain login when refreshed on that domain.
 
 ## Project/study/run layout
 

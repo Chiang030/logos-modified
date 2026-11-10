@@ -27,7 +27,7 @@ your current project directory. `install.sh` below is an optional convenience
 script for the same preparation plus a shortcut, not a required system install.
 
 ```bash
-tar -xzf logos-server-20261009.tar.gz
+tar -xzf logos-server-v0.3.15.tar.gz
 cd logos-server
 bash install.sh --with-sim --shortcut
 nano logos-agent/.env
@@ -62,7 +62,7 @@ Windows virtual environments and node_modules are never copied to Linux.
 
 ## Included and excluded
 
-Included: current CLI, character logo, prompts, eight product Skills, simulation
+Included: web workspace and shared VS Code UI, current CLI, character logo, prompts, eight product Skills, simulation
 tools and patched sim sources, complete Pi source, package locks and upstream
 licenses. Excluded: real `.env`, API keys, installed dependencies, virtual
 environments, Git history, operation logs and host-specific caches. Configure
@@ -75,3 +75,10 @@ Ansys, licensing, GUI attachment and physical acceptance require server tests.
 For GUI control, start sim serve from an interactive desktop; SSH alone does
 not provide a desktop session. Redeploy/restart remote sim servers to load the
 patched source. No solver or user project is launched by installation checks.
+
+## Web workspace
+
+On Linux, run `bash install.sh --with-web` to install and build the web workspace.
+See [web setup](logos-agent/web/docs/install.md) for Lark authentication, persistent
+login, administrator model configuration, systemd services, and optional ANSYS
+license service setup. Credentials and user data stay outside the source bundle.

@@ -1,6 +1,7 @@
 # LOGOS workspace layout
 
-Implemented on the server branch on 2026-11-10 without a core version bump.
+Released with LOGOS v0.3.15 on 2026-11-10. The web service runs on Linux;
+the shared project workspace tool also supports Windows and macOS desktop paths.
 
 An empty folder registered as a new project receives project.md,
 studies/baseline/study.json, and .logos/project.json. Existing nonempty folders

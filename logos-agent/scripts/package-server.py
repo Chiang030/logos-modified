@@ -11,42 +11,60 @@ repository = Path(__file__).resolve().parents[2]
 product = repository / "logos-agent"
 output = product / "dist"
 output.mkdir(exist_ok=True)
-release = "logos-server-20261009"
-excluded_dirs = {".git", "node_modules", ".venv", "__pycache__", ".pytest_cache", ".logos", ".pi", "dist", ".artifacts", "packages", "previews"}
-
-def collect(root, prefix):
-    import os
-    files = {}
-    for directory, dirs, names in os.walk(root, followlinks=False):
-        # `packages` is excluded only for LOGOS integration download caches,
-        # never for the Pi monorepo's source packages.
-        skip = excluded_dirs - {"packages"}
-        dirs[:] = [d for d in dirs if d not in skip and not (d == "packages" and Path(directory) == product / "integrations")]
-        for name in names:
-            if name == ".git" or (name.startswith(".env") and name != ".env.example"):
+def collect(root: Path, prefix: str, pathspec: str = "") -> tuple[dict[str, bytes], dict[str, int]]:
+    """Read committed sources only, excluding local credentials and build products."""
+    command = ["git", "-C", str(root), "archive", "--format=tar", "HEAD"]
+    if pathspec:
+        command.append(pathspec)
+    payload = subprocess.check_output(command)
+    files: dict[str, bytes] = {}
+    modes: dict[str, int] = {}
+    with tarfile.open(fileobj=io.BytesIO(payload)) as archive:
+        for entry in archive:
+            if entry.isdir():
                 continue
-            if name.endswith((".pyc", ".log", ".whl")):
+            if not entry.isfile():
+                raise ValueError(f"Unsupported archive entry: {entry.name}")
+            name = prefix + entry.name
+            parts = Path(name).parts
+            if any(part in {"node_modules", ".venv", ".git", "runtime", "dist"} for part in parts):
                 continue
-            path = Path(directory) / name
-            if path.is_symlink():
-                path.resolve().relative_to(repository)
-            relative = path.relative_to(root).as_posix()
-            files[prefix + "/" + relative] = path.read_bytes()
-    return files
+            if Path(name).name.startswith(".env") and Path(name).name != ".env.example":
+                continue
+            if name.endswith((".vsix", ".log", ".pyc")):
+                continue
+            stream = archive.extractfile(entry)
+            assert stream is not None
+            files[name] = stream.read()
+            modes[name] = entry.mode
+    return files, modes
 
-files = collect(product, "logos-agent")
-files.update(collect(repository / "vendor/pi", "vendor/pi"))
+
+files, modes = collect(repository, "", "logos-agent")
+pi_files, pi_modes = collect(repository / "vendor/pi", "vendor/pi/")
+files.update(pi_files)
+modes.update(pi_modes)
+version = json.loads(files["logos-agent/package.json"])["version"]
+release = f"logos-server-v{version}"
 for relative in ("README.md", "install.sh", "start.sh", "logos.cmd", "bin/logos"):
-    files[relative] = (product / "deploy" / relative).read_bytes()
+    source = "logos-agent/deploy/" + relative
+    files[relative] = files[source]
+    modes[relative] = 0o755 if relative in ("bin/logos", "install.sh", "start.sh") else 0o644
 revision = subprocess.check_output(["git", "-C", str(repository / "vendor/pi"), "rev-parse", "HEAD"], text=True).strip()
-manifest = {"release": release, "pi_revision": revision,
+product_revision = subprocess.check_output(["git", "-C", str(repository), "rev-parse", "HEAD"], text=True).strip()
+pinned_revision = subprocess.check_output(["git", "-C", str(repository), "rev-parse", "HEAD:vendor/pi"], text=True).strip()
+if revision != pinned_revision:
+    raise ValueError("Pi checkout does not match the committed submodule revision")
+manifest = {"release": release, "version": version, "revision": product_revision, "pi_revision": revision,
             "distribution": "online-install-source", "node": ">=22.19", "python": ">=3.10",
             "files": {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())}}
 files["MANIFEST.json"] = (json.dumps(manifest, indent=2) + "\n").encode()
+modes["MANIFEST.json"] = 0o644
 required = ["vendor/pi/package-lock.json", "vendor/pi/packages/coding-agent/src/cli.ts",
             "vendor/pi/packages/coding-agent/src/experimental/source-resolver.ts",
             "logos-agent/.env.example", "logos-agent/pi-domain/extensions/simulation.mjs",
-            "logos-agent/integrations/sim-cli/src/sim/installations.py", "bin/logos", "install.sh"]
+            "logos-agent/integrations/sim-cli/src/sim/installations.py", "bin/logos", "install.sh", "logos-agent/web/server/main.ts",
+            "logos-agent/web/deploy/.env.example", "logos-agent/web/scripts/install-ansys-license.py"]
 assert all(name in files for name in required)
 assert not any(Path(name).name == ".env" or "node_modules" in Path(name).parts or ".venv" in Path(name).parts for name in files)
 tar_path = output / (release + ".tar.gz")
@@ -55,13 +73,13 @@ with tarfile.open(tar_path, "w:gz") as archive:
     for name, data in sorted(files.items()):
         info = tarfile.TarInfo("logos-server/" + name)
         info.size = len(data)
-        info.mode = 0o755 if name in ("bin/logos", "install.sh", "start.sh") else 0o644
+        info.mode = modes[name]
         archive.addfile(info, io.BytesIO(data))
 with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
     for name, data in sorted(files.items()):
         info = zipfile.ZipInfo("logos-server/" + name)
         info.create_system = 3
-        mode = 0o755 if name in ("bin/logos", "install.sh", "start.sh") else 0o644
+        mode = modes[name]
         info.external_attr = (0o100000 | mode) << 16
         info.compress_type = zipfile.ZIP_DEFLATED
         archive.writestr(info, data)

@@ -2,18 +2,27 @@
 set -eu
 logos_root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 logos_with_sim=0
+logos_with_web=0
 logos_shortcut=0
 for logos_option in "$@"; do
   case "$logos_option" in
+    --with-web) logos_with_web=1 ;;
     --with-sim) logos_with_sim=1 ;;
     --shortcut) logos_shortcut=1 ;;
-    *) echo "Usage: bash install.sh [--with-sim] [--shortcut]" >&2; exit 2 ;;
+    *) echo "Usage: bash install.sh [--with-sim] [--with-web] [--shortcut]" >&2; exit 2 ;;
   esac
 done
 command -v node >/dev/null || { echo "Install Node.js >=22.19 first." >&2; exit 1; }
 command -v npm >/dev/null || { echo "Install npm first." >&2; exit 1; }
 node -e 'const [a,b]=process.versions.node.split(".").map(Number); if(a<22||(a===22&&b<19)){console.error("Node.js >=22.19 required");process.exit(1)}'
 npm --prefix "$logos_root/logos-agent" run pi:setup
+npm --prefix "$logos_root/logos-agent/pi-domain" ci --no-fund
+if [ "$logos_with_web" = 1 ]; then
+  npm --prefix "$logos_root/logos-agent/vscode-extension" ci --no-fund
+  npm --prefix "$logos_root/logos-agent/web" ci --no-fund
+  npm --prefix "$logos_root/logos-agent/web" run build
+  echo "Web built. Configure OAuth and services using logos-agent/web/docs/install.md."
+fi
 if [ "$logos_with_sim" = 1 ]; then
   command -v python3 >/dev/null || { echo "Install Python 3.10+ and python3-venv first." >&2; exit 1; }
   python3 "$logos_root/logos-agent/integrations/setup.py"
