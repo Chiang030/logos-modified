@@ -65,7 +65,7 @@ required = ["vendor/pi/package-lock.json", "vendor/pi/packages/coding-agent/src/
             "logos-agent/.env.example", "logos-agent/pi-domain/extensions/simulation.mjs",
             "logos-agent/integrations/sim-cli/src/sim/installations.py", "bin/logos", "install.sh", "logos-agent/web/server/main.ts",
             "logos-agent/web/deploy/.env.example", "logos-agent/web/scripts/install-ansys-license.py"]
-assert all(name in files for name in required)
+assert all(name in files for name in required), [name for name in required if name not in files]
 assert not any(Path(name).name == ".env" or "node_modules" in Path(name).parts or ".venv" in Path(name).parts for name in files)
 tar_path = output / (release + ".tar.gz")
 zip_path = output / (release + ".zip")
