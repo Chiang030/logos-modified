@@ -177,7 +177,7 @@ PATH correction selects Gmsh 4.15.2. Simulated tests use separate databases.
 | Variable | Meaning |
 | --- | --- |
 | LOGOS_WEB_HOST | Default 127.0.0.1 |
-| LOGOS_WEB_PORT | Default 18880; pilot uses 18881 |
+| LOGOS_WEB_PORT | Default 18880; pilot uses 18882 |
 | LOGOS_WEB_PUBLIC_URL | Exact public origin, without a subpath |
 | LOGOS_WEB_DATA_DIR | Default ~/.local/share/logos-web, outside the checkout |
 | LOGOS_WEB_PREVIEW | Default 0; 1 permits loopback static UI preview |
@@ -234,3 +234,15 @@ decryption and a controlled task before reopening access.
 For a database-only online snapshot use SQLite's backup API, not a copy of only
 the live main DB. A pre-runtime snapshot is under the pilot backups directory.
 No automated backup scheduler or restore drill is claimed.
+
+## Local service recovery on 2026-11-10
+
+The old pilot port 18881 was occupied by another service. LOGOS now listens on
+127.0.0.1:18882. The HTTP and task units are enabled under the account user
+manager, with lingering already enabled and Restart=on-failure. Local bootstrap
+responds successfully and reports the task worker ready. The old Quick Tunnel
+is inactive and its previous public hostname does not resolve; public access
+and the replacement Lark callback remain pending the domain setup. The future
+tunnel must target http://127.0.0.1:18882. No tunnel was started by this recovery.
+The persistent-login code passed 13 tests; a real browser login through the
+replacement public address remains to be checked.
