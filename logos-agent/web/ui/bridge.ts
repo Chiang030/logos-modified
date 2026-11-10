@@ -1,6 +1,7 @@
 import type { HostBridge } from "../../vscode-extension/webview-ui/src/hostBridge";
 import type { ExtensionToWebviewMessage, ModelOption } from "../../vscode-extension/webview-ui/src/protocol";
 import { api, type Conversation, type Project, type User } from "./api";
+import { requestId } from "./browser";
 
 interface Run {id:string;status:string;error?:string;created:number;}
 export class BrowserBridge implements HostBridge {
@@ -60,7 +61,7 @@ export class BrowserBridge implements HostBridge {
         if(this.preview)throw new Error("这是只读界面预览，没有提交任务");
         await this.catalog();if(!this.selected)throw new Error("管理员尚未开放模型，请先配置 API");
         if(!this.active){const result=await api<{session:Conversation}>("/api/sessions",{project:this.project.id});await this.selectSession(result.session.id);}
-        const input={project:this.project.id,command:{type:"chat/send",text:command.text,session:this.active,connection:this.selected.provider,model:this.selected.id,thinking:this.thinking,requestKey:crypto.randomUUID()}};
+        const input={project:this.project.id,command:{type:"chat/send",text:command.text,session:this.active,connection:this.selected.provider,model:this.selected.id,thinking:this.thinking,requestKey:requestId()}};
         const submit=()=>api<{run:Run}>("/api/bridge",input);
         let result;try{result=await submit();}catch(error){if(!(error instanceof TypeError))throw error;result=await submit();}
         this.run=result.run;this.emit({type:"runtime/status",status:"starting",detail:"排队中"});

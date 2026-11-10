@@ -4,10 +4,12 @@ import { createRoot } from "react-dom/client";
 import { App } from "../../vscode-extension/webview-ui/src/App";
 import logo from "../../vscode-extension/resources/logos_full_restored_transparent.png";
 import { BrowserBridge } from "./bridge";
+import { installClipboardFallback } from "./browser";
 import { AdminPanel } from "./admin";
 import { SoftwareDialog } from "./software";
 import { api, query, setCsrf, upload, type Bootstrap, type Entry, type Project, type Conversation } from "./api";
 
+installClipboardFallback();
 const demoProject: Project = { id: "preview-project", name: "机翼设计 · 示例项目", directory: "wing-study" };
 const demoFiles: Entry[] = [
   { name: "geometry", directory: true, size: 0, modified: 0 },
