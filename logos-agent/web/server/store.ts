@@ -4,6 +4,8 @@ import { dirname } from "node:path";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { HttpError } from "./errors.ts";
 
+export const LOGIN_MAX_AGE_SECONDS = 30 * 24 * 3600;
+
 export interface User { id: string; name: string; admin: boolean; }
 export interface Project { id: string; owner: string; name: string; directory: string; created: number; }
 export interface Session { id: string; owner: string; project: string; title: string; created: number; }
@@ -38,7 +40,7 @@ export class Store {
   login(user: User): { token: string; csrf: string } {
     const token = randomBytes(32).toString("hex"), csrf = randomBytes(24).toString("hex");
     this.db.prepare("DELETE FROM auth_sessions WHERE expires<?").run(Date.now());
-    this.db.prepare("INSERT INTO auth_sessions VALUES(?,?,?,?)").run(digest(token), user.id, csrf, Date.now() + 12 * 3600_000);
+    this.db.prepare("INSERT INTO auth_sessions VALUES(?,?,?,?)").run(digest(token), user.id, csrf, Date.now() + LOGIN_MAX_AGE_SECONDS * 1000);
     return { token, csrf };
   }
   authenticate(token: string | undefined): { user: User; csrf: string } {
@@ -46,6 +48,15 @@ export class Store {
       .get(digest(token), Date.now()) as unknown as (UserRow & { csrf: string }) | undefined;
     if (!row) throw new HttpError(401, "请先登录");
     return { user: { id: row.id, name: row.name, admin: Boolean(row.admin) }, csrf: row.csrf };
+  }
+  /** Extend an authenticated browser login without reviving expired or revoked tokens. */
+  refreshLogin(token: string | undefined): { user: User; csrf: string } {
+    const identity = this.authenticate(token);
+    const now = Date.now();
+    const result = this.db.prepare("UPDATE auth_sessions SET expires=? WHERE hash=? AND expires>?")
+      .run(now + LOGIN_MAX_AGE_SECONDS * 1000, digest(token!), now);
+    if (!result.changes) throw new HttpError(401, "请先登录");
+    return identity;
   }
   logout(token: string): void { this.db.prepare("DELETE FROM auth_sessions WHERE hash=?").run(digest(token)); }
   saveState(state: string): void {

@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
-import { Store } from "./store.ts";
+import { Store, LOGIN_MAX_AGE_SECONDS } from "./store.ts";
 import { WorkspaceFiles, segments } from "./files.ts";
 import { beginLogin, completeLogin, cookie, cookies, equal, ready, identityName, type Config } from "./auth.ts";
 import { HttpError, text } from "./errors.ts";
@@ -30,7 +30,7 @@ async function route(s: Services & Control, req: IncomingMessage, res: ServerRes
   const url = new URL(req.url ?? "/", config.publicUrl), method = req.method ?? "GET";
   if (url.pathname === "/api/bootstrap" && method === "GET") {
     let identity: ReturnType<Store["authenticate"]> | undefined;
-    try { identity = store.authenticate(cookies(req).logos_session); } catch (error) { if (!(error instanceof HttpError) || error.status !== 401) throw error; }
+    try { identity = store.refreshLogin(cookies(req).logos_session); res.setHeader("Set-Cookie", cookie(config, "logos_session", cookies(req).logos_session!, LOGIN_MAX_AGE_SECONDS)); } catch (error) { if (!(error instanceof HttpError) || error.status !== 401) throw error; }
     json(res, { user: identity?.user ?? null, csrf: identity?.csrf, feishuReady: ready(config), identityLabel: identityName(config), previewEnabled: config.preview,
       version: "0.3.14", executionReady: s.jobs.health().ready, executionReason: s.jobs.health().reason });
     return;
@@ -43,7 +43,7 @@ async function route(s: Services & Control, req: IncomingMessage, res: ServerRes
     const state = url.searchParams.get("state") ?? "", code = url.searchParams.get("code") ?? "";
     if (!state || !equal(state, cookies(req).logos_oauth ?? "") || !store.consumeState(state) || !code) throw new HttpError(400, "登录请求已过期，请重新登录");
     const user = await completeLogin(config, store, code), session = store.login(user);
-    res.writeHead(302, { Location: "/", "Set-Cookie": [cookie(config, "logos_session", session.token, 43200), cookie(config, "logos_oauth", "", 0)], "Cache-Control": "no-store" }); res.end(); return;
+    res.writeHead(302, { Location: "/", "Set-Cookie": [cookie(config, "logos_session", session.token, LOGIN_MAX_AGE_SECONDS), cookie(config, "logos_oauth", "", 0)], "Cache-Control": "no-store" }); res.end(); return;
   }
   if (url.pathname === "/favicon.ico" && method === "GET") { res.writeHead(204); res.end(); return; }
   if (!url.pathname.startsWith("/api/")) { await asset(s.assets, url.pathname, method, res); return; }

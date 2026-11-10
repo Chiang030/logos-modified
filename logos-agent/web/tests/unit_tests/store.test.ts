@@ -87,3 +87,27 @@ test("Lark uses international endpoints and accepts string success codes without
         : Response.json({ code: 0, data: { open_id: "alice", tenant_key: "another-company", name: "Alice" } })), /允许的企业/);
   } finally { store.close(); await rm(directory, { recursive: true, force: true }); }
 });
+
+test("remembered login survives reloads and restarts, renews for 30 days, and respects expiry/logout", async t => {
+  const directory = await mkdtemp(join(tmpdir(), "logos-login-lifetime-")), file = join(directory, "db.sqlite");
+  let store = new Store(file), now = Date.now();
+  t.mock.method(Date, "now", () => now);
+  const day = 24 * 3600_000;
+  try {
+    const login = store.login(store.user("remembered", "Remembered user"));
+    now += 13 * 3600_000;
+    assert.equal(store.refreshLogin(login.token).csrf, login.csrf);
+    store.close(); store = new Store(file);
+    now += 29 * day;
+    assert.equal(store.refreshLogin(login.token).user.name, "Remembered user");
+    now += 29 * day;
+    assert.equal(store.refreshLogin(login.token).csrf, login.csrf);
+    store.logout(login.token);
+    assert.throws(() => store.refreshLogin(login.token), /登录/);
+    const expired = store.login(store.user("expired", "Expired user"));
+    now += 30 * day;
+    assert.throws(() => store.refreshLogin(expired.token), /登录/);
+    assert.throws(() => store.authenticate(expired.token), /登录/);
+    assert.throws(() => store.refreshLogin(undefined), /登录/);
+  } finally { store.close(); await rm(directory, { recursive: true, force: true }); }
+});

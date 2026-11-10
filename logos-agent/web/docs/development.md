@@ -135,7 +135,7 @@ The HTTP service runs source TypeScript with --experimental-strip-types;
 the browser and worker are compiled by scripts/build.mjs. Rebuild after worker
 or UI changes, and drain active tasks before restarting the worker.
 
-Twelve tests cover identity/file-route ownership, OAuth/tenant/CSRF, encrypted
+Thirteen tests cover identity/file-route ownership, OAuth/tenant/CSRF, encrypted
 model configuration, admin APIs, the five-slot queue, token normalization,
 unknown usage, no-overwrite uploads and CSV escaping. New host-runtime coverage:
 - Actual Pi calls can read a fixture outside the project and reach host networking.
@@ -193,7 +193,9 @@ Data: `~/.local/share/logos-web-pilot`.
 The callback stays `/auth/feishu/callback` for both identity platforms.
 Lark uses accounts.larksuite.com authorization and open.larksuite.com token/
 profile APIs. The application must be published and available to employees.
-Sessions expire after 12 hours; admin status refreshes at login. Identity binds
+Browser login cookies and database sessions last 30 days. An authenticated
+bootstrap (opening or refreshing the workbench) renews both for another 30 days.
+Expired or logged-out sessions cannot be renewed; admin status refreshes at login. Identity binds
 platform/application, tenant and open ID. A second real employee login remains
 an operational rollout check.
 

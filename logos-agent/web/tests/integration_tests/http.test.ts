@@ -25,8 +25,19 @@ test("authenticated file/project workflow enforces users, CSRF and unavailable e
   }
   try {
     assert.equal((await fetch(config.publicUrl + "/api/projects")).status, 401);
-    const bootstrap = await (await request("/api/bootstrap")).json();
+    const firstLoad = await request("/api/bootstrap");
+    const bootstrap = await firstLoad.json();
     assert.equal(bootstrap.user.id, alice.id); assert.equal(bootstrap.feishuReady, false);
+    const remembered = firstLoad.headers.get("set-cookie") ?? "";
+    assert.ok(remembered.startsWith("logos_session=" + a.token + ";"));
+    assert.match(remembered, /Max-Age=2592000/);
+    assert.match(remembered, /HttpOnly; SameSite=Lax/);
+    const reload = await fetch(config.publicUrl + "/api/bootstrap", { headers: { Cookie: remembered.split(";")[0] } });
+    assert.equal((await reload.json()).user.id, alice.id);
+    assert.match(reload.headers.get("set-cookie") ?? "", /Max-Age=2592000/);
+    const anonymous = await fetch(config.publicUrl + "/api/bootstrap");
+    assert.equal((await anonymous.json()).user, null);
+    assert.equal(anonymous.headers.get("set-cookie"), null);
     assert.equal((await fetch(config.publicUrl + "/auth/feishu", { redirect: "manual" })).status, 503);
     const forged = await fetch(config.publicUrl + "/api/folders", { method: "POST", headers: { Cookie: "logos_session=" + a.token }, body: '{"path":"forged"}' });
     assert.equal(forged.status, 403);
@@ -78,6 +89,9 @@ test("authenticated file/project workflow enforces users, CSRF and unavailable e
     assert.equal((await request("/api/admin/usage.csv", administrator)).status, 200);
     await request("/api/logout", a, {});
     assert.equal((await request("/api/projects", a)).status, 401);
+    const loggedOut = await request("/api/bootstrap");
+    assert.equal((await loggedOut.json()).user, null);
+    assert.equal(loggedOut.headers.get("set-cookie"), null);
   } finally {
     server.closeAllConnections();
     await new Promise<void>((done) => server.close(() => done()));
