@@ -1,5 +1,6 @@
+import { resolve, join, relative, sep } from "node:path";
 import { constants } from "node:fs";
-import { open, mkdir, readdir, rename, unlink, rmdir } from "node:fs/promises";
+import { open, mkdir, readdir, rename, unlink, rmdir, lstat } from "node:fs/promises";
 import { randomUUID, createHash } from "node:crypto";
 
 const flags = constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW;
@@ -11,7 +12,7 @@ export class WorkspaceError extends Error {
 function parts(path) {
   if (typeof path !== "string" || path.length > 2048) throw new WorkspaceError("项目路径无效");
   const result = path.split("/");
-  if (result.some(p => !p || p === "." || p === ".." || /[\\\x00-\x1f]/.test(p)) || result.length > 32) throw new WorkspaceError("请使用项目内的相对路径");
+  if (result.some(p => !p || p === "." || p === ".." || /[\\:\x00-\x1f]/.test(p)) || result.length > 32) throw new WorkspaceError("请使用项目内的相对路径");
   return result;
 }
 function identifier(value) {
@@ -115,6 +116,33 @@ class Files {
     });
   }
 }
+/** Desktop CLI adapter; the Linux web API continues using pinned descriptors. */
+class DesktopFiles extends Files {
+  constructor(root) { super(null); this.path = resolve(root); }
+  async checked(path, directory = false) {
+    if (process.platform === "win32" && relative(this.path, path).split(sep).filter(Boolean).some(p => /[<>"|?*]|[. ]$/.test(p) || /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(p))) throw new WorkspaceError("Windows 文件名无效");
+    const info = await lstat(path);
+    if (info.isSymbolicLink() || (directory && !info.isDirectory())) throw new WorkspaceError("项目路径不能经过链接或非目录文件");
+    return path;
+  }
+  async directory(path = "", create = false) {
+    let current = await this.checked(this.path, true);
+    for (const name of path ? parts(path) : []) {
+      current = join(current, name);
+      if (create) await mkdir(current, { mode: 0o700 }).catch(error => { if (error.code !== "EEXIST") throw error; });
+      await this.checked(current, true);
+    }
+    return { path: current, close: async () => {} };
+  }
+  async parent(path, create, callback) {
+    const names = parts(path), name = names.pop(), parent = await this.directory(names.join("/"), create);
+    const target = join(parent.path, name);
+    try { await this.checked(target); } catch (error) { if (error.code !== "ENOENT") throw error; }
+    return callback(target);
+  }
+  async list(path = "") { return readdir((await this.directory(path)).path, { withFileTypes: true }); }
+}
+
 async function managed(files) {
   try {
     const marker = await files.json(".logos/project.json");
@@ -193,9 +221,10 @@ async function updateRun(files, request) {
 
 /** Shared by the web API and project_workspace Agent tool; no solver is launched. */
 export async function projectWorkspace(root, request) {
-  if (process.platform !== "linux") throw new WorkspaceError("此服务器项目管理功能需要 Linux");
-  const owned = typeof root === "string", handle = owned ? await open(root, flags) : root;
-  const files = new Files(handle);
+  const desktop = process.platform !== "linux";
+  if (desktop && typeof root !== "string") throw new WorkspaceError("桌面项目需要目录路径");
+  const owned = !desktop && typeof root === "string", handle = owned ? await open(root, flags) : root;
+  const files = desktop ? new DesktopFiles(root) : new Files(handle);
   try {
     if (request.action === "list") return await overview(files);
     if (request.action === "initialize") {

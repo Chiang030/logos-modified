@@ -34,7 +34,7 @@ export async function runSimulation(params, { cwd, signal, command, timeoutMs = 
   argv.push(...(params.args ?? []));
   let executionCwd = cwd;
   const recordsExecution = ["run", "exec"].includes(params.action);
-  const managed = process.platform === "linux" && recordsExecution ? (await projectWorkspace(cwd,{action:"list"})).managed : false;
+  const managed = recordsExecution ? (await projectWorkspace(cwd,{action:"list"})).managed : false;
   if (params.run_id || managed) {
     if (!recordsExecution || !params.study || !params.run_id) throw new Error("Managed execution requires study and run_id from project_workspace prepare_run");
     if (signal?.aborted) {
