@@ -1,6 +1,6 @@
 # LOGOS web workspace development
 
-Updated: 2026-11-10. Branch: `Chiang030/web/workspace`.
+Updated: 2026-11-10. Integrated branch: `Chiang030/logos/web-v0315`.
 Integrated release: `v0.3.15`, including web, CLI/domain, and VS Code sources.
 The pre-web baseline was `e2bc89f` / `v0.3.14`.
 
@@ -208,9 +208,9 @@ systemctl --user status logos-web-pilot logos-web-worker logos-web-ngrok
 journalctl --user -u logos-web-pilot -u logos-web-worker -n 100
 ```
 
-Public pilot: https://outward-speed-alto.ngrok-free.dev/
+Previous public pilot: https://outward-speed-alto.ngrok-free.dev/ (retired after NetBird login verification).
 
-See [fixed ngrok deployment](ngrok.md) for the active endpoint, quota limits,
+See [fixed ngrok deployment](ngrok.md) for the previous endpoint, quota limits,
 and restart verification. The Cloudflare notes below describe the retired pilot.
 
 The Quick Tunnel has no automatic restart or boot enable because a restart can
@@ -254,3 +254,20 @@ a real browser session should retain login when refreshed on that domain.
 See [workspace layout](workspace-layout.md) for initialization, study configuration,
 input snapshots, execution records, browser behavior, and legacy compatibility.
 The shared project_workspace tool is loaded with the LOGOS domain extension.
+
+## NetBird deployment (current)
+
+The active workbench is http://10.250.179.176:18882, bound only to the existing
+NetBird interface on leadhk01. The administrator confirmed the replacement
+Lark callback and access. Users must connect to NetBird. The shared data and
+worker remain unchanged; login persists for 30 days and renews on bootstrap.
+
+The enabled user services are `logos-web-netbird` and `logos-web-worker`.
+The HTTP service reads `~/.config/logos-web-pilot/netbird.env` (0600).
+`logos-web-pilot` and `logos-web-ngrok` are stopped and disabled; their protected
+configuration remains available for rollback. See [NetBird setup](netbird.md).
+
+The system service `logos-ansys-license` is enabled and runs as the existing
+installation owner. Both `lmgrd` and `ansyslmd` reported UP after stale,
+unheld lock files were preserved under backup names. License files were not
+modified. A licensed solver computation has not been claimed by this check.
