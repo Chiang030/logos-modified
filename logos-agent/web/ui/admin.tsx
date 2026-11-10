@@ -1,10 +1,11 @@
 import { useEffect,useState,type ReactElement } from "react";
 import { api } from "./api";
-interface Connection {id?:string;name:string;baseUrl:string;protocol:string;models:string[];enabled:boolean;contextWindow:number;maxTokens:number;reasoning:boolean;version?:number;hasKey?:boolean;}
+import { OpenAiLogin } from "./openai";
+interface Connection {id?:string;name:string;baseUrl:string;protocol:string;models:string[];enabled:boolean;contextWindow:number;maxTokens:number;reasoning:boolean;version?:number;hasKey?:boolean;authType?:"api-key"|"openai-chatgpt";}
 interface UsageRow {owner:string;name:string;connection_name:string;model:string;calls:number;failures:number;unknown:number;input:number;output:number;cacheRead:number;cacheWrite:number;total:number;}
 interface RequestRow {id:string;name:string;model:string;run:string;created:number;status:string;known:number;total:number;}
 interface Report {rows:UsageRow[];requests:RequestRow[];users:{id:string;name:string}[];}
-const empty=():Connection=>({name:"",baseUrl:"",protocol:"openai-completions",models:[],enabled:true,contextWindow:128000,maxTokens:8192,reasoning:false});
+const empty=():Connection=>({name:"",baseUrl:"",protocol:"openai-completions",models:[],enabled:true,contextWindow:128000,maxTokens:8192,reasoning:false,authType:"api-key"});
 const today=()=>new Date(Date.now()+8*3600000).toISOString().slice(0,10);
 const number=(n:number)=>n.toLocaleString("zh-CN");
 export function AdminPanel({close}:{close:()=>void}):ReactElement {
@@ -34,12 +35,14 @@ export function AdminPanel({close}:{close:()=>void}):ReactElement {
     <div className="admin-status">{status?.reason??"读取服务状态…"}<span>运行 {status?.active.count??0} / 5 · 排队 {status?.queued.count??0}</span></div>
     <nav><button className={tab==="models"?"active":""} onClick={()=>setTab("models")}>模型 API</button><button className={tab==="usage"?"active":""} onClick={()=>{setTab("usage");void usage();}}>用户用量</button></nav>
     {notice?<p className="admin-notice" role="status">{notice}</p>:null}
-    {tab==="models"?<div className="admin-models"><aside><button className="primary" onClick={()=>select(empty())}>＋ 新建连接</button>{connections.map(c=><button key={c.id} className={entry.id===c.id?"selected":""} onClick={()=>select(c)}><strong>{c.name}</strong><small>{c.enabled?"已开放":"已停用"} · {c.models.length} 个模型</small></button>)}</aside>
+    {tab==="models"?<div className="admin-models"><aside><button className="primary" onClick={()=>select(empty())}>＋ 新建连接</button><button onClick={()=>select({...empty(),name:"ChatGPT",authType:"openai-chatgpt",baseUrl:"https://api.openai.com/v1",protocol:"openai-responses"})}>＋ ChatGPT 账号连接</button>{connections.map(c=><button key={c.id} className={entry.id===c.id?"selected":""} onClick={()=>select(c)}><strong>{c.name}</strong><small>{c.enabled?"已开放":"已停用"} · {c.models.length} 个模型</small></button>)}</aside>
       <form onSubmit={e=>{e.preventDefault();void save();}}>
         <label>连接名称<input required value={entry.name} onChange={e=>setEntry({...entry,name:e.target.value})} placeholder="例如：公司模型服务" /></label>
-        <label>接口协议<select value={entry.protocol} onChange={e=>setEntry({...entry,protocol:e.target.value})}><option value="openai-completions">OpenAI 兼容 Chat Completions</option><option value="openai-responses">OpenAI Responses</option><option value="anthropic-messages">Anthropic Messages</option></select></label>
-        <label>API 地址<input required type="url" value={entry.baseUrl} onChange={e=>setEntry({...entry,baseUrl:e.target.value})} placeholder="填写服务商提供的 API Base URL" /><small>OpenAI 兼容接口通常包含 /v1；Anthropic 填服务根地址。</small></label>
-        <label>API Key<input type="password" autoComplete="new-password" value={key} onChange={e=>setKey(e.target.value)} placeholder={entry.hasKey?"已保存；留空保留原密钥":"填写 API Key"} /></label>
+        <label>身份验证<select value={entry.authType??"api-key"} onChange={e=>{setKey("");setEntry({...entry,authType:e.target.value as Connection["authType"],...(e.target.value==="openai-chatgpt"?{baseUrl:"https://api.openai.com/v1",protocol:"openai-responses"}:{})});}}><option value="api-key">API Key</option><option value="openai-chatgpt">ChatGPT 账号授权</option></select></label>
+        {entry.authType==="openai-chatgpt"?<OpenAiLogin key={entry.id??"new-account"} onModels={ids=>{setModelText(ids.slice(0,3).join("\n"));}} />:null}
+        <label>接口协议<select disabled={entry.authType==="openai-chatgpt"} value={entry.protocol} onChange={e=>setEntry({...entry,protocol:e.target.value})}><option value="openai-completions">OpenAI 兼容 Chat Completions</option><option value="openai-responses">OpenAI Responses</option><option value="anthropic-messages">Anthropic Messages</option></select></label>
+        <label>API 地址<input required readOnly={entry.authType==="openai-chatgpt"} type="url" value={entry.baseUrl} onChange={e=>setEntry({...entry,baseUrl:e.target.value})} placeholder="填写服务商提供的 API Base URL" /><small>{entry.authType==="openai-chatgpt"?"账号授权直接连接 OpenAI 官方接口。":"OpenAI 兼容接口通常包含 /v1；Anthropic 填服务根地址。"}</small></label>
+        {entry.authType!=="openai-chatgpt"?<label>API Key<input type="password" autoComplete="new-password" value={key} onChange={e=>setKey(e.target.value)} placeholder={entry.hasKey?"已保存；留空保留原密钥":"填写 API Key"} /></label>:null}
         <label>开放的模型 ID<textarea required rows={4} value={modelText} onChange={e=>setModelText(e.target.value)} placeholder="每行一个模型 ID，以服务商提供的名称为准" /></label>
         <div className="admin-form-row"><label>上下文窗口<input type="number" min={1024} max={4000000} value={entry.contextWindow} onChange={e=>setEntry({...entry,contextWindow:Number(e.target.value)})} /></label><label>最大输出 tokens<input type="number" min={128} max={200000} value={entry.maxTokens} onChange={e=>setEntry({...entry,maxTokens:Number(e.target.value)})} /></label></div>
         <div className="admin-checks"><label><input type="checkbox" checked={entry.enabled} onChange={e=>setEntry({...entry,enabled:e.target.checked})} />允许用户使用</label><label><input type="checkbox" checked={entry.reasoning} onChange={e=>setEntry({...entry,reasoning:e.target.checked})} />支持思考档位</label></div>

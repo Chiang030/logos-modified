@@ -4,8 +4,29 @@ import { once } from "node:events";
 import type { Connection, Protocol } from "./models.ts";
 import type { Run } from "./jobs.ts";
 import { Meter, normalize } from "./usage.ts";
+import { openAiFetch } from "./openai-fetch.ts";
+import { HttpError } from "./errors.ts";
 
 const object=(v:unknown):Record<string,unknown>=>v && typeof v==="object" && !Array.isArray(v)?v as Record<string,unknown>:{};
+function transportMessage(error: unknown): string {
+  if (error instanceof HttpError) return error.message;
+  let cause = error;
+  for (let depth = 0; depth < 5; depth++) {
+    const value = object(cause), code = value.code;
+    if (code === "ENOTFOUND" || code === "EAI_AGAIN") return "模型 API 域名无法解析，请管理员更新 API 地址或检查服务器 DNS";
+    if (code === "ECONNREFUSED") return "模型 API 连接被拒绝，请管理员检查服务是否启动及端口配置";
+    if (code === "ETIMEDOUT" || code === "UND_ERR_CONNECT_TIMEOUT") return "连接模型 API 超时，请管理员检查网络或上游服务";
+    if (typeof code === "string" && /CERT|TLS|SSL/.test(code)) return "模型 API TLS 证书验证失败，请管理员检查证书配置";
+    cause = value.cause;
+  }
+  return "无法连接模型 API，请管理员检查 API 地址、网络与上游服务";
+}
+function gatewayFailure(response: ServerResponse, message: string): void {
+  if (response.destroyed) return;
+  if (response.headersSent) { response.destroy(); return; }
+  response.writeHead(502, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+  response.end(JSON.stringify({ error: { message } }));
+}
 export class UsageObserver {
   private pending=""; private raw:Record<string,unknown>={};
   failed=false;completed=false;
@@ -36,10 +57,10 @@ export class UsageObserver {
   finish():void {if(this.pending)this.push("\n");}
 }
 export interface Broker { close():Promise<void>; }
-export async function modelBroker(socket:string,connection:Connection,key:string,run:Run,meter:Meter):Promise<Broker> {
+export async function modelBroker(socket:string,connection:Connection,key:string,run:Run,meter:Meter,resolveKey:()=>Promise<string>=async()=>key):Promise<Broker> {
   const controllers=new Set<AbortController>();
   const server=createServer((request,response)=>{
-    void handle(request,response).catch(()=>{if(!response.headersSent)response.writeHead(502,{"Content-Type":"application/json"});response.end('{"error":{"message":"模型代理请求失败，请检查管理员配置"}}');});
+    void handle(request,response).catch(()=>gatewayFailure(response,"模型代理请求失败，请检查管理员配置"));
   });
   async function handle(req:IncomingMessage,res:ServerResponse):Promise<void>{
     const expected=connection.protocol==="anthropic-messages"?"/v1/messages":connection.protocol==="openai-responses"?"/responses":"/chat/completions";
@@ -55,10 +76,11 @@ export async function modelBroker(socket:string,connection:Connection,key:string
     res.on("close",()=>{if(!res.writableEnded)controller.abort();});
     try{
       const headers:Record<string,string>={"Content-Type":"application/json",Accept:"application/json, text/event-stream"};
-      if(connection.protocol==="anthropic-messages"){headers["x-api-key"]=key;headers["anthropic-version"]="2023-06-01";}
-      else headers.Authorization="Bearer "+key;
+      const credential = await resolveKey();
+      if(connection.protocol==="anthropic-messages"){headers["x-api-key"]=credential;headers["anthropic-version"]="2023-06-01";}
+      else headers.Authorization="Bearer "+credential;
       const base=connection.protocol==="anthropic-messages"?connection.baseUrl.replace(/\/v1$/,""):connection.baseUrl;
-      const upstream=await fetch(base+expected,{method:"POST",headers,body:JSON.stringify(input),signal:controller.signal,redirect:"error"});
+      const upstream=await (connection.authType === "openai-chatgpt" ? openAiFetch : fetch)(base+expected,{method:"POST",headers,body:JSON.stringify(input),signal:controller.signal,redirect:"error"});
       const contentType=upstream.headers.get("content-type")??"application/json";
       if(!upstream.ok){
         // Error bodies can echo upstream credentials. Never return them to sandbox code.
@@ -76,7 +98,10 @@ export async function modelBroker(socket:string,connection:Connection,key:string
       }
       if(stream){observer.push(decoder.decode());observer.finish();}else observer.accept(JSON.parse(jsonText+decoder.decode()));
       meter.finish(id,observer.failed?"failed":"completed");res.end();
-    }catch{meter.finish(id,observer.failed?"failed":observer.completed?"completed":controller.signal.aborted?"cancelled":"failed");if(!res.headersSent)res.writeHead(502);res.destroy();}
+    }catch(error){
+      meter.finish(id,observer.failed?"failed":observer.completed?"completed":controller.signal.aborted?"cancelled":"failed");
+      gatewayFailure(res,controller.signal.aborted?"模型请求已取消或超时":transportMessage(error));
+    }
     finally{clearTimeout(timeout);controllers.delete(controller);}
   }
   await new Promise<void>((resolve,reject)=>{server.once("error",reject);server.listen(socket,()=>{server.off("error",reject);resolve();});});

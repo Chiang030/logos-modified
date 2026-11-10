@@ -19,7 +19,7 @@ export async function executeRun(repo:string,data:string,jobs:Jobs,models:Models
   try{
     const connection=models.get(run.connection);
     if(!connection.enabled || !connection.models.includes(run.model))throw new Error("管理员已停用此模型，请重新选择");
-    const key=models.secret(run.connection);
+    const key=await models.accessToken(run.connection);
     const project=jobs.store.project(run.owner,run.project);
     const root=await realpath(join(data,"users",run.owner,"workspace"));
     const directory=await realpath(join(root,project.directory));
@@ -29,7 +29,7 @@ export async function executeRun(repo:string,data:string,jobs:Jobs,models:Models
     // Unix socket paths must remain short regardless of the configured data directory.
     socketDirectory=await mkdtemp(join(tmpdir(),"logos-run-"));
     const socket=join(socketDirectory,"model.sock");
-    broker=await modelBroker(socket,connection,key,run,meter);
+    broker=await modelBroker(socket,connection,key,run,meter,()=>models.accessToken(run.connection));
     child=await launch({repo,directory,home,transcripts,socket,run,connection,data});
     // Recheck the pinned project path before accepting model work.
     const check=await stat(directory);if(check.ino!==directoryInfo.ino || check.dev!==directoryInfo.dev)throw new Error("项目目录发生变化");

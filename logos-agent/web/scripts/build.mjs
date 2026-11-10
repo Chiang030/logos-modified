@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 
 await mkdir("dist", { recursive: true });
+await build({entryPoints:["server/openai-auth-adapter.ts"],bundle:true,outfile:"dist/openai-auth.mjs",platform:"node",format:"esm",inject:["server/openai-fetch.ts"]});
 execFileSync(process.execPath, ["../vscode-extension/node_modules/tailwindcss/lib/cli.js",
   "-c", "tailwind.config.cjs", "-i", "ui/styles.css", "-o", "dist/app.css", "--minify"], { stdio: "inherit" });
 await build({ entryPoints: ["ui/main.tsx"], bundle: true, outfile: "dist/app.js", platform: "browser", format: "iife",

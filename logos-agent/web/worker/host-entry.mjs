@@ -8,7 +8,12 @@ const proxy=createServer((incoming,outgoing)=>{
   const forward=request({socketPath:socket,path:incoming.url,method:incoming.method,headers:incoming.headers},response=>{
     outgoing.writeHead(response.statusCode??502,response.headers);response.pipe(outgoing);
   });
-  forward.on("error",()=>{if(!outgoing.headersSent)outgoing.writeHead(502);outgoing.end();});
+  forward.on("error",()=>{
+    if(outgoing.destroyed)return;
+    if(outgoing.headersSent){outgoing.destroy();return;}
+    outgoing.writeHead(502,{"Content-Type":"application/json","Cache-Control":"no-store"});
+    outgoing.end(JSON.stringify({error:{message:"模型内部转发连接失败，请重试或联系管理员检查任务服务"}}));
+  });
   outgoing.on("close",()=>forward.destroy());incoming.pipe(forward);
 });
 await new Promise((resolve,reject)=>{proxy.once("error",reject);proxy.listen(0,"127.0.0.1",resolve);});

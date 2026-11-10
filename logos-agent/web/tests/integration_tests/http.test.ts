@@ -82,6 +82,13 @@ test("authenticated file/project workflow enforces users, CSRF and unavailable e
     assert.equal(software.result.products.find((p:{product:string})=>p.product==="blender").selected,executable);
     assert.equal((await request("/api/software/path",b,{product:"not-a-product",path:executable})).status,400);
     const administrator = store.login(store.user("administrator", "Admin", true));
+    assert.equal((await request("/api/admin/openai", a)).status, 403);
+    assert.equal((await request("/api/admin/openai/login", a, {})).status, 403);
+    assert.equal((await request("/api/admin/openai/logout", a, {})).status, 403);
+    const account = await (await request("/api/admin/openai", administrator)).json();
+    assert.deepEqual(account, { connected: false });
+    const forgedAccount = await fetch(config.publicUrl + "/api/admin/openai/logout", { method: "POST", headers: { Cookie: "logos_session=" + administrator.token }, body: "{}" });
+    assert.equal(forgedAccount.status, 403);
     const configInput = { name: "Central API", baseUrl: "https://provider.example.test/v1", protocol: "openai-completions", models: ["fixture"], apiKey: "not-for-browsers" };
     assert.equal((await request("/api/admin/models", a, configInput)).status, 403);
     const saved = await (await request("/api/admin/models", administrator, configInput)).json();

@@ -11,6 +11,17 @@ export interface Control {store:Store;models:Models;jobs:Jobs;meter:Meter;softwa
 export async function control(s:Control,user:User,url:URL,req:IncomingMessage,res:ServerResponse):Promise<boolean>{
   const path=url.pathname,method=req.method;
   if(path.startsWith("/api/admin/") && !user.admin)throw new HttpError(403,"此功能仅管理员可用");
+  if(path==="/api/admin/openai" && method==="GET"){json(res,s.models.openAi.status());return true;}
+  if(path==="/api/admin/openai/login" && method==="POST"){json(res,await s.models.openAi.begin(user.id));return true;}
+  if(path==="/api/admin/openai/login" && method==="GET"){json(res,s.models.openAi.progress(user.id,text(url.searchParams.get("id"),"授权请求")));return true;}
+  if(path==="/api/admin/openai/callback" && method==="POST"){
+    const input=await body(req);json(res,await s.models.openAi.complete(user.id,text(input.id,"授权请求"),text(input.callback,"授权回调地址",8192)));return true;
+  }
+  if(path==="/api/admin/openai/cancel" && method==="POST"){
+    const input=await body(req);s.models.openAi.cancel(user.id,text(input.id,"授权请求"));json(res,{ok:true});return true;
+  }
+  if(path==="/api/admin/openai/logout" && method==="POST"){s.models.openAi.logout();json(res,{connected:false});return true;}
+  if(path==="/api/admin/openai/models" && method==="POST"){json(res,{models:await s.models.openAi.listModels()});return true;}
   if(path==="/api/software" && method==="GET"){json(res,await s.software.status());return true;}
   if(path==="/api/software/scan" && method==="POST"){
     const input=await body(req);void s.software.scan(input.global===true);json(res,{scanning:true},202);return true;
@@ -21,7 +32,7 @@ export async function control(s:Control,user:User,url:URL,req:IncomingMessage,re
     await s.software.setPath(text(input.product,"软件类型"),input.path);json(res,await s.software.status());return true;
   }
   if(path==="/api/models" && method==="GET"){
-    json(res,{models:s.models.list().filter(c=>c.enabled).flatMap(c=>c.models.map(id=>({provider:c.id,id,name:id,connectionId:c.id,connectionName:c.name,contextWindow:c.contextWindow,reasoning:c.reasoning}))),...s.jobs.health()});return true;
+    json(res,{models:s.models.list().filter(c=>c.enabled && (c.authType!=="openai-chatgpt" || c.hasKey)).flatMap(c=>c.models.map(id=>({provider:c.id,id,name:id,connectionId:c.id,connectionName:c.name,contextWindow:c.contextWindow,reasoning:c.reasoning}))),...s.jobs.health()});return true;
   }
   if(path==="/api/runs" && method==="GET"){
     const session=url.searchParams.get("session")??undefined;if(session)s.store.session(user.id,session);
@@ -35,7 +46,12 @@ export async function control(s:Control,user:User,url:URL,req:IncomingMessage,re
   if(path==="/api/admin/models" && method==="GET"){json(res,{connections:s.models.list()});return true;}
   if(path==="/api/admin/models" && method==="POST"){json(res,{connection:s.models.save(await body(req))});return true;}
   if(path==="/api/admin/models/test" && method==="POST"){
-    const input=await body(req),connection=s.models.get(text(input.id,"连接")),key=s.models.secret(connection.id);
+    const input=await body(req),connection=s.models.get(text(input.id,"连接"));
+    if(connection.authType==="openai-chatgpt"){
+      try{json(res,{ok:true,models:await s.models.openAi.listModels(),message:"ChatGPT 账号连接成功，尚未调用模型生成内容"});}
+      catch(error){json(res,{ok:false,message:error instanceof HttpError?error.message:"无法连接 OpenAI 服务，请检查服务器网络"});}return true;
+    }
+    const key=await s.models.accessToken(connection.id);
     const headers:Record<string,string>={Accept:"application/json"};
     if(connection.protocol==="anthropic-messages"){headers["x-api-key"]=key;headers["anthropic-version"]="2023-06-01";}else headers.Authorization="Bearer "+key;
     const suffix=connection.protocol==="anthropic-messages"?"/v1/models":"/models";
