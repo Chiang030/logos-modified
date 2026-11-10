@@ -24,6 +24,8 @@ Set the public origin to your stable HTTPS URL. Register
 allowlist. Configure a reverse proxy or the optional [ngrok service](ngrok.md).
 The HTTP listener defaults to loopback. Keep the original public Host header.
 
+For private VPN access without a public tunnel, see [NetBird setup](netbird.md).
+
 Browser login lasts 30 days and renews when an authenticated user opens or
 refreshes the workbench. Preserve the data directory across deployments and
 restarts; it contains sessions, projects, usage records and the encryption key.

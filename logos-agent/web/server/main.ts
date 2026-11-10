@@ -7,6 +7,7 @@ import { Store } from "./store.ts";
 import { WorkspaceFiles } from "./files.ts";
 import { createHandler } from "./app.ts";
 import type { Config } from "./auth.ts";
+import { vpnHttpAllowed } from "./listener.ts";
 
 process.umask(0o077);
 const port = Number(process.env.LOGOS_WEB_PORT ?? 18880), host = process.env.LOGOS_WEB_HOST ?? "127.0.0.1";
@@ -26,7 +27,8 @@ const address = new URL(publicUrl);
 if (address.pathname !== "/" || address.search || address.hash || address.username || address.password) throw new Error("PUBLIC_URL must be an origin");
 const loopback = ["127.0.0.1", "::1", "localhost"].includes(host);
 if (config.preview && (!loopback || !["127.0.0.1", "[::1]", "localhost"].includes(address.hostname))) throw new Error("Preview is loopback-only");
-if (!loopback && address.protocol !== "https:") throw new Error("Network deployment requires an HTTPS public URL");
+const vpnHttp = vpnHttpAllowed(host, address, port, process.env.LOGOS_WEB_VPN_HTTP === "1");
+if (!loopback && address.protocol !== "https:" && !vpnHttp) throw new Error("Network deployment requires HTTPS or an explicitly configured private VPN HTTP listener");
 mkdirSync(config.data, { recursive: true, mode: 0o700 });
 const store = new Store(join(config.data, "state/application.sqlite"));
 const server = createServer(createHandler({ config, store, files: new WorkspaceFiles(join(config.data, "users")), assets: fileURLToPath(new URL("../dist/", import.meta.url)) }));
