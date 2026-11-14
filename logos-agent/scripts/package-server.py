@@ -64,7 +64,16 @@ required = ["vendor/pi/package-lock.json", "vendor/pi/packages/coding-agent/src/
             "vendor/pi/packages/coding-agent/src/experimental/source-resolver.ts",
             "logos-agent/.env.example", "logos-agent/pi-domain/extensions/simulation.mjs",
             "logos-agent/integrations/sim-cli/src/sim/installations.py", "bin/logos", "install.sh", "logos-agent/web/server/main.ts",
-            "logos-agent/web/deploy/.env.example", "logos-agent/web/scripts/install-ansys-license.py"]
+            "logos-agent/web/deploy/.env.example", "logos-agent/web/scripts/install-ansys-license.py",
+             "logos-agent/examples/validated-demos/README.md",
+             "logos-agent/examples/validated-demos/verify_demo_evidence.py",
+             "logos-agent/examples/validated-demos/structure/README.md",
+             "logos-agent/examples/validated-demos/structure/results/solve.txt",
+             "logos-agent/examples/validated-demos/air-pipe/README.md",
+             "logos-agent/examples/validated-demos/air-pipe/results/strict/run.txt",
+             "logos-agent/examples/validated-demos/air-pipe/results/fine-stable/run.txt",
+             "logos-agent/examples/validated-demos/kicad-led/README.md",
+             "logos-agent/examples/validated-demos/kicad-led/results/led.kicad_sch"]
 assert all(name in files for name in required), [name for name in required if name not in files]
 assert not any(Path(name).name == ".env" or "node_modules" in Path(name).parts or ".venv" in Path(name).parts for name in files)
 tar_path = output / (release + ".tar.gz")

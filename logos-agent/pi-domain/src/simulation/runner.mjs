@@ -6,7 +6,8 @@ import { join } from "node:path";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-export const ACTIONS = ["help", "doctor", "discover", "probe", "verify", "check", "launch", "attach", "connect", "exec", "inspect", "detach", "disconnect", "run"];
+export const ACTIONS = ["help", "doctor", "ps", "discover", "probe", "verify", "check", "launch", "attach", "connect", "exec", "inspect", "detach", "disconnect", "run"];
+const ACTION_TIMEOUTS = { connect: 240000, launch: 240000, attach: 240000, run: 660000, exec: 660000, verify: 240000, probe: 180000 };
 
 /** Preserve failures in the tool protocol, not only inside a JSON text block. */
 export function simulationToolResult(result) {
@@ -14,8 +15,12 @@ export function simulationToolResult(result) {
     content: [{ type: "text", text: JSON.stringify(result) }], details: result };
 }
 
-export async function runSimulation(params, { cwd, signal, command, timeoutMs = 60000 } = {}) {
+export async function runSimulation(params, { cwd, signal, command, timeoutMs } = {}) {
   if (!ACTIONS.includes(params.action)) throw new Error("Unsupported simulation action");
+  // The CLI's connect timeout is 180 s and exec timeout is 600 s. Do not kill
+  // their client after 60 s while the solver may still be starting remotely.
+  const limit = params.timeout_ms ?? timeoutMs ?? ACTION_TIMEOUTS[params.action] ?? 60000;
+  if (!Number.isSafeInteger(limit) || limit < 100 || limit > 3600000) throw new Error("Simulation timeout must be an integer between 100 and 3600000 milliseconds");
   const python = fileURLToPath(new URL(process.platform === "win32" ? "../../../integrations/.venv/Scripts/python.exe" : "../../../integrations/.venv/bin/python", import.meta.url));
   const configured = command ?? (process.env.LOGOS_SIM_COMMAND ? JSON.parse(process.env.LOGOS_SIM_COMMAND)
     : existsSync(python) ? [python, "-m", "sim"] : ["sim"]);
@@ -44,7 +49,6 @@ export async function runSimulation(params, { cwd, signal, command, timeoutMs = 
     const record = await projectWorkspace(cwd,{action:"update_run",study:params.study,run:params.run_id,status:"running",command:[configured[0],...argv],software:"sim CLI; installed product version must be recorded by the execution script"});
     executionCwd = join(cwd,record.path);
   }
-  const limit = params.timeout_ms ?? timeoutMs;
   let stdout = "", stderr = "", stopReason, processError, truncated = false;
   const cap = 1024 * 1024;
   const capture = (current, chunk) => {
@@ -79,7 +83,7 @@ export async function runSimulation(params, { cwd, signal, command, timeoutMs = 
       : payload?.error ?? payload?.data?.error ?? (status.code !== 0 ? { type: "CliError", message: stderr || `CLI exited with ${status.code}` } : null);
   if (typeof error === "string") error = { type: scriptOk === false ? "ScriptError" : "CliError", message: error };
   const result = {
-    operation_id: operationId, stage: params.action, backend: "sim_cli", command: configured[0],
+    operation_id: operationId, stage: params.action, backend: "sim_cli", command: configured[0], timeout_ms: limit,
     transport_ok: transportOk, script_ok: scriptOk, acceptance: "not_evaluated",
     error, exit_code: status.code, signal: status.signal, output_truncated: truncated,
     stdout, stderr, payload, artifacts: [join(directory, "stdout.txt"), join(directory, "stderr.txt"), join(directory, "result.json")],

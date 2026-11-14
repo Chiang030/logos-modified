@@ -20,7 +20,7 @@ export function registerSimulationTool(pi) {
   });
   pi.registerTool({
     name: "simulation", label: "Simulation",
-    description: "Call the configured sim CLI for solver discovery, diagnostics, sessions, inspection and bounded execution. Use help first to check installed commands. No automatic retries or backend fallback. Transport success does not prove script success or physical acceptance. Attached sessions must not be closed by disconnect; verify backend ownership semantics first.",
+    description: "Call the configured sim CLI for solver discovery, diagnostics, sessions, inspection and bounded execution. Use help first; use ps to inspect server/session readiness without starting a solver. Local connect may auto-start the server; exec/inspect need an existing session, while run is one-shot and does not require the HTTP server. Defaults allow 240 seconds for connect/launch and 660 seconds for run/exec; timeout_ms overrides explicitly. No automatic retries or backend fallback. After timeout, inspect ps/inspect before retrying: the remote solver may still be running. Transport success does not prove script success or physical acceptance. Attached sessions must not be closed by disconnect; verify backend ownership semantics first.",
     parameters: Type.Object({
       action: Type.Union(ACTIONS.map((value) => Type.Literal(value))),
       args: Type.Optional(Type.Array(Type.String(), { description: "CLI arguments as separate tokens, not shell text. Use installed CLI help to confirm syntax." })),

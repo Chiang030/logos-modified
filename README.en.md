@@ -2,7 +2,7 @@
 
 [中文（主版本）](README.md) · **English**
 
-> Current server version: **[v0.2.0](https://github.com/Chiang030/logos-modified/releases/tag/v0.2.0)** · VS Code extension: **v0.2.0** (tracking v0.2.0, with in-extension self-update)
+> Current source version: **v0.3.15** (CLI, web workspace, and shared VS Code UI). See repository Releases for installable packages; these web fixes and examples do not create a new release tag.
 
 LOGOS turns a large language model into **an engineer that can actually do the work**: you give tasks in natural language inside a project directory, and it autonomously handles parametric CAD modeling with independent verification, finite-element meshing, aerodynamic CFD and structural FEA solving, high-frequency EM simulation, ECAD (PCB) analysis, and 3D rendering — delivering results backed by verifiable evidence (test output, exported files, screenshots).
 
@@ -21,6 +21,7 @@ The platform drives conversation and task execution on an open-source coding-age
 - [MCP services](#mcp-services)
 - [Built-in skills](#built-in-skills)
 - [Implemented features](#implemented-features)
+- [Validated examples](#validated-examples)
 - [Basic workflow](#basic-workflow)
 - [Install and deployment](#install-and-deployment)
 - [Verification status](#verification-status)
@@ -31,7 +32,7 @@ The platform drives conversation and task execution on an open-source coding-age
 
 ### Option 1 (recommended): VS Code Remote-SSH + terminal CLI
 
-1. Install the **Remote-SSH** extension in VS Code and connect to the server (e.g. `ssh jiangjincheng@172.19.103.12`);
+1. Install the **Remote-SSH** extension in VS Code and connect to the server (e.g. `ssh user@your-server`);
 2. Open the target project folder and a new integrated terminal;
 3. Type **`logos-here`** to wake LOGOS: it creates a dedicated tmux session for the current directory and starts LOGOS — the paper-plane + LOGOS wordmark animation confirms it is up. Re-running it in the same project re-attaches to the existing session;
 4. All conversation and task execution happen in that terminal, with the full v0.2.0 capability set.
@@ -180,6 +181,20 @@ The Ansys skills are verbatim copies from the user-supplied `reusable-assets/har
 - **Blender/3D integration**: MCP + resident GUI instance covering the 3D-logo pipeline (see `references/demo_logo.py`).
 - **SolidCraft CAD integration**: MCP wrapper around the external CLI, `--allow-path` scopes accessible project dirs. The workflow mandates SolidCraft as the default geometry path — never CadQuery/FreeCAD; FreeCAD (`freecadcmd`) is wired through the `freecad` skill (no MCP, direct scripts) as the independent cross-check oracle, foreign-file healer and format converter.
 - **API configuration**: the launcher auto-reads `logos-agent/.env` (cwd-independent); `DEEPSEEK_API_KEY` + `LOGOS_PROVIDER` / `LOGOS_MODEL`, CLI flags win.
+
+## Validated examples
+
+Each example has its own subfolder, README, rerun scripts, public results, and redacted logs. See the [example index and offline verification](logos-agent/examples/validated-demos/README.md).
+
+| Example | Verified on 2026-11-12 | Scope |
+|---|---|---|
+| [Structural cantilever](logos-agent/examples/validated-demos/structure/README.md) | APDL BEAM188 displacement error approximately 0.124%; force/moment balance passed | One-dimensional beam, not a 3D solid or Mechanical GUI workflow |
+| [Low-speed air pipe](logos-agent/examples/validated-demos/air-pipe/README.md) | Fluent pressure-gradient error approximately 0.043%; two-grid difference approximately 0.130% | Axisymmetric laminar internal flow, not airfoil or GCI certification |
+| [KiCad LED board](logos-agent/examples/validated-demos/kicad-led/README.md) | Schematic ERC, netlist, PCB parity/DRC, Gerber, drilling and STEP export passed | Demonstration footprints and board-only STEP, not production qualification |
+
+The web home can import a private example copy without invoking a model or solver. Reruns require verified software, an appropriate Python environment, valid licensing, and a new output directory. Native solver databases with machine-specific metadata are not redistributed; regenerate them using the documented scripts. Redacted records are not represented as untouched native artifacts.
+
+The web workspace also supports pasted and edited image attachments, actual vision input, STEP previews, feedback, and contribution rankings. See [web development](logos-agent/web/docs/development.md) and [installation](logos-agent/web/docs/install.md).
 
 ## Basic workflow
 

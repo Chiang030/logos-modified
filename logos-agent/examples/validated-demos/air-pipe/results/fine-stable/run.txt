@@ -1,0 +1,680 @@
+[Publication copy: host, user, paths, network and license metadata redacted; numerical solver output preserved.]
+[installation-path] -r26.1.0 2ddp -gu -driver null -sifile=[run-directory] -nm
+Warning:  DISPLAY environment variable is not set.
+  Graphics and GUI will not operate correctly
+  without this being set properly.
+[installation-path] -f fluent -gu -sifile=[run-directory] -nm (fluent "2ddp -pdefault  -host -r26.1.0 -t1 -mpi=intel -path[installation-path] -ssh")
+
+Opening input/output transcript to file "[run-directory]".
+Auto-Transcript Start Time:  18:01:35, 12 Nov 2026 
+[installation-path] -r26.1.0 2ddp -pdefault -host -t1 -mpi=intel -path[installation-path] -ssh -cx [host]:35785:44607
+Warning:  DISPLAY environment variable is not set.
+  Graphics and GUI will not operate correctly
+  without this being set properly.
+Starting [installation-path] host -cx [host]:35785:44607 "(list (rpsetvar (QUOTE parallel/function) "fluent 2ddp -flux -node -r26.1.0 -t1 -pdefault -mpi=intel -ssh") (rpsetvar (QUOTE parallel/rhost) "") (rpsetvar (QUOTE parallel/ruser) "") (rpsetvar (QUOTE parallel/nprocs_string) "1") (rpsetvar (QUOTE parallel/auto-spawn?) #t) (rpsetvar (QUOTE parallel/trace-level) 0) (rpsetvar (QUOTE parallel/remote-shell) 1) (rpsetvar (QUOTE parallel/path) "[installation-path]") (rpsetvar (QUOTE parallel/hostsfile) "") (rpsetvar (QUOTE gpuapp/devices) ""))"
+
+              Welcome to ANSYS Fluent 2026 R1
+
+              Copyright 2026 Synopsys, Inc. and ANSYS, Inc. All rights reserved.
+              Unauthorized use, distribution or duplication is prohibited.
+              This product is subject to U.S. laws governing export and re-export.
+              For full Legal Notice, see documentation.
+
+Build Time: Feb 02 2026 15:58:00 EST  Build Id: 10262  
+ 
+[license metadata omitted]
+
+*********************************************
+[license metadata omitted]
+For faster simulations, please start the application with the appropriate parallel options.
+*********************************************
+
+Host spawning Node 0 on machine "[host]" (unix).
+[installation-path] -r26.1.0 2ddp -flux -node -t1 -pdefault -mpi=intel -ssh -mport [network-endpoint].0.1.1:41413:0
+Starting [installation-path] -f [run-directory] -genv I_MPI_FABRICS shm -genv FLUENT_ARCH lnamd64 -genv I_MPI_DEBUG 0 -genv I_MPI_ADJUST_GATHERV 3 -genv I_MPI_ADJUST_ALLREDUCE 2 -genv I_MPI_PLATFORM auto -genv PYTHONHOME [installation-path] -genv FLUENT_PROD_DIR [installation-path] -genv FLUENT_AFFINITY 0 -genv I_MPI_PIN enable -genv KMP_AFFINITY disabled -n 1 [installation-path] node -mpiw intel -pic shmem -mport [network-endpoint].0.1.1:41413:0
+
+Node 0 connecting to the Host ... connection established.
+
+-------------------------------------------------------------------------------
+ID    Hostname  Core  O.S.      PID     CPU Model Name              
+-------------------------------------------------------------------------------
+n0    [host]  1/32  Linux-64  758262  AMD Ryzen 9 9950X3D 16-Core 
+host  [host]        Linux-64  755378  AMD Ryzen 9 9950X3D 16-Core 
+
+MPI Option Selected: intel
+-------------------------------------------------------------------------------
+
+Cleanup script file is [run-directory]
+WARNING: Rank:0 Machine [host] has 38 % of RAM filled with file buffer caches.
+This can cause potential performance issues. Please use -cflush flag to flush the cache. 
+
+
+Graphics driver currently in use: null
+Information: The server has started and is running.
+
+> 
+Reading "[run-directory]"...
+
+Buffering for file scan...
+
+Reading "[run-directory]"...
+
+Buffering for file scan...
+
+
+   15729 nodes.
+   15729 nodes.
+   15360 quadrilateral cells, zone  1.
+   15360 quadrilateral cells, zone  1.
+   30352 2D interior faces, zone  2.
+   30352 2D interior faces, zone  2.
+      48 2D velocity-inlet faces, zone  3.
+      48 2D velocity-inlet faces, zone  3.
+      48 2D pressure-outlet faces, zone  4.
+      48 2D pressure-outlet faces, zone  4.
+     320 2D wall faces, zone  5.
+     320 2D wall faces, zone  5.
+     320 2D axis faces, zone  6.
+     320 2D axis faces, zone  6.
+
+Building...
+     mesh
+Building...
+
+     materials,     mesh
+
+     interface,     materials,
+
+     domains,     interface,
+
+     zones,     domains,
+
+	axis     zones,
+
+	wall	axis
+
+	outlet	wall
+
+	inlet	outlet
+
+	interior	inlet
+
+	air	interior
+
+     parallel,	air
+
+Done.
+     parallel,
+Done.
+Warning: The use of axis boundary conditions is not appropriate for
+         a 2D/3D flow problem. Please consider changing the zone
+         type to symmetry or wall, or the problem to axisymmetric.
+
+Warning: The use of axis boundary conditions is not appropriate for
+         a 2D/3D flow problem. Please consider changing the zone
+         type to symmetry or wall, or the problem to axisymmetric.
+
+Warning: The use of axis boundary conditions is not appropriate for
+         a 2D/3D flow problem. Please consider changing the zone
+         type to symmetry or wall, or the problem to axisymmetric.
+
+Warning: The use of axis boundary conditions is not appropriate for
+         a 2D/3D flow problem. Please consider changing the zone
+         type to symmetry or wall, or the problem to axisymmetric.
+
+
+ Domain Extents:
+   x-coordinate: min (m) = 0.000000e+00, max (m) = 1.000000e+00
+   y-coordinate: min (m) = 0.000000e+00, max (m) = 5.000000e-03
+ Domain Extents:
+   x-coordinate: min (m) = 0.000000e+00, max (m) = 1.000000e+00
+
+ Volume statistics:
+   minimum volume (m3): 3.255208e-07
+   maximum volume (m3): 3.255208e-07
+     total volume (m3): 5.000000e-03
+ Face area statistics:
+   minimum face area (m2): 1.041667e-04
+   maximum face area (m2): 3.125000e-03
+ Checking mesh............   y-coordinate: min (m) = 0.000000e+00, max (m) = 5.000000e-03
+ Volume statistics:
+   minimum volume (m3): 3.255208e-07
+   maximum volume (m3): 3.255208e-07
+     total volume (m3): 5.000000e-03
+ Face area statistics:
+   minimum face area (m2): 1.041667e-04
+   maximum face area (m2): 3.125000e-03
+....................
+ Done.
+ Checking mesh................................
+ Done.
+The following solver settings object method could also be used to execute the above command:
+<solver_session>.settings.mesh.check()
+AIR_STATE {'name': 'air', 'chemical_formula': '', 'density': {'option': 'value', 'value': 1.225}, 'viscosity': {'option': 'value', 'value': 1.7894e-05}}
+INLET_STATE {'name': 'inlet', 'momentum': {'velocity_specification_method': 'Magnitude, Normal to Boundary', 'reference_frame': 'Absolute', 'velocity_magnitude': {'option': 'value', 'value': 0}, 'initial_gauge_pressure': {'option': 'value', 'value': 0}}, 'turbulence': {}}
+METHOD_STATE {'p_v_coupling': {'flow_scheme': 'Coupled', 'flux_type': 'Rhie-Chow: momentum based', 'flux_auto_select': True}, 'spatial_discretization': {'gradient_scheme': 'least-square-cell-based', 'discretization_scheme': {'mom': 'second-order-upwind', 'pressure': 'second-order'}}, 'pseudo_time_method': {'formulation': {'coupled_solver': 'global-time-step'}}, 'expert': {'implicit_bodyforce_treatment': False, 'velocity_formulation': 'absolute', 'physical_velocity_formulation': False, 'disable_rhie_chow_flux': False, 'presto_pressure_scheme': False, 'first_to_second_order_blending': 1.0}, 'high_order_term_relaxation': {'enable': False, 'relaxation_factor': 0.25, 'select_variables': 'flow-variables', 'type': 'standard'}, 'warped_face_gradient_correction': {'enable': False}, 'poor_mesh_numerics': {'cell_quality_based': False, 'solution_and_quality_based': False, 'gradient_quality_based': False, 'reset_poor_elements': False}}
+A newer syntax is available to perform the last operation:
+solver.settings.setup.boundary_conditions.velocity_inlet['inlet'].momentum.velocity_magnitude.value = 0.1
+
+Execute the following code to suppress future warnings like the above:
+
+>>> import warnings
+>>> warnings.filterwarnings("ignore", category=DeprecatedSettingWarning)
+RESIDUAL_STATE {'equations': {'continuity': {'monitor': True, 'check_convergence': True, 'absolute_criteria': 0.001}, 'x-velocity': {'monitor': True, 'check_convergence': True, 'absolute_criteria': 0.001}, 'y-velocity': {'monitor': True, 'check_convergence': True, 'absolute_criteria': 0.001}}, 'options': {'criterion_type': 'absolute', 'n_save': 1000, 'normalize': False, 'residual_values': {'scale_residuals': True, 'compute_local_scale': False}, 'print': True, 'plot': True, 'n_display': 1000}, 'axes': {'x': {'label': '', 'log_scale': False, 'number_format': {'format_type': 'float', 'precision': 0}, 'auto_range': {'min_auto': True, 'max_auto': True}, 'show_major_gridlines': False, 'show_minor_gridlines': False}, 'y': {'label': '', 'log_scale': True, 'number_format': {'format_type': 'exponential', 'precision': 0}, 'auto_range': {'min_auto': True, 'max_auto': True}, 'show_major_gridlines': False, 'show_minor_gridlines': False}}, 'curves': {'continuity': {'line': {'pattern': '----', 'weight': 2, 'color': 'monte carlo green'}, 'line_in_file': {'pattern': ''}, 'marker': {'symbol': ''}, 'marker_in_file': {'symbol': '(*)', 'size': 0.3, 'color': 'monte carlo green'}}, 'x-velocity': {'line': {'pattern': '----', 'weight': 2, 'color': 'lavender gray'}, 'line_in_file': {'pattern': ''}, 'marker': {'symbol': ''}, 'marker_in_file': {'symbol': '(*)', 'size': 0.3, 'color': 'lavender gray'}}, 'y-velocity': {'line': {'pattern': '----', 'weight': 2, 'color': 'scarlet red'}, 'line_in_file': {'pattern': ''}, 'marker': {'symbol': ''}, 'marker_in_file': {'symbol': '(*)', 'size': 0.3, 'color': 'scarlet red'}}}}
+PSEUDO_TIME_BEFORE {'time_step_method': 'automatic', 'length_scale_methods': 'conservative', 'time_step_size_scale_factor': 1.0, 'verbosity': 0}
+PSEUDO_TIME_AFTER {'time_step_method': 'automatic', 'length_scale_methods': 'conservative', 'time_step_size_scale_factor': 0.1, 'verbosity': 0}
+
+Initialize using the hybrid initialization method.
+
+Checking case topology... 
+
+-This case has both inlets & outlets 
+-Pressure information is not available at the boundaries.
+ Case will be initialized with constant pressure
+Initialize using the hybrid initialization method.
+
+Checking case topology... 
+-This case has both inlets & outlets 
+-Pressure information is not available at the boundaries.
+ Case will be initialized with constant pressure
+
+	iter		scalar-0
+
+
+	iter		scalar-0
+
+	1		1.000000e+00
+	1		1.000000e+00
+	2		3.093119e-08
+	2		3.093119e-08
+	3		1.298210e-08
+	3		1.298210e-08
+	4		7.245139e-09
+	4		7.245139e-09
+	5		4.519701e-09
+	5		4.519701e-09
+	6		2.986634e-09
+	6		2.986634e-09
+	7		2.041653e-09
+	7		2.041653e-09
+	8		1.425986e-09
+	8		1.425986e-09
+	9		1.010274e-09
+	9		1.010274e-09
+	10		7.227588e-10
+	10		7.227588e-10
+
+Hybrid initialization is done.
+
+Hybrid initialization is done.
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+     1  1.0000e+00  3.9702e-02  3.9082e-07  0:00:15  599
+     1  1.0000e+00  3.9702e-02  3.9082e-07  0:00:15  599
+     2  1.0000e+00  2.2045e-02  5.3851e-06  0:00:17  598
+     2  1.0000e+00  2.2045e-02  5.3851e-06  0:00:17  598
+     3  7.6344e-01  1.2445e-02  4.9654e-06  0:00:16  597
+     3  7.6344e-01  1.2445e-02  4.9654e-06  0:00:16  597
+     4  5.0398e-01  7.2868e-03  4.2486e-06  0:00:17  596
+     4  5.0398e-01  7.2868e-03  4.2486e-06  0:00:17  596
+     5  2.7017e-01  4.4666e-03  3.0275e-06  0:00:17  595
+     5  2.7017e-01  4.4666e-03  3.0275e-06  0:00:17  595
+     6  2.1777e-01  2.8663e-03  2.3185e-06  0:00:17  594
+     6  2.1777e-01  2.8663e-03  2.3185e-06  0:00:17  594
+     7  1.8529e-01  1.9332e-03  2.0722e-06  0:00:16  593
+     7  1.8529e-01  1.9332e-03  2.0722e-06  0:00:16  593
+     8  1.7769e-01  1.3835e-03  1.9924e-06  0:00:16  592
+     8  1.7769e-01  1.3835e-03  1.9924e-06  0:00:16  592
+     9  1.5953e-01  1.0438e-03  1.8037e-06  0:00:16  591
+     9  1.5953e-01  1.0438e-03  1.8037e-06  0:00:16  591
+    10  1.3809e-01  8.2625e-04  1.5601e-06  0:00:16  590
+    10  1.3809e-01  8.2625e-04  1.5601e-06  0:00:16  590
+    11  1.2187e-01  6.7774e-04  1.3872e-06  0:00:15  589
+    11  1.2187e-01  6.7774e-04  1.3872e-06  0:00:15  589
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+    12  1.0117e-01  5.7024e-04  1.1941e-06  0:00:15  588
+    12  1.0117e-01  5.7024e-04  1.1941e-06  0:00:15  588
+    13  8.1809e-02  4.8876e-04  1.0078e-06  0:00:15  587
+    13  8.1809e-02  4.8876e-04  1.0078e-06  0:00:15  587
+    14  7.1311e-02  4.2311e-04  9.7072e-07  0:00:15  586
+    14  7.1311e-02  4.2311e-04  9.7072e-07  0:00:15  586
+    15  6.1474e-02  3.6936e-04  8.8722e-07  0:00:14  585
+    15  6.1474e-02  3.6936e-04  8.8722e-07  0:00:14  585
+    16  5.3326e-02  3.2424e-04  7.8902e-07  0:00:14  584
+    16  5.3326e-02  3.2424e-04  7.8902e-07  0:00:14  584
+    17  4.6472e-02  2.8599e-04  6.9335e-07  0:00:14  583
+    17  4.6472e-02  2.8599e-04  6.9335e-07  0:00:14  583
+    18  4.0274e-02  2.5278e-04  6.0644e-07  0:00:14  582
+    18  4.0274e-02  2.5278e-04  6.0644e-07  0:00:14  582
+    19  3.5202e-02  2.2382e-04  5.3090e-07  0:00:13  581
+    19  3.5202e-02  2.2382e-04  5.3090e-07  0:00:13  581
+    20  3.1187e-02  1.9876e-04  4.6636e-07  0:00:13  580
+    20  3.1187e-02  1.9876e-04  4.6636e-07  0:00:13  580
+    21  2.7317e-02  1.7678e-04  4.1149e-07  0:00:13  579
+    21  2.7317e-02  1.7678e-04  4.1149e-07  0:00:13  579
+    22  2.3604e-02  1.5745e-04  3.6514e-07  0:00:13  578
+    22  2.3604e-02  1.5745e-04  3.6514e-07  0:00:13  578
+
+  iter  continuity
+  x-velocity  y-velocity  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+    23  2.0847e-02  1.4043e-04  3.2595e-07  0:00:13  577
+    23  2.0847e-02  1.4043e-04  3.2595e-07  0:00:13  577
+    24  1.8422e-02  1.2541e-04  2.9270e-07  0:00:13  576
+    24  1.8422e-02  1.2541e-04  2.9270e-07  0:00:13  576
+    25  1.6450e-02  1.1213e-04  2.6381e-07  0:00:13  575
+    25  1.6450e-02  1.1213e-04  2.6381e-07  0:00:13  575
+    26  1.4680e-02  1.0037e-04  2.3804e-07  0:00:13  574
+    26  1.4680e-02  1.0037e-04  2.3804e-07  0:00:13  574
+    27  1.2884e-02  8.9937e-05  2.1470e-07  0:00:13  573
+    27  1.2884e-02  8.9937e-05  2.1470e-07  0:00:13  573
+    28  1.1301e-02  8.0656e-05  1.9361e-07  0:00:14  572
+    28  1.1301e-02  8.0656e-05  1.9361e-07  0:00:14  572
+    29  1.0033e-02  7.2422e-05  1.7471e-07  0:00:14  571
+    29  1.0033e-02  7.2422e-05  1.7471e-07  0:00:14  571
+    30  8.9747e-03  6.5062e-05  1.5758e-07  0:00:14  570
+    30  8.9747e-03  6.5062e-05  1.5758e-07  0:00:14  570
+    31  7.9313e-03  5.8472e-05  1.4194e-07  0:00:14  569
+    31  7.9313e-03  5.8472e-05  1.4194e-07  0:00:14  569
+    32  6.9479e-03  5.2564e-05  1.2767e-07  0:00:15  568
+    32  6.9479e-03  5.2564e-05  1.2767e-07  0:00:15  568
+    33  6.1664e-03  4.7264e-05  1.1467e-07  0:00:15  567
+    33  6.1664e-03  4.7264e-05  1.1467e-07  0:00:15  567
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+    34  5.5254e-03  4.2506e-05  1.0289e-07  0:00:14  566
+    34  5.5254e-03  4.2506e-05  1.0289e-07  0:00:14  566
+    35  4.9377e-03  3.8231e-05  9.2346e-08  0:00:14  565
+    35  4.9377e-03  3.8231e-05  9.2346e-08  0:00:14  565
+    36  4.3395e-03  3.4390e-05  8.2862e-08  0:00:14  564
+    36  4.3395e-03  3.4390e-05  8.2862e-08  0:00:14  564
+    37  3.8121e-03  3.0939e-05  7.4431e-08  0:00:14  563
+    37  3.8121e-03  3.0939e-05  7.4431e-08  0:00:14  563
+    38  3.3762e-03  2.7837e-05  6.6876e-08  0:00:14  562
+    38  3.3762e-03  2.7837e-05  6.6876e-08  0:00:14  562
+    39  3.0083e-03  2.5049e-05  6.0118e-08  0:00:14  561
+    39  3.0083e-03  2.5049e-05  6.0118e-08  0:00:14  561
+    40  2.6739e-03  2.2543e-05  5.4102e-08  0:00:14  560
+    40  2.6739e-03  2.2543e-05  5.4102e-08  0:00:14  560
+    41  2.3907e-03  2.0290e-05  4.8777e-08  0:00:14  559
+    41  2.3907e-03  2.0290e-05  4.8777e-08  0:00:14  559
+    42  2.1362e-03  1.8264e-05  4.3950e-08  0:00:14  558
+    42  2.1362e-03  1.8264e-05  4.3950e-08  0:00:14  558
+    43  1.9065e-03  1.6442e-05  3.9564e-08  0:00:14  557
+    43  1.9065e-03  1.6442e-05  3.9564e-08  0:00:14  557
+    44  1.7030e-03  1.4804e-05  3.5614e-08  0:00:14  556
+    44  1.7030e-03  1.4804e-05  3.5614e-08  0:00:14  556
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+    45  1.5242e-03  1.3330e-05  3.2048e-08  0:00:14  555
+    45  1.5242e-03  1.3330e-05  3.2048e-08  0:00:14  555
+    46  1.3531e-03  1.2004e-05  2.8871e-08  0:00:14  554
+    46  1.3531e-03  1.2004e-05  2.8871e-08  0:00:14  554
+    47  1.1977e-03  1.0810e-05  2.6044e-08  0:00:13  553
+    47  1.1977e-03  1.0810e-05  2.6044e-08  0:00:13  553
+    48  1.0587e-03  9.7363e-06  2.3456e-08  0:00:13  552
+    48  1.0587e-03  9.7363e-06  2.3456e-08  0:00:13  552
+    49  9.4304e-04  8.7695e-06  2.1104e-08  0:00:13  551
+    49  9.4304e-04  8.7695e-06  2.1104e-08  0:00:13  551
+    50  8.4200e-04  7.8991e-06  1.8987e-08  0:00:13  550
+    50  8.4200e-04  7.8991e-06  1.8987e-08  0:00:13  550
+    51  7.5457e-04  7.1154e-06  1.7088e-08  0:00:13  549
+    51  7.5457e-04  7.1154e-06  1.7088e-08  0:00:13  549
+    52  6.8227e-04  6.4096e-06  1.5402e-08  0:00:13  548
+    52  6.8227e-04  6.4096e-06  1.5402e-08  0:00:13  548
+    53  6.1663e-04  5.7739e-06  1.3883e-08  0:00:13  547
+    53  6.1663e-04  5.7739e-06  1.3883e-08  0:00:13  547
+    54  5.5670e-04  5.2014e-06  1.2503e-08  0:00:13  546
+    54  5.5670e-04  5.2014e-06  1.2503e-08  0:00:13  546
+    55  4.9907e-04  4.6858e-06  1.1254e-08  0:00:13  545
+    55  4.9907e-04  4.6858e-06  1.1254e-08  0:00:13  545
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+    56  4.4539e-04  4.2214e-06  1.0140e-08  0:00:13  544
+    56  4.4539e-04  4.2214e-06  1.0140e-08  0:00:13  544
+    57  3.9868e-04  3.8030e-06  9.1485e-09  0:00:13  543
+    57  3.9868e-04  3.8030e-06  9.1485e-09  0:00:13  543
+    58  3.5887e-04  3.4262e-06  8.2491e-09  0:00:13  542
+    58  3.5887e-04  3.4262e-06  8.2491e-09  0:00:13  542
+    59  3.2501e-04  3.0867e-06  7.4369e-09  0:00:13  541
+    59  3.2501e-04  3.0867e-06  7.4369e-09  0:00:13  541
+    60  2.9456e-04  2.7809e-06  6.7011e-09  0:00:13  540
+    60  2.9456e-04  2.7809e-06  6.7011e-09  0:00:13  540
+    61  2.6707e-04  2.5055e-06  6.0340e-09  0:00:13  539
+    61  2.6707e-04  2.5055e-06  6.0340e-09  0:00:13  539
+    62  2.4232e-04  2.2573e-06  5.4326e-09  0:00:13  538
+    62  2.4232e-04  2.2573e-06  5.4326e-09  0:00:13  538
+    63  2.1814e-04  2.0337e-06  4.8967e-09  0:00:13  537
+    63  2.1814e-04  2.0337e-06  4.8967e-09  0:00:13  537
+    64  1.9746e-04  1.8323e-06  4.4129e-09  0:00:13  536
+    64  1.9746e-04  1.8323e-06  4.4129e-09  0:00:13  536
+    65  1.7910e-04  1.6509e-06  3.9780e-09  0:00:13  535
+    65  1.7910e-04  1.6509e-06  3.9780e-09  0:00:13  535
+    66  1.6249e-04  1.4874e-06  3.5879e-09  0:00:13  534
+    66  1.6249e-04  1.4874e-06  3.5879e-09  0:00:13  534
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+    67  1.4662e-04  1.3402e-06  3.2350e-09  0:00:13  533
+    67  1.4662e-04  1.3402e-06  3.2350e-09  0:00:13  533
+    68  1.3327e-04  1.2075e-06  2.9166e-09  0:00:13  532
+    68  1.3327e-04  1.2075e-06  2.9166e-09  0:00:13  532
+    69  1.2126e-04  1.0879e-06  2.6289e-09  0:00:13  531
+    69  1.2126e-04  1.0879e-06  2.6289e-09  0:00:13  531
+    70  1.0970e-04  9.8022e-07  2.3690e-09  0:00:13  530
+    70  1.0970e-04  9.8022e-07  2.3690e-09  0:00:13  530
+    71  9.9171e-05  8.8318e-07  2.1349e-09  0:00:13  529
+    71  9.9171e-05  8.8318e-07  2.1349e-09  0:00:13  529
+    72  8.9852e-05  7.9575e-07  1.9239e-09  0:00:13  528
+    72  8.9852e-05  7.9575e-07  1.9239e-09  0:00:13  528
+    73  8.1725e-05  7.1698e-07  1.7349e-09  0:00:13  527
+    73  8.1725e-05  7.1698e-07  1.7349e-09  0:00:13  527
+    74  7.4267e-05  6.4601e-07  1.5659e-09  0:00:12  526
+    74  7.4267e-05  6.4601e-07  1.5659e-09  0:00:12  526
+    75  6.7282e-05  5.8206e-07  1.4133e-09  0:00:12  525
+    75  6.7282e-05  5.8206e-07  1.4133e-09  0:00:12  525
+    76  6.0595e-05  5.2444e-07  1.2740e-09  0:00:12  524
+    76  6.0595e-05  5.2444e-07  1.2740e-09  0:00:12  524
+    77  5.4665e-05  4.7253e-07  1.1480e-09  0:00:12  523
+    77  5.4665e-05  4.7253e-07  1.1480e-09  0:00:12  523
+
+
+  iter  continuity  x-velocity  y-velocity  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+    78  4.9438e-05  4.2576e-07  1.0346e-09  0:00:12  522
+    78  4.9438e-05  4.2576e-07  1.0346e-09  0:00:12  522
+    79  4.4829e-05  3.8361e-07  9.3261e-10  0:00:12  521
+    79  4.4829e-05  3.8361e-07  9.3261e-10  0:00:12  521
+    80  4.0468e-05  3.4564e-07  8.4061e-10  0:00:12  520
+    80  4.0468e-05  3.4564e-07  8.4061e-10  0:00:12  520
+    81  3.6308e-05  3.1143e-07  7.5761e-10  0:00:12  519
+    81  3.6308e-05  3.1143e-07  7.5761e-10  0:00:12  519
+    82  3.2713e-05  2.8060e-07  6.8287e-10  0:00:12  518
+    82  3.2713e-05  2.8060e-07  6.8287e-10  0:00:12  518
+    83  2.9537e-05  2.5282e-07  6.1601e-10  0:00:12  517
+    83  2.9537e-05  2.5282e-07  6.1601e-10  0:00:12  517
+    84  2.6726e-05  2.2780e-07  5.5589e-10  0:00:12  516
+    84  2.6726e-05  2.2780e-07  5.5589e-10  0:00:12  516
+    85  2.4131e-05  2.0525e-07  5.0147e-10  0:00:12  515
+    85  2.4131e-05  2.0525e-07  5.0147e-10  0:00:12  515
+    86  2.1756e-05  1.8493e-07  4.5221e-10  0:00:12  514
+    86  2.1756e-05  1.8493e-07  4.5221e-10  0:00:12  514
+    87  1.9624e-05  1.6663e-07  4.0769e-10  0:00:12  513
+    87  1.9624e-05  1.6663e-07  4.0769e-10  0:00:12  513
+    88  1.7655e-05  1.5013e-07  3.6745e-10  0:00:12  512
+    88  1.7655e-05  1.5013e-07  3.6745e-10  0:00:12  512
+
+  iter  continuity
+  x-velocity  y-velocity  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+    89  1.5811e-05  1.3527e-07  3.3102e-10  0:00:12  511
+    89  1.5811e-05  1.3527e-07  3.3102e-10  0:00:12  511
+    90  1.4116e-05  1.2188e-07  2.9828e-10  0:00:12  510
+    90  1.4116e-05  1.2188e-07  2.9828e-10  0:00:12  510
+    91  1.2692e-05  1.0982e-07  2.6888e-10  0:00:12  509
+    91  1.2692e-05  1.0982e-07  2.6888e-10  0:00:12  509
+    92  1.1393e-05  9.8946e-08  2.4246e-10  0:00:12  508
+    92  1.1393e-05  9.8946e-08  2.4246e-10  0:00:12  508
+    93  1.0322e-05  8.9152e-08  2.1878e-10  0:00:12  507
+    93  1.0322e-05  8.9152e-08  2.1878e-10  0:00:12  507
+    94  9.3940e-06  8.0327e-08  1.9743e-10  0:00:12  506
+    94  9.3940e-06  8.0327e-08  1.9743e-10  0:00:12  506
+    95  8.5296e-06  7.2375e-08  1.7817e-10  0:00:12  505
+    95  8.5296e-06  7.2375e-08  1.7817e-10  0:00:12  505
+    96  7.7127e-06  6.5210e-08  1.6075e-10  0:00:12  504
+    96  7.7127e-06  6.5210e-08  1.6075e-10  0:00:12  504
+    97  6.9768e-06  5.8755e-08  1.4500e-10  0:00:12  503
+    97  6.9768e-06  5.8755e-08  1.4500e-10  0:00:12  503
+    98  6.3080e-06  5.2939e-08  1.3078e-10  0:00:12  502
+    98  6.3080e-06  5.2939e-08  1.3078e-10  0:00:12  502
+    99  5.7021e-06  4.7698e-08  1.1796e-10  0:00:12  501
+    99  5.7021e-06  4.7698e-08  1.1796e-10  0:00:12  501
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+   100  5.1504e-06  4.2976e-08  1.0641e-10  0:00:12  500
+   100  5.1504e-06  4.2976e-08  1.0641e-10  0:00:12  500
+   101  4.6505e-06  3.8722e-08  9.5993e-11  0:00:12  499
+   101  4.6505e-06  3.8722e-08  9.5993e-11  0:00:12  499
+   102  4.1968e-06  3.4888e-08  8.6604e-11  0:00:12  498
+   102  4.1968e-06  3.4888e-08  8.6604e-11  0:00:12  498
+   103  3.7911e-06  3.1434e-08  7.8128e-11  0:00:12  497
+   103  3.7911e-06  3.1434e-08  7.8128e-11  0:00:12  497
+   104  3.4238e-06  2.8322e-08  7.0483e-11  0:00:12  496
+   104  3.4238e-06  2.8322e-08  7.0483e-11  0:00:12  496
+   105  3.0944e-06  2.5518e-08  6.3583e-11  0:00:44  495
+   105  3.0944e-06  2.5518e-08  6.3583e-11  0:00:44  495
+   106  2.8037e-06  2.2992e-08  5.7353e-11  0:00:37  494
+   106  2.8037e-06  2.2992e-08  5.7353e-11  0:00:37  494
+   107  2.5342e-06  2.0716e-08  5.1730e-11  0:00:32  493
+   107  2.5342e-06  2.0716e-08  5.1730e-11  0:00:32  493
+   108  2.2891e-06  1.8665e-08  4.6660e-11  0:00:27  492
+   108  2.2891e-06  1.8665e-08  4.6660e-11  0:00:27  492
+   109  2.0675e-06  1.6817e-08  4.2085e-11  0:00:24  491
+   109  2.0675e-06  1.6817e-08  4.2085e-11  0:00:24  491
+   110  1.8677e-06  1.5152e-08  3.7958e-11  0:00:21  490
+   110  1.8677e-06  1.5152e-08  3.7958e-11  0:00:21  490
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+   111  1.6894e-06  1.3652e-08  3.4236e-11  0:00:24  489
+   111  1.6894e-06  1.3652e-08  3.4236e-11  0:00:24  489
+   112  1.5279e-06  1.2300e-08  3.0881e-11  0:00:22  488
+   112  1.5279e-06  1.2300e-08  3.0881e-11  0:00:22  488
+   113  1.3810e-06  1.1082e-08  2.7856e-11  0:00:20  487
+   113  1.3810e-06  1.1082e-08  2.7856e-11  0:00:20  487
+   114  1.2465e-06  9.9850e-09  2.5127e-11  0:00:18  486
+   114  1.2465e-06  9.9850e-09  2.5127e-11  0:00:18  486
+   115  1.1242e-06  8.9964e-09  2.2663e-11  0:00:16  485
+   115  1.1242e-06  8.9964e-09  2.2663e-11  0:00:16  485
+   116  1.0074e-06  8.1056e-09  2.0423e-11  0:00:15  484
+   116  1.0074e-06  8.1056e-09  2.0423e-11  0:00:15  484
+   117  9.0604e-07  7.3030e-09  1.8419e-11  0:00:14  483
+   117  9.0604e-07  7.3030e-09  1.8419e-11  0:00:14  483
+   118  8.1751e-07  6.5799e-09  1.6613e-11  0:00:14  482
+   118  8.1751e-07  6.5799e-09  1.6613e-11  0:00:14  482
+   119  7.3902e-07  5.9284e-09  1.4982e-11  0:00:13  481
+   119  7.3902e-07  5.9284e-09  1.4982e-11  0:00:13  481
+   120  6.6808e-07  5.3414e-09  1.3511e-11  0:00:13  480
+   120  6.6808e-07  5.3414e-09  1.3511e-11  0:00:13  480
+   121  6.0333e-07  4.8125e-09  1.2186e-11  0:00:12  479
+   121  6.0333e-07  4.8125e-09  1.2186e-11  0:00:12  479
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+   122  5.4393e-07  4.3360e-09  1.0990e-11  0:00:12  478
+   122  5.4393e-07  4.3360e-09  1.0990e-11  0:00:12  478
+   123  4.9015e-07  3.9066e-09  9.9130e-12  0:00:12  477
+   123  4.9015e-07  3.9066e-09  9.9130e-12  0:00:12  477
+   124  4.4213e-07  3.5198e-09  8.9403e-12  0:00:12  476
+   124  4.4213e-07  3.5198e-09  8.9403e-12  0:00:12  476
+   125  3.9879e-07  3.1712e-09  8.0620e-12  0:00:12  475
+   125  3.9879e-07  3.1712e-09  8.0620e-12  0:00:12  475
+   126  3.5952e-07  2.8572e-09  7.2698e-12  0:00:12  474
+   126  3.5952e-07  2.8572e-09  7.2698e-12  0:00:12  474
+   127  3.2389e-07  2.5743e-09  6.5556e-12  0:00:11  473
+   127  3.2389e-07  2.5743e-09  6.5556e-12  0:00:11  473
+   128  2.9204e-07  2.3193e-09  5.9116e-12  0:00:11  472
+   128  2.9204e-07  2.3193e-09  5.9116e-12  0:00:11  472
+   129  2.6317e-07  2.0897e-09  5.3306e-12  0:00:11  471
+   129  2.6317e-07  2.0897e-09  5.3306e-12  0:00:11  471
+   130  2.3724e-07  1.8827e-09  4.8066e-12  0:00:11  470
+   130  2.3724e-07  1.8827e-09  4.8066e-12  0:00:11  470
+   131  2.1396e-07  1.6963e-09  4.3343e-12  0:00:11  469
+   131  2.1396e-07  1.6963e-09  4.3343e-12  0:00:11  469
+   132  1.9281e-07  1.5283e-09  3.9084e-12  0:00:11  468
+   132  1.9281e-07  1.5283e-09  3.9084e-12  0:00:11  468
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+   133  1.7373e-07  1.3769e-09  3.5242e-12  0:00:11  467
+   133  1.7373e-07  1.3769e-09  3.5242e-12  0:00:11  467
+   134  1.5669e-07  1.2406e-09  3.1776e-12  0:00:11  466
+   134  1.5669e-07  1.2406e-09  3.1776e-12  0:00:11  466
+   135  1.4124e-07  1.1177e-09  2.8649e-12  0:00:11  465
+   135  1.4124e-07  1.1177e-09  2.8649e-12  0:00:11  465
+   136  1.2726e-07  1.0070e-09  2.5832e-12  0:00:11  464
+   136  1.2726e-07  1.0070e-09  2.5832e-12  0:00:11  464
+   137  1.1465e-07  9.0730e-10  2.3290e-12  0:00:11  463
+   137  1.1465e-07  9.0730e-10  2.3290e-12  0:00:11  463
+   138  1.0338e-07  8.1744e-10  2.0999e-12  0:00:11  462
+   138  1.0338e-07  8.1744e-10  2.0999e-12  0:00:11  462
+   139  9.3153e-08  7.3648e-10  1.8932e-12  0:00:10  461
+   139  9.3153e-08  7.3648e-10  1.8932e-12  0:00:10  461
+   140  8.3905e-08  6.6354e-10  1.7071e-12  0:00:10  460
+   140  8.3905e-08  6.6354e-10  1.7071e-12  0:00:10  460
+   141  7.5538e-08  5.9783e-10  1.5391e-12  0:00:10  459
+   141  7.5538e-08  5.9783e-10  1.5391e-12  0:00:10  459
+   142  6.7990e-08  5.3862e-10  1.3876e-12  0:00:11  458
+   142  6.7990e-08  5.3862e-10  1.3876e-12  0:00:11  458
+   143  6.1193e-08  4.8527e-10  1.2509e-12  0:00:11  457
+   143  6.1193e-08  4.8527e-10  1.2509e-12  0:00:11  457
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+   144  5.5065e-08  4.3721e-10  1.1277e-12  0:00:11  456
+   144  5.5065e-08  4.3721e-10  1.1277e-12  0:00:11  456
+   145  4.9515e-08  3.9390e-10  1.0167e-12  0:00:11  455
+   145  4.9515e-08  3.9390e-10  1.0167e-12  0:00:11  455
+   146  4.4512e-08  3.5489e-10  9.1654e-13  0:00:11  454
+   146  4.4512e-08  3.5489e-10  9.1654e-13  0:00:11  454
+   147  4.0016e-08  3.1974e-10  8.2623e-13  0:00:11  453
+   147  4.0016e-08  3.1974e-10  8.2623e-13  0:00:11  453
+   148  3.5973e-08  2.8807e-10  7.4489e-13  0:00:11  452
+   148  3.5973e-08  2.8807e-10  7.4489e-13  0:00:11  452
+   149  3.2349e-08  2.5954e-10  6.7156e-13  0:00:11  451
+   149  3.2349e-08  2.5954e-10  6.7156e-13  0:00:11  451
+   150  2.9090e-08  2.3383e-10  6.0544e-13  0:00:10  450
+   150  2.9090e-08  2.3383e-10  6.0544e-13  0:00:10  450
+   151  2.6151e-08  2.1067e-10  5.4579e-13  0:00:10  449
+   151  2.6151e-08  2.1067e-10  5.4579e-13  0:00:10  449
+   152  2.3502e-08  1.8980e-10  4.9200e-13  0:00:11  448
+   152  2.3502e-08  1.8980e-10  4.9200e-13  0:00:11  448
+   153  2.1117e-08  1.7100e-10  4.4358e-13  0:00:10  447
+   153  2.1117e-08  1.7100e-10  4.4358e-13  0:00:10  447
+   154  1.8970e-08  1.5406e-10  3.9988e-13  0:00:10  446
+   154  1.8970e-08  1.5406e-10  3.9988e-13  0:00:10  446
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+   155  1.7038e-08  1.3880e-10  3.6049e-13  0:00:10  445
+   155  1.7038e-08  1.3880e-10  3.6049e-13  0:00:10  445
+   156  1.5300e-08  1.2505e-10  3.2500e-13  0:00:10  444
+   156  1.5300e-08  1.2505e-10  3.2500e-13  0:00:10  444
+   157  1.3742e-08  1.1266e-10  2.9298e-13  0:00:10  443
+   157  1.3742e-08  1.1266e-10  2.9298e-13  0:00:10  443
+   158  1.2336e-08  1.0150e-10  2.6413e-13  0:00:10  442
+   158  1.2336e-08  1.0150e-10  2.6413e-13  0:00:10  442
+   159  1.1077e-08  9.1449e-11  2.3811e-13  0:00:10  441
+   159  1.1077e-08  9.1449e-11  2.3811e-13  0:00:10  441
+   160  9.9460e-09  8.2390e-11  2.1464e-13  0:00:10  440
+!  160 solution is converged
+   160  9.9460e-09  8.2390e-11  2.1464e-13  0:00:10  440
+!  160 solution is converged
+
+                 p02
+ -------------------
+           Area-Weighted Average                [Pa]
+-------------------------------- -------------------
+                             p02           0.4569916
+
+                 p02
+ -------------------
+           Area-Weighted Average                [Pa]
+-------------------------------- -------------------
+                             p02           0.4569916
+
+                 p08
+ -------------------
+           Area-Weighted Average                [Pa]
+-------------------------------- -------------------
+                             p08
+          0.11357582
+                 p08
+ -------------------
+           Area-Weighted Average                [Pa]
+-------------------------------- -------------------
+                             p08          0.11357582
+
+          mass-inlet
+ -------------------
+                  Mass Flow Rate              [kg/s]
+-------------------------------- -------------------
+
+                           inlet       9.6211275e-06
+          mass-inlet
+ -------------------
+                  Mass Flow Rate              [kg/s]
+-------------------------------- -------------------
+                           inlet       9.6211275e-06
+
+         mass-outlet
+ -------------------
+                  Mass Flow Rate              [kg/s]
+--------------------------------
+ -------------------
+                          outlet         mass-outlet
+      -9.6211275e-06
+ -------------------
+                  Mass Flow Rate              [kg/s]
+-------------------------------- -------------------
+                          outlet      -9.6211275e-06
+PHYSICAL_REPORTS [{'p02': [0.4569916049253608, 'Pa']}, {'p08': [0.113575820446103, 'Pa']}, {'mass-inlet': [9.621127501618743e-06, 'kg/s']}, {'mass-outlet': [-9.621127503348447e-06, 'kg/s']}]
+Fast-loading "[installation-path]"Fast-loading "[installation-path]"
+Done.
+
+Done.
+
+Writing to [host]:"[run-directory]" in NODE0 mode and compression level 1 ...
+
+Writing to [host]:"[run-directory]" in NODE0 mode and compression level 1 ...
+Grouping cells for Laplace smoothing ...
+Grouping cells for Laplace smoothing ...
+       15360 cells,     1 zone  ...
+       31088 faces,     5 zones ...
+       15729 nodes,     1 zone  ...
+  Done.
+       15360 cells,     1 zone  ...
+       31088 faces,     5 zones ...
+       15729 nodes,     1 zone  ...
+  Done.
+Done.
+Done.
+
+Writing to [host]:"[run-directory]" in NODE0 mode and compression level 1 ...
+
+Writing to [host]:"[run-directory]" in NODE0 mode and compression level 1 ...
+  Writing results.
+  Writing results.
+Done.
+Done.
+REPORT_STATE {'mesh': {}, 'surface': {'p02': {'name': 'p02', 'report_type': 'surface-areaavg', 'field': 'pressure', 'surface_names': ['p02'], 'per_selection': False, 'average_over': 1, 'retain_instantaneous_values': False, 'output_parameter': False, 'create_report_file': False, 'create_report_plot': False}, 'p08': {'name': 'p08', 'report_type': 'surface-areaavg', 'field': 'pressure', 'surface_names': ['p08'], 'per_selection': False, 'average_over': 1, 'retain_instantaneous_values': False, 'output_parameter': False, 'create_report_file': False, 'create_report_plot': False}}, 'volume': {}, 'force': {}, 'lift': {}, 'drag': {}, 'moment': {}, 'time': {}, 'flux': {'mass-inlet': {'name': 'mass-inlet', 'report_type': 'flux-massflow', 'boundaries': ['inlet'], 'per_selection': False, 'average_over': 1, 'retain_instantaneous_values': False, 'output_parameter': False, 'create_report_file': False, 'create_report_plot': False}, 'mass-outlet': {'name': 'mass-outlet', 'report_type': 'flux-massflow', 'boundaries': ['outlet'], 'per_selection': False, 'average_over': 1, 'retain_instantaneous_values': False, 'output_parameter': False, 'create_report_file': False, 'create_report_plot': False}}, 'vbm': {}, 'user_defined': {}, 'expression': {}, 'single_valued_expression': {}}
+SURFACE_COMMANDS ['_MutableMapping__marker', '__abstractmethods__', '__call__', '__class__', '__class_getitem__', '__contains__', '__delattr__', '__delitem__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__getitem__', '__getstate__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__iter__', '__le__', '__len__', '__lt__', '__module__', '__ne__', '__new__', '__orig_bases__', '__parameters__', '__reduce__', '__reduce_ex__', '__repr__', '__reversed__', '__setattr__', '__setitem__', '__sizeof__', '__slots__', '__str__', '__subclasshook__', '__weakref__', '_abc_impl', '_add_units_to_state', '_child_alias_objs', '_child_aliases', '_child_classes', '_file_transfer_handler', '_file_transfer_service', '_flproxy', '_name', '_parent', '_print_state_helper', '_python_name', '_root', '_set_file_transfer_service', '_set_on_interrupt', '_setattr', '_state_type', '_version', '_while_creating', '_while_deleting', '_while_executing_command', '_while_renaming', '_while_resizing', '_while_setting_state', 'after_execute', 'before_execute', 'child_names', 'clear', 'command_names', 'create_multiple_iso_surfaces', 'create_multiple_plane_surfaces', 'create_multiple_zone_surfaces', 'delete', 'expression_volume', 'external_surface', 'find_object', 'flproxy', 'fluent_name', 'get', 'get_active_child_names', 'get_active_command_names', 'get_active_query_names', 'get_attr', 'get_attrs', 'get_completer_info', 'get_state', 'group_surface', 'imprint_surface', 'is_active', 'is_read_only', 'iso_clip', 'iso_surface', 'items', 'keys', 'line_surface', 'obj_name', 'parent', 'partition_surface', 'path', 'plane_slice', 'plane_surface', 'point_surface', 'pop', 'popitem', 'print_state', 'python_name', 'python_path', 'quadric_surface', 'query_names', 'rake_surface', 'reset_zone_surfaces', 'set_flproxy', 'set_rendering_priority', 'set_state', 'setdefault', 'sphere_slice', 'split_surface', 'state_with_units', 'surface_cells', 'to_python_keys', 'to_scheme_keys', 'transform_surface', 'update', 'values', 'zone_surface']
+ELAPSED 39.119340658187866
+Shutting down Server...
+Services Shutdown...Done.
+Server Shutdown...Done.
+Queue Cleared...Done.
+Shutdown Complete.
+Auto-Transcript Stop Time:  18:02:13, 12 Nov 2026 
+Total Transcript Time: 0 Minute 38 Second.
+
+Automatic transcript closed.

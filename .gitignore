@@ -281,6 +281,11 @@ apps/logos-workspace/web/vite.config.d.ts
 # Generated at build time by libs/code/hatch_build.py (stamps the release commit)
 libs/code/deepagents_code/_build_info.py
 
+# Local handoff notes, private validation originals and deployment backups
+/output/
+/PROJECT_STATUS.md
+/HANDOFF-codex-v0.3.6.md
+
 # Local LOGOS state and generated packaging payloads
 /.logos/
 /.playwright-mcp/

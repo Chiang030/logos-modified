@@ -1,0 +1,563 @@
+[Publication copy: host, user, paths, network and license metadata redacted; numerical solver output preserved.]
+
+ Ansys Mechanical Enterprise                       
+
+
+ *------------------------------------------------------------------*
+ |                                                                  |
+ |   W E L C O M E   T O   T H E   A N S Y S (R)  P R O G R A M     |
+ |                                                                  |
+ *------------------------------------------------------------------*
+
+
+
+
+ ***************************************************************
+ *         ANSYS MAPDL 2026 R1          LEGAL NOTICES          *
+ ***************************************************************
+ *                                                             *
+ * Copyright (c) 2026 Synopsys, Inc. and ANSYS, Inc.           *
+ * All rights reserved.                                        *
+ * Unauthorized use, distribution or duplication is            *
+ * prohibited.                                                 *
+ *                                                             *
+ * Ansys is a registered trademark of Ansys, Inc. or its       *
+ * subsidiaries in the United States or other countries.       *
+ * See the Ansys, Inc. online documentation or the Ansys, Inc. *
+ * documentation CD or online help for the complete Legal      *
+ * Notice.                                                     *
+ *                                                             *
+ ***************************************************************
+ *                                                             *
+ * THIS ANSYS SOFTWARE PRODUCT AND PROGRAM DOCUMENTATION       *
+ * INCLUDE TRADE SECRETS AND CONFIDENTIAL AND PROPRIETARY      *
+ * PRODUCTS OF ANSYS, INC., ITS SUBSIDIARIES, OR LICENSORS.    *
+ * The software products and documentation are furnished by    *
+ * Ansys, Inc. or its subsidiaries under a software license    *
+ * agreement that contains provisions concerning               *
+ * non-disclosure, copying, length and nature of use,          *
+ * compliance with exporting laws, warranties, disclaimers,    *
+ * limitations of liability, and remedies, and other           *
+ * provisions.  The software products and documentation may be *
+ * used, disclosed, transferred, or copied only in accordance  *
+ * with the terms and conditions of that software license      *
+ * agreement.                                                  *
+ *                                                             *
+ * Ansys, Inc. is a UL registered                              *
+ * ISO 9001:2015 company.                                      *
+ *                                                             *
+ ***************************************************************
+ *                                                             *
+ * This product is subject to U.S. laws governing export and   *
+ * re-export.                                                  *
+ *                                                             *
+ * For U.S. Government users, except as specifically granted   *
+ * by the Ansys, Inc. software license agreement, the use,     *
+ * duplication, or disclosure by the United States Government  *
+ * is subject to restrictions stated in the Ansys, Inc.        *
+ * software license agreement and FAR 12.212 (for non-DOD      *
+ * licenses).                                                  *
+ *                                                             *
+ ***************************************************************
+
+
+ AFTER YOU HAVE READ, UNDERSTOOD, AND AGREED TO THE PREVIOUS NOTICES,
+ PRESS <CR> OR <ENTER> TO CONTINUE
+ 2026 R1 
+     
+ Point Releases and Patches installed:   
+     
+ Ansys, Inc. License Manager 2026 R1 
+ Electromagnetics Suite 2026 R1  
+ Electromagnetics RSM 2026 R1
+ PerceiveEM 2026 R1  
+ BladeModeler 2026 R1
+ CFX (includes CFD-Post) 2026 R1 
+ Core WB Files 2026 R1   
+ CFD-Post only 2026 R1   
+ Chemkin 2026 R1 
+ EnSight 2026 R1 
+ FENSAP-ICE 2026 R1  
+ Fluent (includes CFD-Post) 2026 R1  
+ Polyflow (includes CFD-Post) 2026 R1
+ Forte (includes EnSight) 2026 R1
+ ICEM CFD 2026 R1
+ RBF Morph Fluids UDF 2026 R1
+ RBF Morph Libraries 2026 R1 
+ Rocky 2026 R1   
+ TurboGrid 2026 R1   
+ Dynamic Reporting 2026 R1   
+ Remote Solve Manager Standalone Services 2026 R1
+ Aqwa 2026 R1
+ Autodyn 2026 R1 
+ Customization Files for User Programmable Features 2026 R1  
+ LS-DYNA 2026 R1 
+ Mechanical Products 2026 R1 
+ Motion 2026 R1  
+ Sherlock 2026 R1
+
+
+          *****  MAPDL COMMAND LINE ARGUMENTS  *****
+  INITIAL JOBNAME              = cantilever                                                                                                                                                                                                                                              
+  BATCH MODE REQUESTED (-b)    = LIST
+  INPUT FILE COPY MODE (-c)    = COPY
+  SHARED MEMORY PARALLEL REQUESTED
+    SINGLE PROCESS WITH SINGLE THREAD REQUESTED
+    TOTAL OF     1 CORES REQUESTED
+  INPUT FILE NAME              = [run-directory]
+  OUTPUT FILE NAME             = [run-directory]
+
+ RELEASE= 2026 R1              BUILD= 26.1      UP20260202   VERSION=LINUX x64   
+ CURRENT JOBNAME=cantilever  17:51:10  NOV 12, 2026  Elapsed Time=       0.218
+
+     1  /BATCH  
+     2  /TITLE,LOGOS cantilever BEAM188 benchmark SI
+     3  /PREP7  
+     4  ET,1,188
+     5  KEYOPT,1,3,3
+     6  MP,EX,1,210E9   
+     7  MP,PRXY,1,0.3   
+     8  SECTYPE,1,BEAM,RECT 
+     9  SECDATA,0.02,0.04   
+    10  ! Beam axis X, section local y along global Y, height along global Z.   
+    11  *DO,J,0,20  
+    12  N,J+1,J/20,0,0  
+    13  *ENDDO  
+    14  N,1000,0,1,0
+    15  *DO,J,1,20  
+    16  E,J,J+1,1000
+    17  *ENDDO  
+    18  D,1,ALL,0   
+    19  F,21,FZ,-100
+    20  FINISH  
+    21  /SOLU   
+    22  ANTYPE,STATIC   
+    23  NLGEOM,OFF  
+    24  OUTRES,ALL,ALL  
+    25  SOLVE   
+    26  FINISH  
+    27  /POST1  
+    28  SET,LAST
+    29  PRNSOL,U,COMP   
+    30  PRRSOL  
+    31  *GET,UZTIP,NODE,21,U,Z  
+    32  *GET,RZROOT,NODE,1,RF,FZ
+    33  *GET,MYROOT,NODE,1,RF,MY
+    34  *CFOPEN,results,csv 
+    35  *VWRITE,'tip_uz_m,root_fz_N,root_my_Nm' 
+    36  (A) 
+    37  *VWRITE,UZTIP,RZROOT,MYROOT 
+    38  (E24.16,',',E24.16,',',E24.16)  
+    39  *CFCLOS 
+    40  SAVE
+    41  FINISH  
+    42  /EXIT,NOSAVE
+
+ RUN SETUP PROCEDURE FROM FILE= [installation-path]
+
+ /INPUT FILE= [installation-path]  LINE=       0
+
+ TITLE= 
+ LOGOS cantilever BEAM188 benchmark SI                                         
+
+
+ *** MAPDL - ENGINEERING ANALYSIS SYSTEM  RELEASE 2026 R1          26.1     ***
+ Ansys Mechanical Enterprise                       
+ 20120530  VERSION=LINUX x64     17:51:11  NOV 12, 2026 Elapsed Time=      1.336
+
+ LOGOS cantilever BEAM188 benchmark SI                                         
+
+
+
+          ***** MAPDL ANALYSIS DEFINITION (PREP7) *****
+
+ ELEMENT TYPE          1 IS BEAM188      3-D 2-NODE BEAM             
+  KEYOPT( 1- 6)=        0      0      0        0      0      0
+  KEYOPT( 7-12)=        0      0      0        0      0      0
+  KEYOPT(13-18)=        0      0      0        0      0      0
+
+ CURRENT NODAL DOF SET IS  UX    UY    UZ    ROTX  ROTY  ROTZ
+  THREE-DIMENSIONAL MODEL
+
+ ELEMENT TYPE       1 IS BEAM188      3-D 2-NODE BEAM             
+  KEYOPT( 1- 6)=        0      0      3        0      0      0
+  KEYOPT( 7-12)=        0      0      0        0      0      0
+  KEYOPT(13-18)=        0      0      0        0      0      0
+
+ CURRENT NODAL DOF SET IS  UX    UY    UZ    ROTX  ROTY  ROTZ
+  THREE-DIMENSIONAL MODEL
+
+ MATERIAL          1     EX   =  0.2100000E+12  
+
+ MATERIAL          1     PRXY =  0.3000000      
+                                   
+   INPUT SECTION ID NUMBER                  1
+   INPUT SECTION TYPE                 BEAM
+   INPUT BEAM SECTION SUBTYPE         Rectangle       
+   INPUT BEAM SECTION NAME                    
+                     
+   SECTION ID NUMBER IS:            1
+   BEAM SECTION TYPE IS:     Rectangle       
+   BEAM SECTION NAME IS:             
+   COMPUTED BEAM SECTION DATA SUMMARY:
+    Area                 = 0.80000E-03
+    Iyy                  = 0.10667E-06
+    Iyz                  = 0.18612E-23
+    Izz                  = 0.26667E-07
+    Warping Constant     = 0.12717E-11
+    Torsion Constant     = 0.74629E-07
+    Centroid Y           = 0.29779E-18
+    Centroid Z           =-0.52940E-18
+    Shear Center Y       =-0.99964E-17
+    Shear Center Z       = 0.42409E-17
+    Shear Correction-xy  = 0.84211    
+    Shear Correction-yz  = 0.77349E-15
+    Shear Correction-xz  = 0.84211    
+                 
+    Beam Section is offset to CENTROID of cross section
+
+ *DO LOOP ON PARAMETER= J FROM  0.0000     TO  20.000     BY  1.0000    
+
+ NODE          1  KCS=      0  X,Y,Z=  0.0000       0.0000       0.0000     
+
+ *ENDDO  INDEX= J                               
+
+ NODE       1000  KCS=      0  X,Y,Z=  0.0000       1.0000       0.0000     
+
+ *DO LOOP ON PARAMETER= J FROM  1.0000     TO  20.000     BY  1.0000    
+
+ ELEMENT      1       1      2   1000
+
+ *ENDDO  INDEX= J                               
+
+ SPECIFIED CONSTRAINT UX   FOR SELECTED NODES            1 TO           1 BY           1
+ REAL=  0.00000000       IMAG=  0.00000000    
+ ADDITIONAL DOFS=  UY    UZ    ROTX  ROTY  ROTZ
+
+ SPECIFIED NODAL LOAD FZ   FOR SELECTED NODES        21 TO       21 BY        1
+  REAL= -100.000000       IMAG=  0.00000000    
+
+
+ ***** ROUTINE COMPLETED *****  ELAPSED TIME =         1.340
+
+
+
+ *****  MAPDL SOLUTION ROUTINE  *****
+
+
+ PERFORM A STATIC ANALYSIS
+  THIS WILL BE A NEW ANALYSIS
+
+ SMALL DEFORMATION ANALYSIS
+
+ WRITE ALL  ITEMS TO THE DATABASE WITH A FREQUENCY OF ALL 
+   FOR ALL APPLICABLE ENTITIES
+
+ *****  MAPDL SOLVE    COMMAND  *****
+
+ *** SELECTION OF ELEMENT TECHNOLOGIES FOR APPLICABLE ELEMENTS ***
+                ---GIVE SUGGESTIONS ONLY---
+
+ ELEMENT TYPE         1 IS BEAM188 . KEYOPT(1)=1 IS SUGGESTED FOR NON-CIRCULAR CROSS
+ SECTIONS AND KEYOPT(3)=2 IS ALWAYS SUGGESTED.
+
+ ELEMENT TYPE         1 IS BEAM188 . KEYOPT(15) IS ALREADY SET AS SUGGESTED.
+
+
+
+ *** MAPDL - ENGINEERING ANALYSIS SYSTEM  RELEASE 2026 R1          26.1     ***
+ Ansys Mechanical Enterprise                       
+ 20120530  VERSION=LINUX x64     17:51:11  NOV 12, 2026 Elapsed Time=      1.343
+
+ LOGOS cantilever BEAM188 benchmark SI                                         
+
+
+
+                       S O L U T I O N   O P T I O N S
+
+   PROBLEM DIMENSIONALITY. . . . . . . . . . . . .3-D                  
+   DEGREES OF FREEDOM. . . . . . UX   UY   UZ   ROTX ROTY ROTZ
+   ANALYSIS TYPE . . . . . . . . . . . . . . . . .STATIC (STEADY-STATE)
+   GLOBALLY ASSEMBLED MATRIX . . . . . . . . . . .SYMMETRIC  
+
+ *** NOTE ***                            ELAPSED TIME =       1.344   TIME= 17:51:11
+ Present time 0 is less than or equal to the previous time.  Time will   
+ default to 1.                                                           
+
+ *** NOTE ***                            ELAPSED TIME =       1.344   TIME= 17:51:11
+ The conditions for direct assembly have been met.  No .emat or .erot    
+ files will be produced.                                                 
+
+ *** NOTE ***                            ELAPSED TIME =       1.344   TIME= 17:51:11
+ Internal nodes from 1001 to 1040 are created.                           
+ 40 internal nodes are used for quadratic and/or cubic options of        
+ BEAM188, PIPE288, and/or SHELL208.                                      
+
+                      L O A D   S T E P   O P T I O N S
+
+   LOAD STEP NUMBER. . . . . . . . . . . . . . . .     1
+   TIME AT END OF THE LOAD STEP. . . . . . . . . .  1.0000    
+   NUMBER OF SUBSTEPS. . . . . . . . . . . . . . .     1
+   STEP CHANGE BOUNDARY CONDITIONS . . . . . . . .    NO
+   PRINT OUTPUT CONTROLS . . . . . . . . . . . . .NO PRINTOUT
+   DATABASE OUTPUT CONTROLS
+      ITEM     FREQUENCY   COMPONENT
+       ALL        ALL               
+
+
+ SOLUTION MONITORING INFO IS WRITTEN TO FILE= cantilever.mntr                                                                                                                                                                                                                                                     
+
+ *** NOTE ***                            ELAPSED TIME =       1.347   TIME= 17:51:11
+ Predictor is ON by default for structural elements with rotational      
+ degrees of freedom.  Use the PRED,OFF command to turn the predictor     
+ OFF if it adversely affects the convergence.                            
+
+
+ Range of element maximum matrix coefficients in global coordinates
+ Maximum = 3.6288E+10 at element 18.                                     
+ Minimum = 3.6288E+10 at element 1.                                      
+
+   *** ELEMENT MATRIX FORMULATION TIMES
+     TYPE    NUMBER     ENAME   TOTAL ELAPSED   AVG ELAPSED
+
+        1        20   BEAM188          0.0015   0.000074503
+ Elapsed Time at end of element matrix formulation = 1.34927715.         
+
+ SPARSE MATRIX DIRECT SOLVER.
+  Number of equations =         360,    Maximum wavefront =     36
+
+
+  Memory allocated on this process
+  -------------------------------------------------------------------
+  Equation solver memory allocated                     =     0.435 MB
+  Equation solver memory required for in-core mode     =     0.420 MB
+  Equation solver memory required for out-of-core mode =     0.371 MB
+  Total (solver and non-solver) memory allocated       =   465.638 MB
+
+ *** NOTE ***                            ELAPSED TIME =       1.351   TIME= 17:51:11
+ The Sparse Matrix Solver is currently running in the in-core memory     
+ mode.  This memory mode uses the most amount of memory in order to      
+ avoid using the hard drive as much as possible, which most often        
+ results in the fastest solution time.  This mode is recommended if      
+ enough physical memory is present to accommodate all of the solver      
+ data.                                                                   
+ Sparse solver maximum pivot= 1.2432E+10 at node 21 UX.                  
+ Sparse solver minimum pivot= 11200 at node 11 ROTY.                     
+ Sparse solver minimum pivot in absolute value= 11200 at node 11 ROTY.   
+
+   *** ELEMENT RESULT CALCULATION TIMES
+     TYPE    NUMBER     ENAME   TOTAL ELAPSED   AVG ELAPSED
+
+        1        20   BEAM188          0.0016   0.000078319
+
+   *** NODAL LOAD CALCULATION TIMES
+     TYPE    NUMBER     ENAME   TOTAL ELAPSED   AVG ELAPSED
+
+        1        20   BEAM188          0.0004   0.000018802
+ *** LOAD STEP     1   SUBSTEP     1  COMPLETED.    CUM ITER =      1
+ *** TIME =   1.00000         TIME INC =   1.00000      NEW TRIANG MATRIX
+
+
+ *** MAPDL BINARY FILE STATISTICS
+  BUFFER SIZE USED= 16384
+        0.062 MB WRITTEN ON ASSEMBLED MATRIX FILE: cantilever.full
+        0.312 MB WRITTEN ON RESULTS FILE: cantilever.rst
+
+ FINISH SOLUTION PROCESSING
+
+
+ ***** ROUTINE COMPLETED *****  ELAPSED TIME =         1.356
+
+
+
+ *** MAPDL - ENGINEERING ANALYSIS SYSTEM  RELEASE 2026 R1          26.1     ***
+ Ansys Mechanical Enterprise                       
+ 20120530  VERSION=LINUX x64     17:51:11  NOV 12, 2026 Elapsed Time=      1.356
+
+ LOGOS cantilever BEAM188 benchmark SI                                         
+
+
+
+          ***** MAPDL RESULTS INTERPRETATION (POST1) *****
+
+ *** NOTE ***                            ELAPSED TIME =       1.357   TIME= 17:51:11
+ Reading results into the database (SET command) will update the current 
+ displacement and force boundary conditions in the database with the     
+ values from the results file for that load set.  Note that any          
+ subsequent solutions will use these values unless action is taken to    
+ either SAVE the current values or not overwrite them (/EXIT,NOSAVE).    
+
+
+ USE LAST SUBSTEP ON RESULT FILE  FOR LOAD CASE 0 
+
+ SET COMMAND GOT LOAD STEP=     1  SUBSTEP=     1  CUMULATIVE ITERATION=     1
+   TIME/FREQUENCY=  1.0000    
+ TITLE= LOGOS cantilever BEAM188 benchmark SI                                   
+
+ PRINT U    NODAL SOLUTION PER NODE
+
+ *** MAPDL - ENGINEERING ANALYSIS SYSTEM  RELEASE 2026 R1          26.1     ***
+ Ansys Mechanical Enterprise                       
+ 20120530  VERSION=LINUX x64     17:51:11  NOV 12, 2026 Elapsed Time=      1.359
+
+ LOGOS cantilever BEAM188 benchmark SI                                         
+
+
+ 
+  ***** POST1 NODAL DEGREE OF FREEDOM LISTING *****                            
+ 
+  LOAD STEP=     1  SUBSTEP=     1                                             
+   TIME=    1.0000      LOAD CASE=   0                                         
+ 
+  THE FOLLOWING DEGREE OF FREEDOM RESULTS ARE IN THE GLOBAL COORDINATE SYSTEM  
+ 
+    NODE       UX           UY           UZ           USUM  
+       1   0.0000       0.0000       0.0000       0.0000     
+       2   0.0000      0.32896E-025-0.22041E-004 0.22041E-004
+       3   0.0000      0.12656E-024-0.86493E-004 0.86493E-004
+       4   0.0000      0.27596E-024-0.19112E-003 0.19112E-003
+       5   0.0000      0.47613E-024-0.33370E-003 0.33370E-003
+       6   0.0000      0.72217E-024-0.51199E-003 0.51199E-003
+       7   0.0000      0.10093E-023-0.72377E-003 0.72377E-003
+       8   0.0000      0.13329E-023-0.96679E-003 0.96679E-003
+       9   0.0000      0.16885E-023-0.12388E-002 0.12388E-002
+      10   0.0000      0.20717E-023-0.15377E-002 0.15377E-002
+      11   0.0000      0.24786E-023-0.18610E-002 0.18610E-002
+      12   0.0000      0.29053E-023-0.22067E-002 0.22067E-002
+      13   0.0000      0.33483E-023-0.25725E-002 0.25725E-002
+      14   0.0000      0.38043E-023-0.29562E-002 0.29562E-002
+      15   0.0000      0.42704E-023-0.33555E-002 0.33555E-002
+      16   0.0000      0.47440E-023-0.37681E-002 0.37681E-002
+      17   0.0000      0.52228E-023-0.41919E-002 0.41919E-002
+      18   0.0000      0.57050E-023-0.46247E-002 0.46247E-002
+      19   0.0000      0.61892E-023-0.50642E-002 0.50642E-002
+      20   0.0000      0.66742E-023-0.55081E-002 0.55081E-002
+      21   0.0000      0.71594E-023-0.59542E-002 0.59542E-002
+
+ MAXIMUM ABSOLUTE VALUES
+ NODE           0             0            21            21
+ VALUE    0.0000       0.0000     -0.59542E-002 0.59542E-002
+
+ PRINT REACTION SOLUTIONS PER NODE
+
+ *** MAPDL - ENGINEERING ANALYSIS SYSTEM  RELEASE 2026 R1          26.1     ***
+ Ansys Mechanical Enterprise                       
+ 20120530  VERSION=LINUX x64     17:51:11  NOV 12, 2026 Elapsed Time=      1.359
+
+ LOGOS cantilever BEAM188 benchmark SI                                         
+
+
+ 
+  ***** POST1 TOTAL REACTION SOLUTION LISTING *****                            
+ 
+  LOAD STEP=     1  SUBSTEP=     1                                             
+   TIME=    1.0000      LOAD CASE=   0                                         
+ 
+  THE FOLLOWING X,Y,Z SOLUTIONS ARE IN THE GLOBAL COORDINATE SYSTEM            
+ 
+    NODE       FX           FY           FZ           MX           MY           MZ    
+       1   0.0000     -0.90497E-018  100.00      0.39098E-008 -100.00     -0.69363E-014
+
+ TOTAL VALUES
+ VALUE    0.0000     -0.90497E-018  100.00      0.39098E-008 -100.00     -0.69363E-014
+
+ *GET  UZTIP     FROM  NODE     21  ITEM=U    Z     VALUE=-0.595421882E-02
+
+ *GET  RZROOT    FROM  NODE         1  ITEM=RF   FZ    VALUE= 100.0000000     
+
+ *GET  MYROOT    FROM  NODE         1  ITEM=RF   MY    VALUE=-100.0000000     
+
+ OPENED FILE= results.csv FOR COMMAND FILE DATA 
+
+
+  COMMAND FILE CLOSED 
+
+
+ ALL CURRENT MAPDL DATA WRITTEN TO FILE NAME= cantilever.db
+  FOR POSSIBLE RESUME FROM THIS POINT
+
+ EXIT THE MAPDL POST1 DATABASE PROCESSOR
+
+
+ ***** ROUTINE COMPLETED *****  ELAPSED TIME =         1.365
+
+
+
+ EXIT MAPDL WITHOUT SAVING DATABASE
+
+
+ NUMBER OF WARNING MESSAGES ENCOUNTERED=          0
+ NUMBER OF ERROR   MESSAGES ENCOUNTERED=          0
+
++--------------------- M A P D L   S T A T I S T I C S ------------------------+
+
+Release: 2026 R1            Build: 26.1       Update: UP20260202   Platform: LINUX x64   
+Date Run: 11/12/2026   Time: 17:51     Process ID: 672242
+Operating System: Ubuntu 24.04.5 LTS
+
+Processor Model: AMD Ryzen 9 9950X3D 16-Core Processor
+
+Compiler: Intel(R) Fortran Compiler Classic Version 2021.9  (Build: 20230302)
+          Intel(R) C/C++ Compiler Classic Version 2021.9  (Build: 20230302)
+          AOCL-BLAS 5.1.1 Build 20251007
+          Intel(R) oneAPI Math Kernel Library Version 2024.2-Product Build 20240605
+
+Number of machines requested            :    1
+Total number of cores available         :   32
+Number of physical cores available      :   16
+Number of processes requested           :    1
+Number of threads per process requested :    1
+Total number of cores requested         :    1 (Shared Memory Parallel)                    
+
+GPU Acceleration: Not Requested
+
+Job Name: cantilever
+Input File: structure_demo.dat
+Working Directory: [run-directory]
+
+Total CPU time for main thread                    :        0.3 seconds
+Total CPU time summed for all threads             :        0.1 seconds
+
+Elapsed time spent obtaining a license            :        1.3 seconds
+Elapsed time spent pre-processing model (/PREP7)  :        0.0 seconds
+Elapsed time spent solution - preprocessing       :        0.0 seconds
+Elapsed time spent computing solution             :        0.0 seconds
+   Elapsed time in element formation & assembly   :        0.0 seconds
+   Elapsed time in equation solver                :        0.0 seconds
+   Elapsed time in element result calculations    :        0.0 seconds
+Elapsed time spent solution - postprocessing      :        0.0 seconds
+Elapsed time spent post-processing model (/POST1) :        0.0 seconds
+ 
+Equation solver used                              :            Sparse (symmetric)
+Sparse direct equation solver computational rate  :        1.8 Gflops
+
+Sum of disk space used on all processes           :        0.5 MB
+
+Sum of memory used on all processes               :       42.0 MB
+Sum of memory allocated on all processes          :     2304.0 MB
+Physical memory available                         :         60 GB
+Total amount of I/O written to disk               :        0.0 GB
+Total amount of I/O read from disk                :        0.0 GB
+
++------------------ E N D   M A P D L   S T A T I S T I C S -------------------+
+
+
+ *-----------------------------------------------------------------------------*
+ |                                                                             |
+ |                               RUN COMPLETED                                 |
+ |                                                                             |
+ |-----------------------------------------------------------------------------|
+ |                                                                             |
+ |  Ansys MAPDL 2026 R1         Build 26.1         UP20260202    LINUX x64     |
+ |                                                                             |
+ |-----------------------------------------------------------------------------|
+ |                                                                             |
+ |  Database Requested(-db)  1024 MB     Scratch Memory Requested      1024 MB |
+ |  Maximum Database Used       1 MB     Maximum Scratch Memory Used     41 MB |
+ |                                                                             |
+ |-----------------------------------------------------------------------------|
+ |                                                                             |
+ |        CP Time      (sec) =          0.098       Time  =  17:51:11          |
+ |        Elapsed Time (sec) =          1.409       Date  =  11/12/2026        |
+ |                                                                             |
+ *-----------------------------------------------------------------------------*

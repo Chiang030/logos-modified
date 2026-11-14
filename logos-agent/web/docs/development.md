@@ -1,14 +1,14 @@
 # LOGOS web workspace development
 
-Updated: 2026-11-10. Integrated branch: `Chiang030/logos/web-v0315`.
+Updated: 2026-11-11. Integrated branch: `Chiang030/logos/web-v0315`.
 Integrated release: `v0.3.15`, including web, CLI/domain, and VS Code sources.
 The pre-web baseline was `e2bc89f` / `v0.3.14`.
 
 ## Current execution policy
 
 The user explicitly requested shared server-account execution. All Agent tasks
-run directly as the Linux service account, currently `jiangjincheng` on
-`leadhk01`. No per-user Linux identities, bubblewrap namespaces, network
+run directly as the configured Linux service account. No per-user Linux
+identities, bubblewrap namespaces, network
 isolation, read-only filesystem mounts or project-only command permissions
 are applied. The worker service no longer sets NoNewPrivileges or custom
 CPU/memory/process resource caps. The normal operating system account
@@ -35,7 +35,8 @@ AppArmor profile are unused; no global OS policy was disabled.
 - Lark international / Feishu OAuth uses an explicit enterprise and administrator
   allowlist. The pilot uses Lark and a verified real employee account.
 - Users select a personal folder to establish a project. The browser supports
-  folder/file upload, text/image/PDF preview, downloads and persistent sessions.
+  folder/file upload, text/image/PDF, video/audio and interactive 3D previews,
+  downloads and persistent sessions.
 - Administrators manage API URL, protocol, encrypted key, enabled models,
   thinking support and context/output limits. Protocols: OpenAI Chat Completions,
   OpenAI Responses and Anthropic Messages.
@@ -113,8 +114,71 @@ directory descriptors and reject traversal/symlinks to keep the explorer scoped
 to its user's data. Agent commands are unrestricted by these route checks.
 
 Text previews include line numbers and up to 512 KiB. Markdown/CSV currently
-use text preview. Binary formats require download. There is no rich CAD/mesh
-preview, editor, user quota, project-deletion UI or automatic backup scheduler.
+use text preview. Video (MP4/M4V, WebM, OGV, MOV) and audio (MP3, WAV,
+OGG/OGA, M4A, AAC, FLAC) use browser controls and authenticated byte-range reads;
+playback depends on browser codec support. STL, OBJ (geometry only), PLY
+(surfaces or point clouds), GLB and glTF 2.0 use a lazy-loaded Three.js viewer
+with orbit, zoom, pan and camera reset. Three.js is required for WebGL rendering
+and its maintained format loaders; it is widely adopted and regularly released.
+glTF sidecars must be uploaded at their relative paths within the same project;
+external URLs and paths outside the project are rejected. Combined model/sidecar
+downloads are limited to 64 MiB and 256 sidecars. Draco/Meshopt/KTX2 decoders
+are not bundled; export uncompressed GLB for these models. Animations are shown
+at their initial pose. Closing the preview cancels downloads and releases GPU
+resources. STEP/STP now supports an explicit authenticated POST to create a
+read-only tessellation with the selected Gmsh. The source stays unchanged. Preview
+inputs are limited to 32 MiB, binary STL output to 64 MiB / one million triangles;
+Linux util-linux `prlimit` bounds virtual memory to 2 GiB, output file size and CPU.
+The converter uses one thread, including BLAS, and a 60-second execution timeout.
+There are at most two conversions globally and one per user; no preview cache is
+currently maintained. IGES and other native CAD formats still require export or
+download. Download failures stay visible in the workbench; project links handle
+encoded filenames and server absolute paths inside the project, not invented
+`sandbox:` paths. There is no general CAD/text editor, user quota, project-deletion
+UI or automatic backup scheduler.
+
+## Improvements verified and deployed on 2026-11-12
+
+- Web image attachments support ClipboardEvent paste on private HTTP, file choice,
+  preview/remove, crop/rotate/red-pen edits. Up to four PNG/JPEG/WebP images, 4 MiB
+  each and 8 MiB total, pass as real Pi RPC image content. File-panel upload alone
+  only saves a project file; the image preview has an explicit add-to-chat action.
+- Known official models use the installed provider capability catalog. Custom model
+  aliases require administrator `visionModels`; unknown/text-only models reject
+  image runs. The broker rejects the first request if the latest user turn lost
+  an image during decoding, rather than silently calling a text-only request.
+- Feedback supports own submissions and administrator review. The authenticated
+  home has active-day and accepted-feedback rankings over 30 Beijing calendar days;
+  no prompt, project, token or cost details are published. Self-review is denied.
+- The home demo gallery creates private copies of verified APDL beam, Fluent
+  axisymmetric air-pipe and KiCad LED evidence plus rerun scripts. Import does not
+  invoke a solver or model. Deploy `logos-agent/examples/validated-demos` with source.
+  Its `structure`, `air-pipe`, and `kicad-led` subfolders each contain a README,
+  scripts, public results, and redacted `.txt` logs; native solver databases with
+  machine metadata are not distributed. See the [example index](../../examples/validated-demos/README.md).
+  Failed imports may retain an unregistered partial folder for inspection; imports
+  are rate-limited. There is no automatic disk quota or cleanup.
+- Reply completion is labeled separately from simulation acceptance. Agent guidance
+  requires executing promised authorized recovery instead of ending with a promise.
+  This is not an autonomous continuation engine or a physical-result validator.
+- The simulation tool exposes read-only `ps`. Defaults are 240 s for connect/launch
+  and 660 s for run/exec (previously 60 s, below the underlying CLI timeouts).
+  Timeouts retain unknown remote state; inspect before retrying. SIM `run` is
+  one-shot; local `connect` can start a server; `exec` needs an existing session.
+
+Verification: isolated Linux candidate typecheck/build and 58 Node tests pass,
+including real Pi with a local fake image provider, damaged-image rejection,
+actual private demo imports, authorization/CSRF and existing runtime regressions.
+Headless Chromium exercised paste/edit/send, feedback, rankings, demo import,
+STEP WebGL and Unicode download names/errors with mocked APIs. Actual Gmsh
+converted an actual KiCad STEP under the resource bounds. Solvers ran independently
+in temporary directories. After explicit user approval and a verified empty queue,
+production web/worker were restarted. Source hashes, readiness, database integrity
+and anonymous authorization checks passed at the existing deployment origin.
+Chromium also tested the deployed assets on that origin with mocked APIs;
+real visual-model interpretation and logged-in production workflow acceptance are
+not claimed. See the individual example validation documents for quantitative
+results, failed attempts and scope limits.
 
 ## Build and tests
 
@@ -166,10 +230,17 @@ responses from previous projects are ignored. Browser coverage in
 file previews, failed reads/retry, empty and real same-name directories, selecting
 the current project again, and project switching during a delayed response.
 
+`tests/browser/media-preview.mjs` accepts a Playwright Page, built web origin and
+optional screenshot path. It mocks all API traffic and uses the small generated
+VP8 fixture in `tests/fixtures/preview.webm` to verify real playback and seeking,
+audio metadata, five 3D formats, glTF buffers/textures, camera interaction,
+lazy loading, failed-model retry, path rejection, cleanup and text fallback.
+The Node media tests cover real HTTP range bodies, MIME types and downloads.
+
 Initial browser acceptance displayed five installed software categories; after
 adding /srv discovery, the server inventory contains eight. A real
 DeepSeek task successfully called software_discover and bash, confirmed the
-jiangjincheng account and executed Gmsh. Its calls were recorded under the
+configured service account and executed Gmsh. Its calls were recorded under the
 logged-in user. A subsequent direct runtime-environment check verified the
 PATH correction selects Gmsh 4.15.2. Simulated tests use separate databases.
 
@@ -188,7 +259,7 @@ PATH correction selects Gmsh 4.15.2. Simulated tests use separate databases.
 | LOGOS_WEB_ADMIN_OPEN_IDS | Explicit app-scoped open IDs; no first-user promotion |
 
 Environment file: `~/.config/logos-web-pilot/server.env` (mode 0600).
-Repository: `/home/jiangjincheng/logos-server-20261009/logos-server`.
+Repository: `/path/to/logos-server` (replace with the actual checkout).
 Data: `~/.local/share/logos-web-pilot`.
 
 The callback stays `/auth/feishu/callback` for both identity platforms.
@@ -208,7 +279,7 @@ systemctl --user status logos-web-pilot logos-web-worker logos-web-ngrok
 journalctl --user -u logos-web-pilot -u logos-web-worker -n 100
 ```
 
-Previous public pilot: https://outward-speed-alto.ngrok-free.dev/ (retired after NetBird login verification).
+The previous temporary public pilot endpoint was retired after private-VPN login verification; do not reuse its address.
 
 See [fixed ngrok deployment](ngrok.md) for the previous endpoint, quota limits,
 and restart verification. The Cloudflare notes below describe the retired pilot.
@@ -257,8 +328,8 @@ The shared project_workspace tool is loaded with the LOGOS domain extension.
 
 ## NetBird deployment (current)
 
-The active workbench is http://10.250.179.176:18882, bound only to the existing
-NetBird interface on leadhk01. The administrator confirmed the replacement
+The private workbench uses `http://<vpn-address>:<port>`, bound only to the
+configured NetBird interface. The administrator confirmed the replacement
 Lark callback and access. Users must connect to NetBird. The shared data and
 worker remain unchanged; login persists for 30 days and renews on bootstrap.
 

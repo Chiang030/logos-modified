@@ -23,7 +23,7 @@ export class Software {
   readonly directory:string;
   constructor(data:string){this.directory=join(data,"state");}
   async status():Promise<{result?:SoftwareDiscovery;scanning:boolean;error:string}>{
-    if(!this.result && !this.pending)await this.scan(false);
+    if(!this.result)await (this.pending ?? this.scan(false));
     return {result:this.result,scanning:Boolean(this.pending),error:this.error};
   }
   scan(global:boolean):Promise<void>{

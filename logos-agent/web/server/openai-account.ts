@@ -64,10 +64,14 @@ export class OpenAiAccount {
     const token = await this.accessToken();
     const response = await openAiFetch("https://api.openai.com/v1/models", { headers: { Authorization: "Bearer " + token }, signal: AbortSignal.timeout(15_000), redirect: "error" });
     if (!response.ok) { await response.body?.cancel(); throw new HttpError(502, "OpenAI 模型列表返回 HTTP " + response.status); }
-    const data = await response.json() as { data?: { id?: unknown }[] };
+    const data = await response.json() as { data?: { id?: unknown }[]; models?: { slug?: unknown }[] };
     const catalog = JSON.parse(await readFile(new URL("../../../vendor/pi/packages/ai/src/providers/data/openai.json", import.meta.url), "utf8")) as Record<string, Record<string, { id: string; type: string }>>;
     const supported = new Set(Object.values(catalog["openai-responses"] ?? {}).filter(model => model.type === "chat").map(model => model.id));
-    return (data.data ?? []).map(model => model.id).filter((id): id is string => typeof id === "string" && supported.has(id)).slice(0,100);
+    const ids = [
+      ...(Array.isArray(data.data) ? data.data.map(model => model?.id) : []),
+      ...(Array.isArray(data.models) ? data.models.map(model => model?.slug) : []),
+    ];
+    return [...new Set(ids.filter((id): id is string => typeof id === "string" && supported.has(id)))].slice(0,100);
   }
   async accessToken(): Promise<string> {
     const deadline = Date.now() + 45_000;

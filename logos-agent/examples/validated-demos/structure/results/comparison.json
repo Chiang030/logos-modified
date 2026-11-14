@@ -1,0 +1,12 @@
+{
+  "element": "BEAM188, 1D Timoshenko beam, not 3D solid",
+  "tip_uz_m": -0.001489933053595736,
+  "root_fz_N": 99.99999999776641,
+  "root_my_Nm": -99.99999999617485,
+  "euler_bernoulli_tip_m": 0.0014880952380952378,
+  "approx_timoshenko_tip_m": 0.0014899523809523807,
+  "relative_EB_error": 0.001235012016334837,
+  "nominal_root_bending_stress_Pa": 18749999.999999996,
+  "force_and_moment_balanced": true,
+  "passed": true
+}

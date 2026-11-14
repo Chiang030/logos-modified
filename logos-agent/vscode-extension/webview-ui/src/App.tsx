@@ -1,3 +1,4 @@
+import { ImageAttachments, readImageFile, type DraftImage } from "./components/ImageAttachments";
 import { SettingsPanel } from "./components/SettingsPanel";
 import type { MemberIdentity } from "../../src/shared/members";
 import { HistoryMenu } from "./components/HistoryMenu";
@@ -56,6 +57,19 @@ export function App({ host = getHostBridge(), web = false }: { host?: HostBridge
   const [historyOpen, setHistoryOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
   const [thinkingOpen, setThinkingOpen] = useState(false);
+  const [images, setImages] = useState<DraftImage[]>([]);
+  const [readingImages, setReadingImages] = useState(false);
+  const pendingImageSend = useRef(false);
+  const sendSequence = useRef(0), pendingDraftRequest = useRef<number | undefined>(undefined);
+  const preserveDraftOnReset = useRef(false);
+  const imageReads = useRef(0);
+  const draftEpoch = useRef(0);
+  const draftImages = useRef(images);
+  draftImages.current = images;
+  const clearImageDraft = (): void => {
+    draftEpoch.current++; imageReads.current = 0; setReadingImages(false);
+    draftImages.current = []; setImages([]); pendingImageSend.current = false; pendingDraftRequest.current = undefined;
+  };
   const [inputValue, setInputValue] = useState("");
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(true);
@@ -105,9 +119,12 @@ export function App({ host = getHostBridge(), web = false }: { host?: HostBridge
         case "session/loading": setLoading(message.loading); break;
         case "runtime/status": setStatus(message.status); setStatusDetail(message.detail); break;
         case "runtime/config": setRuntimeConfig(message.config); break;
-        case "runtime/error": setSending(false); setError(message.message); setDiagnostics((current) => current.includes(message.message) ? current : [...current, message.message]); setDiagnosticsVisible(true); if (message.fatal !== false) setStatus("error"); break;
+        case "runtime/error": pendingImageSend.current = false; setSending(false); setError(message.message); setDiagnostics((current) => current.includes(message.message) ? current : [...current, message.message]); setDiagnosticsVisible(true); if (message.fatal !== false) setStatus("error"); break;
         case "session/list": setSessions(message.sessions); setActiveSessionId(message.activeSessionId); break;
-        case "session/reset": setTimeline([]); setError(undefined); break;
+        case "session/reset":
+          if (!preserveDraftOnReset.current) clearImageDraft();
+          preserveDraftOnReset.current = false;
+          setTimeline([]); setError(undefined); break;
         case "session/restore": {
           const restored = restoreTimeline(message.messages, message.tools ?? []);
           orderRef.current = maxTimelineOrder(restored);
@@ -146,14 +163,58 @@ export function App({ host = getHostBridge(), web = false }: { host?: HostBridge
     return () => { document.removeEventListener("mousedown", onPointerDown); document.removeEventListener("keydown", onKeyDown); };
   }, [historyOpen]);
 
+  useEffect(() => {
+    clearImageDraft(); preserveDraftOnReset.current = false;
+    return () => { draftEpoch.current++; };
+  }, [host]);
+  const addImages = async (files: File[]): Promise<void> => {
+    if (!files.length || pendingImageSend.current) return;
+    const epoch = draftEpoch.current;
+    imageReads.current++; setReadingImages(true);
+    try {
+      if (files.length > 4) throw new Error("每次最多选择 4 张图片");
+      const added = await Promise.all(files.map(readImageFile));
+      if (epoch !== draftEpoch.current) return;
+      const next = [...draftImages.current, ...added];
+      if (next.length > 4 || next.reduce((sum, image) => sum + image.data.length * 3 / 4, 0) > 8 * 1024 * 1024) throw new Error("最多 4 张图片，总大小不超过 8 MiB");
+      draftImages.current = next; setImages(next);
+    } catch (error) { if (epoch === draftEpoch.current) setError(error instanceof Error ? error.message : "图片读取失败"); }
+    finally { if (epoch === draftEpoch.current) { imageReads.current--; setReadingImages(imageReads.current > 0); } }
+  };
+  useEffect(() => {
+    if (!web) return;
+    const attach = (event: Event): void => {
+      const detail = (event as CustomEvent<{host?:unknown;file?:unknown}>).detail;
+      if (detail?.host === host && detail.file instanceof File) void addImages([detail.file]);
+    };
+    const accepted = (event: Event): void => {
+      const detail = (event as CustomEvent<{host?:unknown;draftRequest?:number}>).detail;
+      if (detail?.host !== host || detail.draftRequest !== pendingDraftRequest.current) return;
+      if (pendingImageSend.current) { clearImageDraft(); setInputValue(""); }
+      setSending(false);
+    };
+    const changing = (event: Event): void => {
+      const detail = (event as CustomEvent<{host?:unknown;preserveDraft?:boolean}>).detail;
+      if (detail?.host !== host) return;
+      preserveDraftOnReset.current = detail.preserveDraft === true;
+      if (!preserveDraftOnReset.current) { clearImageDraft(); setSending(false); }
+    };
+    window.addEventListener("logos-attach-image", attach);
+    window.addEventListener("logos-chat-accepted", accepted);
+    window.addEventListener("logos-session-changing", changing);
+    return () => { window.removeEventListener("logos-attach-image", attach); window.removeEventListener("logos-chat-accepted", accepted); window.removeEventListener("logos-session-changing", changing); };
+  }, [web, host]);
+
   const send = (): void => {
-    const text = inputValue.trim();
-    if (!text || scanning || sending || loading || status === "starting" || status === "stopping") return;
+    const text = inputValue.trim() || (web && images.length ? "请分析所附图片。" : "");
+    if (!text || readingImages || scanning || sending || loading || status === "starting" || status === "stopping") return;
     if (!member) { setSettingsOpen(true); return; }
     followScroll.current = true;
     setSending(true);
     setError(undefined);
-    vscode.postMessage({ type: "chat/send", text });
+    pendingImageSend.current = web && images.length > 0;
+    const draftRequest = ++sendSequence.current; pendingDraftRequest.current = draftRequest;
+    vscode.postMessage({ type: "chat/send", text, ...(web ? { images, draftRequest } : {}) });
   };
 
   return (
@@ -167,7 +228,7 @@ export function App({ host = getHostBridge(), web = false }: { host?: HostBridge
           <div className="flex items-center gap-1.5 rounded-full border border-[#2b2b2b] bg-[#1c1c1c] px-2 py-0.5 font-mono text-[10px] text-[#9ca3af]" title={error || statusDetail}><span className={`h-1.5 w-1.5 rounded-full ${status === "error" ? "bg-red-400" : status === "ready" ? "bg-emerald-400" : "animate-pulse bg-sky-400"}`} /><span className="tracking-wide">{statusLabel(status)}</span><span className="text-[#525252]">•</span><span className="text-[#737373]">MACH-SYS</span></div>
           <button type="button" className="flex h-7 w-7 items-center justify-center rounded text-[#9ca3af]" title="LOGOS 设置" aria-label="LOGOS 设置" onClick={() => web ? host.postMessage({ type: "settings/load" }) : setSettingsOpen((value) => !value)}><Settings className="h-3.5 w-3.5" /></button>
           <button type="button" className="flex h-7 w-7 items-center justify-center rounded text-[#9ca3af] transition-colors hover:bg-[#262626] hover:text-white" title="Session History" aria-label="Session History" aria-expanded={historyOpen} onClick={() => setHistoryOpen((open) => !open)}><History className="h-3.5 w-3.5" /></button>
-          {historyOpen ? <HistoryMenu sessions={sessions} active={activeSessionId} busy={busy} post={(message) => { vscode.postMessage(message); if (message.type !== "session/rename") setHistoryOpen(false); }} /> : null}
+          {historyOpen ? <HistoryMenu sessions={sessions} active={activeSessionId} busy={busy} post={(message) => { if (message.type === "session/select" || message.type === "session/new") clearImageDraft(); vscode.postMessage(message); if (message.type !== "session/rename") setHistoryOpen(false); }} /> : null}
         </div>
       </header>
       {diagnostics.length > 0 && diagnosticsVisible ? <details className="error-card" open>
@@ -181,7 +242,9 @@ export function App({ host = getHostBridge(), web = false }: { host?: HostBridge
 
       <footer hidden={settingsOpen} className="control-footer shrink-0 space-y-2 border-t border-[#262626] bg-[#131313] px-0 py-2">
         <button type="button" className="px-2.5 text-[11px] text-[#9ca3af]" onClick={() => web ? host.postMessage({ type: "identity/load" }) : setSettingsOpen(true)}>使用者：{member?.name ?? "添加或选择姓名"}</button>
-        <div className="relative rounded-lg border border-[#2b2b2b] bg-[#1a1a1a] transition-all focus-within:border-sky-500/70 focus-within:ring-1 focus-within:ring-sky-500/30"><textarea value={inputValue} onChange={(event) => setInputValue(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }} placeholder="输入设计问题或仿真需求…" rows={2} className="w-full resize-none bg-transparent px-2.5 py-2 font-sans text-xs text-white outline-none placeholder-[#555]" aria-label="Message LOGOS" /></div>
+        <div className="relative rounded-lg border border-[#2b2b2b] bg-[#1a1a1a] transition-all focus-within:border-sky-500/70 focus-within:ring-1 focus-within:ring-sky-500/30"><textarea onPaste={event => { if (!web || sending || readingImages) return; const files = Array.from(event.clipboardData.items).filter(item => item.kind === "file" && item.type.startsWith("image/")).map(item => item.getAsFile()).filter((file): file is File => file !== null); if (files.length) { event.preventDefault(); void addImages(files); } }} value={inputValue} onChange={(event) => setInputValue(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }} placeholder="输入设计问题或仿真需求…" rows={2} className="w-full resize-none bg-transparent px-2.5 py-2 font-sans text-xs text-white outline-none placeholder-[#555]" aria-label="Message LOGOS" /></div>
+        {web ? <ImageAttachments images={images} disabled={sending || readingImages} onChange={setImages} onFiles={files => void addImages(files)} /> : null}
+        {error ? <p role="alert">{error}</p> : null}
         <div className="control-dock flex items-center justify-between gap-2"><div className="control-meta flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           <div className="control-picker relative min-w-0 max-w-full"><PickerButton label={runtimeConfig.activeModel?.name || runtimeConfig.activeModel?.id || "选择模型"} icon={<Cpu className="h-3 w-3 shrink-0 text-sky-400" />} open={modelOpen} disabled={busy} onClick={() => { setModelOpen((open) => !open); setThinkingOpen(false); }} />{modelOpen ? <div className="absolute bottom-8 left-0 z-50 max-h-72 w-56 max-w-[calc(100vw-16px)] overflow-y-auto rounded-lg border border-[#2e2e32] bg-[#1c1c1e] py-1 font-mono text-[11px] shadow-2xl">{runtimeConfig.models.length === 0
             ? <button type="button" className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-sky-400 hover:bg-[#2a2a2e]" onClick={() => { setModelOpen(false); if (web) host.postMessage({ type: "settings/load" }); else setSettingsOpen(true); }}><span aria-hidden="true">＋</span> {web ? "尚未配置 API，查看设置" : "尚未配置 API，点击新建"}</button>
@@ -191,7 +254,7 @@ export function App({ host = getHostBridge(), web = false }: { host?: HostBridge
             </Fragment>)}</div> : null}</div>
           <div className="control-picker relative min-w-0 max-w-full"><PickerButton label={thinkingLabel} icon={<BrainCircuit className="h-3 w-3 shrink-0 text-sky-400" />} open={thinkingOpen} disabled={busy || runtimeConfig.thinkingLevels.length === 0} onClick={() => { setThinkingOpen((open) => !open); setModelOpen(false); }} />{thinkingOpen ? <div className="absolute bottom-8 left-0 z-50 w-36 max-w-[calc(100vw-16px)] rounded-lg border border-[#2e2e32] bg-[#1c1c1e] py-1 font-mono text-[11px] shadow-2xl">{runtimeConfig.thinkingLevels.map((level) => <button type="button" key={level} className={`flex w-full items-center justify-between px-2.5 py-1.5 text-left hover:bg-[#2a2a2e] ${level === runtimeConfig.thinkingLevel ? "bg-[#222226] font-bold text-sky-400" : "text-[#a1a1aa]"}`} onClick={() => { vscode.postMessage({ type: "thinking/select", level }); setThinkingOpen(false); }}>{formatThinking(level)}{level === runtimeConfig.thinkingLevel ? <CheckCircle2 className="h-3 w-3" /> : null}</button>)}</div> : null}</div>
           <div className="control-context flex min-w-0 items-center gap-1.5 font-mono text-[10px] text-[#737373]"><span>Context:</span><span className="min-w-0 truncate font-semibold text-[#a1a1aa]">{formatContext(runtimeConfig.contextUsage)}</span><div className="h-1.5 w-10 shrink-0 overflow-hidden rounded-full bg-[#262626]"><div className="h-full rounded-full bg-sky-400 transition-all duration-500" style={{ width: `${clampPercent(runtimeConfig.contextUsage?.percent)}%` }} /></div><span className="shrink-0 text-[9px] text-[#636366]">{formatPercent(runtimeConfig.contextUsage?.percent)}</span></div>
-        </div><button type="button" onClick={inputValue.trim() ? send : () => vscode.postMessage({ type: "chat/abort" })} disabled={scanning || sending || loading || status === "starting" || status === "stopping" || (!inputValue.trim() && !running)} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sky-500 font-bold text-black shadow-[0_0_10px_rgba(56,189,248,0.3)] transition-all hover:bg-sky-400 active:scale-95" title={inputValue.trim() ? "Send" : running ? "Stop" : "Send"} aria-label={inputValue.trim() ? "Send" : running ? "Stop" : "Send"}>{running && !inputValue.trim() ? <span className="text-sm">■</span> : <ArrowUp className="h-4 w-4 stroke-[2.5]" />}</button></div>
+        </div><button type="button" onClick={(inputValue.trim() || images.length) ? send : () => vscode.postMessage({ type: "chat/abort" })} disabled={readingImages || scanning || sending || loading || status === "starting" || status === "stopping" || (!inputValue.trim() && !images.length && !running)} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sky-500 font-bold text-black shadow-[0_0_10px_rgba(56,189,248,0.3)] transition-all hover:bg-sky-400 active:scale-95" title={(inputValue.trim() || images.length) ? "Send" : running ? "Stop" : "Send"} aria-label={(inputValue.trim() || images.length) ? "Send" : running ? "Stop" : "Send"}>{running && !inputValue.trim() && !images.length ? <span className="text-sm">■</span> : <ArrowUp className="h-4 w-4 stroke-[2.5]" />}</button></div>
       </footer>
     </div>
   );
@@ -235,7 +298,7 @@ const MessageItem = memo(function MessageItem({ message }: { message: TimelineMe
   const rendered = useMemo(() => message.text ? renderMarkdown(message.text) : "", [message.text]);
   if (message.role === "system" || message.role === "tool") return null;
   if (!message.text && message.status !== "streaming") return null;
-  return <article className="timeline-entry space-y-1"><div className="flex items-center gap-2 font-mono text-[11px] text-[#737373]"><span className="font-semibold text-white">{message.role === "user" ? message.userName || "未登记用户" : "LOGOS"}</span><span>•</span><span>{message.status}</span></div><div className="rounded-lg border border-[#242426] bg-[#141416] p-3 text-xs leading-relaxed text-[#e5e7eb] markdown-content">{message.text ? <div dangerouslySetInnerHTML={{ __html: rendered }} /> : <span className="animate-pulse text-sky-400">▋</span>}</div></article>;
+  return <article className="timeline-entry space-y-1"><div className="flex items-center gap-2 font-mono text-[11px] text-[#737373]"><span className="font-semibold text-white">{message.role === "user" ? message.userName || "未登记用户" : "LOGOS"}</span><span>•</span><span title={message.status === "complete" ? "仅表示本条回复结束，不代表仿真通过" : undefined}>{message.status === "complete" ? (message.role === "user" ? "已发送" : "回复已结束") : message.status}</span></div><div className="rounded-lg border border-[#242426] bg-[#141416] p-3 text-xs leading-relaxed text-[#e5e7eb] markdown-content">{message.text ? <div dangerouslySetInnerHTML={{ __html: rendered }} /> : <span className="animate-pulse text-sky-400">▋</span>}</div></article>;
 });
 
 const ToolItem = memo(function ToolItem({ tool }: { tool: ToolCallView }): ReactElement {

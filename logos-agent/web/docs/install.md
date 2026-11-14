@@ -10,6 +10,17 @@ submodule, run `npm --prefix logos-agent run pi:setup`, then `npm ci` in
 `logos-agent/pi-domain`, `logos-agent/vscode-extension` and `logos-agent/web`;
 finish with `npm --prefix logos-agent/web run build`.
 
+Keep `logos-agent/examples/validated-demos` alongside the source when deploying;
+copying only `web/dist` is not sufficient. The home gallery imports private copies
+from its `structure`, `air-pipe`, and `kicad-led` subfolders. Each contains a README,
+rerun scripts, public results, and redacted text evidence; importing does not run a
+solver. See the [example index](../../examples/validated-demos/README.md).
+
+STEP/STP preview additionally requires an existing Gmsh executable discoverable
+by the software panel and Linux util-linux `prlimit` at `/usr/bin/prlimit`.
+Neither is installed automatically. Preview conversion is bounded and leaves the
+CAD source unchanged; downloading the original does not require the converter.
+
 ## Identity and storage
 
 Copy `logos-agent/web/deploy/.env.example` to

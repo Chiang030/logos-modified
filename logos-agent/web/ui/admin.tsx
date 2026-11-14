@@ -1,7 +1,7 @@
 import { useEffect,useState,type ReactElement } from "react";
 import { api } from "./api";
 import { OpenAiLogin } from "./openai";
-interface Connection {id?:string;name:string;baseUrl:string;protocol:string;models:string[];enabled:boolean;contextWindow:number;maxTokens:number;reasoning:boolean;version?:number;hasKey?:boolean;authType?:"api-key"|"openai-chatgpt";}
+interface Connection {id?:string;name:string;baseUrl:string;protocol:string;models:string[];visionModels?:string[];enabled:boolean;contextWindow:number;maxTokens:number;reasoning:boolean;version?:number;hasKey?:boolean;authType?:"api-key"|"openai-chatgpt";}
 interface UsageRow {owner:string;name:string;connection_name:string;model:string;calls:number;failures:number;unknown:number;input:number;output:number;cacheRead:number;cacheWrite:number;total:number;}
 interface RequestRow {id:string;name:string;model:string;run:string;created:number;status:string;known:number;total:number;}
 interface Report {rows:UsageRow[];requests:RequestRow[];users:{id:string;name:string}[];}
@@ -10,18 +10,18 @@ const today=()=>new Date(Date.now()+8*3600000).toISOString().slice(0,10);
 const number=(n:number)=>n.toLocaleString("zh-CN");
 export function AdminPanel({close}:{close:()=>void}):ReactElement {
   const [tab,setTab]=useState("models"),[connections,setConnections]=useState<Connection[]>([]),[entry,setEntry]=useState<Connection>(empty);
-  const [key,setKey]=useState(""),[modelText,setModelText]=useState(""),[busy,setBusy]=useState(false),[notice,setNotice]=useState("");
+  const [key,setKey]=useState(""),[modelText,setModelText]=useState(""),[visionText,setVisionText]=useState(""),[busy,setBusy]=useState(false),[notice,setNotice]=useState("");
   const [start,setStart]=useState(today().slice(0,8)+"01"),[end,setEnd]=useState(today()),[user,setUser]=useState(""),[model,setModel]=useState(""),[report,setReport]=useState<Report>();
   const [status,setStatus]=useState<{ready:boolean;reason:string;active:{count:number};queued:{count:number}}>();
   const parameters=()=>new URLSearchParams({start,end,user,model}).toString();
   const load=async():Promise<void>=>{setConnections((await api<{connections:Connection[]}>("/api/admin/models")).connections);setStatus(await api("/api/admin/status"));};
   useEffect(()=>{void load().catch(e=>setNotice(e.message));},[]);
-  const select=(c:Connection):void=>{setEntry(c);setModelText(c.models.join("\n"));setKey("");setNotice("");};
+  const select=(c:Connection):void=>{setEntry(c);setModelText(c.models.join("\n"));setVisionText((c.visionModels ?? []).join("\n"));setKey("");setNotice("");};
   const usage=async():Promise<void>=>{setBusy(true);try{setReport(await api("/api/admin/usage?"+parameters()));}catch(e){setNotice((e as Error).message);}finally{setBusy(false);}};
   const save=async():Promise<void>=>{
     setBusy(true);setNotice("");
     try{
-      const result=await api<{connection:Connection}>("/api/admin/models",{...entry,models:modelText.split(/[\n,]/).map(s=>s.trim()).filter(Boolean),...(key?{apiKey:key}:{})});
+      const result=await api<{connection:Connection}>("/api/admin/models",{...entry,models:modelText.split(/[\n,]/).map(s=>s.trim()).filter(Boolean),visionModels:visionText.split(/[\n,]/).map(s=>s.trim()).filter(Boolean),...(key?{apiKey:key}:{})});
       select(result.connection);await load();setNotice("配置已保存。密钥不会返回浏览器；正在运行的任务继续使用启动时的配置。");
     }catch(e){setNotice((e as Error).message);}finally{setBusy(false);}
   };
@@ -44,6 +44,7 @@ export function AdminPanel({close}:{close:()=>void}):ReactElement {
         <label>API 地址<input required readOnly={entry.authType==="openai-chatgpt"} type="url" value={entry.baseUrl} onChange={e=>setEntry({...entry,baseUrl:e.target.value})} placeholder="填写服务商提供的 API Base URL" /><small>{entry.authType==="openai-chatgpt"?"账号授权直接连接 OpenAI 官方接口。":"OpenAI 兼容接口通常包含 /v1；Anthropic 填服务根地址。"}</small></label>
         {entry.authType!=="openai-chatgpt"?<label>API Key<input type="password" autoComplete="new-password" value={key} onChange={e=>setKey(e.target.value)} placeholder={entry.hasKey?"已保存；留空保留原密钥":"填写 API Key"} /></label>:null}
         <label>开放的模型 ID<textarea required rows={4} value={modelText} onChange={e=>setModelText(e.target.value)} placeholder="每行一个模型 ID，以服务商提供的名称为准" /></label>
+        <label>额外声明支持图片的模型 ID<textarea rows={2} value={visionText} onChange={e=>setVisionText(e.target.value)} placeholder="仅填写服务商已确认支持图像输入的开放模型 ID" /><small>已收录的模型按本机能力目录识别；私有模型或自定义别名需要明确声明。勾选并不能让纯文本模型获得视觉能力。</small></label>
         <div className="admin-form-row"><label>上下文窗口<input type="number" min={1024} max={4000000} value={entry.contextWindow} onChange={e=>setEntry({...entry,contextWindow:Number(e.target.value)})} /></label><label>最大输出 tokens<input type="number" min={128} max={200000} value={entry.maxTokens} onChange={e=>setEntry({...entry,maxTokens:Number(e.target.value)})} /></label></div>
         <div className="admin-checks"><label><input type="checkbox" checked={entry.enabled} onChange={e=>setEntry({...entry,enabled:e.target.checked})} />允许用户使用</label><label><input type="checkbox" checked={entry.reasoning} onChange={e=>setEntry({...entry,reasoning:e.target.checked})} />支持思考档位</label></div>
         <div className="admin-buttons"><button className="primary" disabled={busy}>{busy?"处理中…":"保存配置"}</button><button type="button" disabled={busy||!entry.id} onClick={()=>void check()}>检查连接 / 列出模型</button></div>

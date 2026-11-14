@@ -1,6 +1,7 @@
 import type { HostBridge } from "../../vscode-extension/webview-ui/src/hostBridge";
 import type { ExtensionToWebviewMessage, ModelOption } from "../../vscode-extension/webview-ui/src/protocol";
 import { api, type Conversation, type Project, type User } from "./api";
+import { projectFileLink } from "./file-links";
 import { requestId } from "./browser";
 
 interface Run {id:string;status:string;error?:string;created:number;}
@@ -37,9 +38,7 @@ export class BrowserBridge implements HostBridge {
       case "link/open":{
         const href=String(command.href??"");
         if(/^https?:\/\//i.test(href)){window.open(href,"_blank","noopener,noreferrer");return;}
-        if(/^[a-z][a-z\d+.-]*:/i.test(href)||href.startsWith("//"))throw new Error("该文件链接不支持打开");
-        const path=this.project.absolutePath && href.startsWith(this.project.absolutePath+"/")?href.slice(this.project.absolutePath.length+1):href;
-        this.openFile(path.replace(/^\/workspace\//,"").replace(/^\.\//,""));return;
+        this.openFile(projectFileLink(href,this.project));return;
       }
       case "model/select":{
         const selected=this.models.find(m=>m.provider===command.provider && m.id===command.modelId);
@@ -49,22 +48,24 @@ export class BrowserBridge implements HostBridge {
       }
       case "thinking/select":this.thinking=String(command.level);this.config();return;
       case "session/new":{
+        window.dispatchEvent(new CustomEvent("logos-session-changing",{detail:{host:this,preserveDraft:false}}));
         if(this.preview){this.emit({type:"session/reset"});return;}
         const result=await api<{session:Conversation}>("/api/sessions",{project:this.project.id});
         await this.selectSession(result.session.id);await this.history();return;
       }
       case "session/select":{
+        window.dispatchEvent(new CustomEvent("logos-session-changing",{detail:{host:this,preserveDraft:false}}));
         const sessions=await this.history();if(!sessions.some(s=>s.id===command.sessionId))throw new Error("会话不存在");
         await this.selectSession(String(command.sessionId));await this.history();return;
       }
       case "chat/send":{
         if(this.preview)throw new Error("这是只读界面预览，没有提交任务");
         await this.catalog();if(!this.selected)throw new Error("管理员尚未开放模型，请先配置 API");
-        if(!this.active){const result=await api<{session:Conversation}>("/api/sessions",{project:this.project.id});await this.selectSession(result.session.id);}
-        const input={project:this.project.id,command:{type:"chat/send",text:command.text,session:this.active,connection:this.selected.provider,model:this.selected.id,thinking:this.thinking,requestKey:requestId()}};
+        if(!this.active){const result=await api<{session:Conversation}>("/api/sessions",{project:this.project.id});await this.selectSession(result.session.id,true);}
+        const input={project:this.project.id,command:{type:"chat/send",text:command.text,images:command.images,session:this.active,connection:this.selected.provider,model:this.selected.id,thinking:this.thinking,requestKey:requestId()}};
         const submit=()=>api<{run:Run}>("/api/bridge",input);
         let result;try{result=await submit();}catch(error){if(!(error instanceof TypeError))throw error;result=await submit();}
-        this.run=result.run;this.emit({type:"runtime/status",status:"starting",detail:"排队中"});
+        this.run=result.run;window.dispatchEvent(new CustomEvent("logos-chat-accepted",{detail:{host:this,text:command.text,draftRequest:command.draftRequest}}));this.emit({type:"runtime/status",status:"starting",detail:"排队中"});
         await this.history();return;
       }
       case "chat/abort":if(this.run && ["queued","starting","running","cancelling"].includes(this.run.status)){await api("/api/cancel",{run:this.run.id});this.notice("正在停止任务");}return;
@@ -85,9 +86,11 @@ export class BrowserBridge implements HostBridge {
     const status=this.run?.status;
     this.emit({type:"runtime/status",status:status==="queued"||status==="starting"?"starting":status==="running"?"running":status==="cancelling"?"stopping":this.healthy?"ready":"idle",detail:status==="queued"?"排队中":this.healthy?"任务服务就绪":"任务服务暂不可用"});
   }
-  private async selectSession(id:string):Promise<void>{
+  private async selectSession(id:string,preserveDraft=false):Promise<void>{
     window.clearTimeout(this.timer);const generation=++this.generation;
-    this.active=id;this.sequence=0;this.run=undefined;this.emit({type:"session/reset"});this.emit({type:"session/loading",loading:true});
+    this.active=id;this.sequence=0;this.run=undefined;
+    window.dispatchEvent(new CustomEvent("logos-session-changing",{detail:{host:this,preserveDraft}}));
+    this.emit({type:"session/reset"});this.emit({type:"session/loading",loading:true});
     await this.poll(generation);
   }
   private async poll(generation:number):Promise<void>{

@@ -1,7 +1,7 @@
 import { projectWorkspace, WorkspaceError } from "../../pi-domain/src/workspace.mjs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
-import { resolve, join } from "node:path";
+import { join } from "node:path";
 import { Store, LOGIN_MAX_AGE_SECONDS } from "./store.ts";
 import { WorkspaceFiles, segments } from "./files.ts";
 import { beginLogin, completeLogin, cookie, cookies, equal, ready, identityName, type Config } from "./auth.ts";
@@ -13,21 +13,26 @@ import { Jobs } from "./jobs.ts";
 import { Meter } from "./usage.ts";
 import { control, prompt, type Control } from "./control.ts";
 import { Software } from "./software.ts";
+import { asset } from "./assets.ts";
+import { CadPreview } from "./cad-preview.ts";
+import { Feedback, feedbackRoute } from "./feedback.ts";
+import { Demos, demoRoute } from "./demos.ts";
 
 const productVersion: string = JSON.parse(await readFile(new URL("../../package.json", import.meta.url), "utf8")).version;
 
 export interface Services { config: Config; store: Store; files: WorkspaceFiles; assets: string; }
 export function createHandler(services: Services): (req: IncomingMessage, res: ServerResponse) => void {
-  const resources = { ...services, models: new Models(services.store, join(services.config.data,"state")), jobs: new Jobs(services.store), meter: new Meter(services.store), software: new Software(services.config.data) };
+  const software = new Software(services.config.data);
+  const resources = { ...services, models: new Models(services.store, join(services.config.data,"state")), jobs: new Jobs(services.store), meter: new Meter(services.store), software, cad: new CadPreview(services.config.data, undefined, software), feedback: new Feedback(services.store), demos: new Demos() };
   return (request, response) => {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("Referrer-Policy", "same-origin");
     response.setHeader("X-Frame-Options", "SAMEORIGIN");
-    response.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'; form-action 'self'");
+    response.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; frame-src 'self' blob:; connect-src 'self' data: blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'self'; form-action 'self'");
     void route(resources, request, response).catch((error: unknown) => failure(response, error));
   };
 }
-async function route(s: Services & Control, req: IncomingMessage, res: ServerResponse): Promise<void> {
+async function route(s: Services & Control & { cad: CadPreview; feedback: Feedback; demos: Demos }, req: IncomingMessage, res: ServerResponse): Promise<void> {
   const { config, store } = s;
   if (req.headers.host !== new URL(config.publicUrl).host) throw new HttpError(421, "访问地址不匹配");
   const url = new URL(req.url ?? "/", config.publicUrl), method = req.method ?? "GET";
@@ -49,7 +54,7 @@ async function route(s: Services & Control, req: IncomingMessage, res: ServerRes
     res.writeHead(302, { Location: "/", "Set-Cookie": [cookie(config, "logos_session", session.token, LOGIN_MAX_AGE_SECONDS), cookie(config, "logos_oauth", "", 0)], "Cache-Control": "no-store" }); res.end(); return;
   }
   if (url.pathname === "/favicon.ico" && method === "GET") { res.writeHead(204); res.end(); return; }
-  if (!url.pathname.startsWith("/api/")) { await asset(s.assets, url.pathname, method, res); return; }
+  if (!url.pathname.startsWith("/api/")) { await asset(s.assets, url.pathname, req, res); return; }
   const auth = store.authenticate(cookies(req).logos_session);
   if (method !== "GET" && (req.headers.origin !== config.publicUrl || !equal(String(req.headers["x-csrf-token"] ?? ""), auth.csrf))) throw new HttpError(403, "请求验证失败，请刷新后重试");
   if (url.pathname === "/api/logout" && method === "POST") {
@@ -64,6 +69,8 @@ async function route(s: Services & Control, req: IncomingMessage, res: ServerRes
     finally { await handle.close(); }
     return;
   }
+  if (await demoRoute(s.demos,store,s.files,auth.user,url,req,res)) return;
+  if (await feedbackRoute(s.feedback,auth.user,url,req,res)) return;
   if (await control(s,auth.user,url,req,res)) return;
   if (url.pathname === "/api/projects" && method === "GET") { json(res, { projects: store.projects(auth.user.id).map(project=>({...project,absolutePath:join(config.data,"users",auth.user.id,"workspace",project.directory)})) }); return; }
   if (url.pathname === "/api/projects" && method === "POST") {
@@ -92,6 +99,20 @@ async function route(s: Services & Control, req: IncomingMessage, res: ServerRes
     const path = scopedPath(s, auth.user.id, url), handle = await s.files.read(auth.user.id, path);
     await sendFile(req, res, handle, path, url.searchParams.has("download")); return;
   }
+  if (url.pathname === "/api/cad-preview" && method === "POST") {
+    const input = await body(req), project = store.project(auth.user.id, text(input.project, "项目"));
+    const path = text(input.path, "文件路径", 2048); segments(path);
+    const handle = await s.files.read(auth.user.id, project.directory + "/" + path);
+    const controller = new AbortController(), abort = (): void => { if (!res.writableEnded) controller.abort(); };
+    res.once("close", abort);
+    if (res.destroyed) controller.abort();
+    const deadline = setTimeout(() => controller.abort(), 65_000);
+    try {
+      const result = await s.cad.render(auth.user.id, handle, path, controller.signal);
+      res.writeHead(200, { "Content-Type": "model/stl", "Content-Length": result.length, "Cache-Control": "no-store" }); res.end(result);
+    } finally { clearTimeout(deadline); res.off("close", abort); await handle.close(); }
+    return;
+  }
   if (url.pathname === "/api/preview" && method === "GET") {
     const handle = await s.files.read(auth.user.id, scopedPath(s, auth.user.id, url));
     try {
@@ -107,7 +128,7 @@ async function route(s: Services & Control, req: IncomingMessage, res: ServerRes
     const input = await body(req); json(res, { session: store.createSession(auth.user.id, text(input.project, "项目")) }, 201); return;
   }
   if (url.pathname === "/api/bridge" && method === "POST") {
-    const input = await body(req), project = store.project(auth.user.id, text(input.project, "项目"));
+    const input = await body(req, 12 * 1024 * 1024), project = store.project(auth.user.id, text(input.project, "项目"));
     const command = input.command as Record<string, unknown> | undefined;
     if (!command || typeof command.type !== "string") throw new HttpError(400, "命令无效");
     if (command.type === "session/rename") {
@@ -121,8 +142,9 @@ async function route(s: Services & Control, req: IncomingMessage, res: ServerRes
       const connection=s.models.get(text(command.connection,"模型连接"));
       const thinking=typeof command.thinking==="string"?command.thinking:"off";
       if (!["off","minimal","low","medium","high"].includes(thinking) || (!connection.reasoning && thinking!=="off")) throw new HttpError(400,"思考档位无效");
-      const run=s.jobs.submit(auth.user.id,project.id,text(command.session,"会话"),connection,text(command.model,"模型"),prompt(command.text),text(command.requestKey,"提交标识",80),thinking);
-      json(res,{run},202);return;
+      const run=s.jobs.submit(auth.user.id,project.id,text(command.session,"会话"),connection,text(command.model,"模型"),prompt((typeof command.text === "string" && command.text.trim()) || (Array.isArray(command.images) && command.images.length ? "请分析所附图片。" : command.text)),text(command.requestKey,"提交标识",80),thinking,command.images);
+      const { images: _images, ...summary } = run;
+      json(res,{run:summary},202);return;
     }
     throw new HttpError(400, "此操作尚未启用");
   }
@@ -132,11 +154,4 @@ function scopedPath(s: Services, user: string, url: URL): string {
   const path = url.searchParams.get("path") ?? ""; segments(path);
   const project = url.searchParams.get("project");
   return project ? [s.store.project(user, project).directory, path].filter(Boolean).join("/") : path;
-}
-async function asset(root: string, pathname: string, method: string, response: ServerResponse): Promise<void> {
-  if (method !== "GET") throw new HttpError(405, "请求方法不支持");
-  const names: Record<string, [string, string]> = { "/": ["index.html", "text/html; charset=utf-8"], "/app.js": ["app.js", "text/javascript; charset=utf-8"], "/app.css": ["app.css", "text/css; charset=utf-8"] };
-  const entry = names[pathname]; if (!entry) throw new HttpError(404, "页面不存在");
-  const data = await readFile(resolve(root, entry[0]));
-  response.writeHead(200, { "Content-Type": entry[1], "Cache-Control": "no-cache" }); response.end(data);
 }

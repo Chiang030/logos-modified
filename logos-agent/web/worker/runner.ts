@@ -8,6 +8,7 @@ import type { Jobs, Run } from "../server/jobs.ts";
 import type { Models } from "../server/models.ts";
 import type { Meter } from "../server/usage.ts";
 import { modelBroker, type Broker } from "../server/broker.ts";
+import { validateImages } from "../server/attachments.ts";
 import { launch } from "./runtime.ts";
 import { Events } from "./events.ts";
 
@@ -42,12 +43,12 @@ export async function executeRun(repo:string,data:string,jobs:Jobs,models:Models
     rpc.onExit(()=>{if(!finished && !events.settled && !cancelled)failure=new Error("运行进程意外退出");complete();});
     const deadline=Date.now()+60*60_000;
     timer=setInterval(()=>{
-      cancelled=jobs.get(run.owner,run.id).status==="cancelling";
+      cancelled=jobs.status(run.owner,run.id)==="cancelling";
       if(cancelled || Date.now()>deadline){if(!cancelled)failure=new Error("任务超过 60 分钟时限，已停止");complete();}
     },300);
     await rpc.getState();
-    if(jobs.get(run.owner,run.id).status==="cancelling"){cancelled=true;complete();}
-    else{jobs.running(run.id);await rpc.prompt(run.prompt);}
+    if(jobs.status(run.owner,run.id)==="cancelling"){cancelled=true;complete();}
+    else{jobs.running(run.id);await rpc.request({type:"prompt",message:run.prompt,images:validateImages(JSON.parse(run.images ?? "[]"))});}
     await settled;
     if(cancelled || failure)await rpc.requestWithTimeout({type:"abort"},2000).catch(()=>undefined);
     if(failure)throw failure;

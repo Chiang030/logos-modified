@@ -1,5 +1,15 @@
 This directory is the LOGOS Agent product/runtime layer. Run its npm scripts from here, or prefix them with `npm --prefix logos-agent` from the repository root.
 
+## 标准算例
+
+[算例总览](examples/validated-demos/README.md)提供三个独立子文件夹：
+
+- [结构悬臂梁](examples/validated-demos/structure/README.md)：APDL BEAM188 梁单元基准。
+- [低速空气管流](examples/validated-demos/air-pipe/README.md)：Fluent 双网格物理验收。
+- [KiCad LED 小板](examples/validated-demos/kicad-led/README.md)：原理图、ERC、网表、PCB 一致性和制造导出。
+
+各目录说明参数、依赖、重跑步骤、实际结果和限制；可先离线校验，不需启动商业求解器。网页首页支持创建个人示例副本，VSIX 不额外捆绑这些证据文件。
+
 # LOGOS CLI
 
 The built-in `simulation` tool calls the configured sim CLI. See [configuration, result semantics and pending backend work](docs/simulation-tool.md).

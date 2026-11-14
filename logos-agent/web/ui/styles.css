@@ -59,11 +59,21 @@ button:disabled { cursor: not-allowed; }
 .preview-panel>header>div { display: flex; gap: 9px; min-width: 0; }.preview-panel strong { font-weight: 400; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
 .preview-toolbar { display: flex; gap: 10px; align-items: center; padding: 9px 13px; font-size: 10px; border-bottom: 1px solid #202c3f; color: #7d96b4; }
 .preview-toolbar>span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.preview-toolbar button,.preview-toolbar a { color: #7abadd; white-space: nowrap; }
+.preview-toolbar { flex-wrap: wrap; }.preview-toolbar>.file-download { flex: 0 1 auto; overflow: visible; white-space: normal; }
+.file-download [role=alert] { display: block; max-width: 240px; margin-top: 6px; color: #ffb5a8; line-height: 1.5; white-space: normal; }
 .code-preview { flex: 1; overflow: auto; padding: 16px 0; font: 12px/1.9 Consolas,monospace; }
 .code-line { display: flex; }.code-line>span { min-width: 43px; padding-right: 12px; text-align: right; color: #435770; user-select: none; }
 .code-line code { white-space: pre; padding-right: 20px; color: #a8c1d9; }
 .preview-panel>footer { padding: 8px 13px; font-size: 10px; color: #526c89; border-top: 1px solid #243044; display: flex; justify-content: space-between; }
 .preview-hint { padding: 8px 12px; color: #ceb687; font-size: 11px; }.image-preview { padding: 18px; overflow: auto; }.image-preview img { max-width: 100%; }.pdf-preview { border: 0; width: 100%; flex: 1; }
+.media-preview { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; justify-content: center; padding: 14px; gap: 12px; }
+.media-preview video { width: 100%; max-height: 65vh; background: #000; }.media-preview audio { width: 100%; }
+.model-preview { display: flex; flex-direction: column; flex: 1; min-height: 320px; }
+.model-actions { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; color: #8daac4; font-size: 11px; }
+.model-actions button,.model-status button { border: 1px solid #34546c; border-radius: 5px; padding: 5px 9px; color: #8bcbe5; }
+.model-actions button:disabled { opacity: .4; }.model-viewport { position: relative; flex: 1; min-height: 240px; overflow: hidden; }
+.model-viewport canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.model-status { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; background: #0b1522ee; color: #9bb8ce; font-size: 12px; overflow: auto; }
 .project-home { flex: 1; padding: clamp(30px,7vw,90px); overflow: auto; background: radial-gradient(ellipse at 70% 20%,#10263b 0,transparent 60%); }
 .eyebrow { font-size: 10px; color: #568cb2; letter-spacing: 3px; margin-bottom: 20px; }
 .project-home h1 { font-size: clamp(28px,3vw,45px); font-weight: 500; line-height: 1.5; letter-spacing: 2px; }.project-home h1 span { color: #8ec8e8; }

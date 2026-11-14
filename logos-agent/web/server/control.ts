@@ -36,7 +36,7 @@ export async function control(s:Control,user:User,url:URL,req:IncomingMessage,re
   }
   if(path==="/api/runs" && method==="GET"){
     const session=url.searchParams.get("session")??undefined;if(session)s.store.session(user.id,session);
-    json(res,{runs:s.jobs.list(user.id,session),...s.jobs.health()});return true;
+    json(res,{runs:s.jobs.list(user.id,session).map(({images: _images, ...run}) => run),...s.jobs.health()});return true;
   }
   if(path==="/api/events" && method==="GET"){
     const after=Number(url.searchParams.get("after")??0);if(!Number.isSafeInteger(after)||after<0)throw new HttpError(400,"事件序号无效");

@@ -1,0 +1,434 @@
+[Publication copy: host, user, paths, network and license metadata redacted; numerical solver output preserved.]
+[installation-path] -r26.1.0 2ddp -gu -driver null -sifile=[run-directory] -nm
+Warning:  DISPLAY environment variable is not set.
+  Graphics and GUI will not operate correctly
+  without this being set properly.
+[installation-path] -f fluent -gu -sifile=[run-directory] -nm (fluent "2ddp -pdefault  -host -r26.1.0 -t1 -mpi=intel -path[installation-path] -ssh")
+
+Opening input/output transcript to file "[run-directory]".
+Auto-Transcript Start Time:  17:41:09, 12 Nov 2026 
+[installation-path] -r26.1.0 2ddp -pdefault -host -t1 -mpi=intel -path[installation-path] -ssh -cx [host]:44157:43819
+Warning:  DISPLAY environment variable is not set.
+  Graphics and GUI will not operate correctly
+  without this being set properly.
+Starting [installation-path] host -cx [host]:44157:43819 "(list (rpsetvar (QUOTE parallel/function) "fluent 2ddp -flux -node -r26.1.0 -t1 -pdefault -mpi=intel -ssh") (rpsetvar (QUOTE parallel/rhost) "") (rpsetvar (QUOTE parallel/ruser) "") (rpsetvar (QUOTE parallel/nprocs_string) "1") (rpsetvar (QUOTE parallel/auto-spawn?) #t) (rpsetvar (QUOTE parallel/trace-level) 0) (rpsetvar (QUOTE parallel/remote-shell) 1) (rpsetvar (QUOTE parallel/path) "[installation-path]") (rpsetvar (QUOTE parallel/hostsfile) "") (rpsetvar (QUOTE gpuapp/devices) ""))"
+
+              Welcome to ANSYS Fluent 2026 R1
+
+              Copyright 2026 Synopsys, Inc. and ANSYS, Inc. All rights reserved.
+              Unauthorized use, distribution or duplication is prohibited.
+              This product is subject to U.S. laws governing export and re-export.
+              For full Legal Notice, see documentation.
+
+Build Time: Feb 02 2026 15:58:00 EST  Build Id: 10262  
+ 
+[license metadata omitted]
+
+*********************************************
+[license metadata omitted]
+For faster simulations, please start the application with the appropriate parallel options.
+*********************************************
+
+Host spawning Node 0 on machine "[host]" (unix).
+[installation-path] -r26.1.0 2ddp -flux -node -t1 -pdefault -mpi=intel -ssh -mport [network-endpoint].0.1.1:36445:0
+Starting [installation-path] -f [run-directory] -genv I_MPI_FABRICS shm -genv FLUENT_ARCH lnamd64 -genv I_MPI_DEBUG 0 -genv I_MPI_ADJUST_GATHERV 3 -genv I_MPI_ADJUST_ALLREDUCE 2 -genv I_MPI_PLATFORM auto -genv PYTHONHOME [installation-path] -genv FLUENT_PROD_DIR [installation-path] -genv FLUENT_AFFINITY 0 -genv I_MPI_PIN enable -genv KMP_AFFINITY disabled -n 1 [installation-path] node -mpiw intel -pic shmem -mport [network-endpoint].0.1.1:36445:0
+
+Node 0 connecting to the Host ... connection established.
+
+-------------------------------------------------------------------------------
+ID    Hostname  Core  O.S.      PID     CPU Model Name              
+-------------------------------------------------------------------------------
+n0    [host]  1/32  Linux-64  659788  AMD Ryzen 9 9950X3D 16-Core 
+host  [host]        Linux-64  659050  AMD Ryzen 9 9950X3D 16-Core 
+
+MPI Option Selected: intel
+-------------------------------------------------------------------------------
+
+Cleanup script file is [run-directory]
+WARNING: Rank:0 Machine [host] has 37 % of RAM filled with file buffer caches.
+This can cause potential performance issues. Please use -cflush flag to flush the cache. 
+
+
+Graphics driver currently in use: null
+Information: The server has started and is running.
+
+> 
+Reading "[run-directory]"...
+
+Buffering for file scan...
+
+Reading "[run-directory]"...
+
+Buffering for file scan...
+
+
+    4025 nodes.
+    4025 nodes.
+    3840 quadrilateral cells, zone  1.
+    3840 quadrilateral cells, zone  1.
+    7496 2D interior faces, zone  2.
+    7496 2D interior faces, zone  2.
+      24 2D velocity-inlet faces, zone  3.
+      24 2D velocity-inlet faces, zone  3.
+      24 2D pressure-outlet faces, zone  4.
+      24 2D pressure-outlet faces, zone  4.
+     160 2D wall faces, zone  5.
+     160 2D wall faces, zone  5.
+     160 2D axis faces, zone  6.
+     160 2D axis faces, zone  6.
+
+Building...
+     mesh
+Building...
+
+     materials,     mesh
+
+     interface,     materials,
+
+     domains,     interface,
+
+     zones,     domains,
+
+	axis     zones,
+
+	wall	axis
+
+	outlet	wall
+
+	inlet	outlet
+
+	interior	inlet
+
+	air	interior
+
+     parallel,	air
+
+Done.
+     parallel,
+Done.
+Warning: The use of axis boundary conditions is not appropriate for
+         a 2D/3D flow problem. Please consider changing the zone
+         type to symmetry or wall, or the problem to axisymmetric.
+
+Warning: The use of axis boundary conditions is not appropriate for
+         a 2D/3D flow problem. Please consider changing the zone
+         type to symmetry or wall, or the problem to axisymmetric.
+
+Warning: The use of axis boundary conditions is not appropriate for
+         a 2D/3D flow problem. Please consider changing the zone
+         type to symmetry or wall, or the problem to axisymmetric.
+
+Warning: The use of axis boundary conditions is not appropriate for
+         a 2D/3D flow problem. Please consider changing the zone
+         type to symmetry or wall, or the problem to axisymmetric.
+
+
+ Domain Extents:
+   x-coordinate: min (m) = 0.000000e+00, max (m) = 1.000000e+00
+   y-coordinate: min (m) = 0.000000e+00, max (m) = 5.000000e-03
+ Domain Extents:
+   x-coordinate: min (m) = 0.000000e+00, max (m) = 1.000000e+00
+
+ Volume statistics:
+   minimum volume (m3): 1.302083e-06
+   maximum volume (m3): 1.302083e-06
+     total volume (m3): 5.000000e-03
+ Face area statistics:
+   minimum face area (m2): 2.083333e-04
+   maximum face area (m2): 6.250000e-03
+ Checking mesh...........   y-coordinate: min (m) = 0.000000e+00, max (m) = 5.000000e-03
+. Volume statistics:
+   minimum volume (m3): 1.302083e-06
+   maximum volume (m3): 1.302083e-06
+     total volume (m3): 5.000000e-03
+ Face area statistics:
+   minimum face area (m2): 2.083333e-04
+   maximum face area (m2): 6.250000e-03
+....................
+ Done.
+ Checking mesh................................
+ Done.
+The following solver settings object method could also be used to execute the above command:
+<solver_session>.settings.mesh.check()
+AIR_STATE {'name': 'air', 'chemical_formula': '', 'density': {'option': 'value', 'value': 1.225}, 'viscosity': {'option': 'value', 'value': 1.7894e-05}}
+INLET_STATE {'name': 'inlet', 'momentum': {'velocity_specification_method': 'Magnitude, Normal to Boundary', 'reference_frame': 'Absolute', 'velocity_magnitude': {'option': 'value', 'value': 0}, 'initial_gauge_pressure': {'option': 'value', 'value': 0}}, 'turbulence': {}}
+METHOD_STATE {'p_v_coupling': {'flow_scheme': 'Coupled', 'flux_type': 'Rhie-Chow: momentum based', 'flux_auto_select': True}, 'spatial_discretization': {'gradient_scheme': 'least-square-cell-based', 'discretization_scheme': {'mom': 'second-order-upwind', 'pressure': 'second-order'}}, 'pseudo_time_method': {'formulation': {'coupled_solver': 'global-time-step'}}, 'expert': {'implicit_bodyforce_treatment': False, 'velocity_formulation': 'absolute', 'physical_velocity_formulation': False, 'disable_rhie_chow_flux': False, 'presto_pressure_scheme': False, 'first_to_second_order_blending': 1.0}, 'high_order_term_relaxation': {'enable': False, 'relaxation_factor': 0.25, 'select_variables': 'flow-variables', 'type': 'standard'}, 'warped_face_gradient_correction': {'enable': False}, 'poor_mesh_numerics': {'cell_quality_based': False, 'solution_and_quality_based': False, 'gradient_quality_based': False, 'reset_poor_elements': False}}
+A newer syntax is available to perform the last operation:
+solver.settings.setup.boundary_conditions.velocity_inlet['inlet'].momentum.velocity_magnitude.value = 0.1
+
+Execute the following code to suppress future warnings like the above:
+
+>>> import warnings
+>>> warnings.filterwarnings("ignore", category=DeprecatedSettingWarning)
+RESIDUAL_STATE {'equations': {'continuity': {'monitor': True, 'check_convergence': True, 'absolute_criteria': 0.001}, 'x-velocity': {'monitor': True, 'check_convergence': True, 'absolute_criteria': 0.001}, 'y-velocity': {'monitor': True, 'check_convergence': True, 'absolute_criteria': 0.001}}, 'options': {'criterion_type': 'absolute', 'n_save': 1000, 'normalize': False, 'residual_values': {'scale_residuals': True, 'compute_local_scale': False}, 'print': True, 'plot': True, 'n_display': 1000}, 'axes': {'x': {'label': '', 'log_scale': False, 'number_format': {'format_type': 'float', 'precision': 0}, 'auto_range': {'min_auto': True, 'max_auto': True}, 'show_major_gridlines': False, 'show_minor_gridlines': False}, 'y': {'label': '', 'log_scale': True, 'number_format': {'format_type': 'exponential', 'precision': 0}, 'auto_range': {'min_auto': True, 'max_auto': True}, 'show_major_gridlines': False, 'show_minor_gridlines': False}}, 'curves': {'continuity': {'line': {'pattern': '----', 'weight': 2, 'color': 'monte carlo green'}, 'line_in_file': {'pattern': ''}, 'marker': {'symbol': ''}, 'marker_in_file': {'symbol': '(*)', 'size': 0.3, 'color': 'monte carlo green'}}, 'x-velocity': {'line': {'pattern': '----', 'weight': 2, 'color': 'lavender gray'}, 'line_in_file': {'pattern': ''}, 'marker': {'symbol': ''}, 'marker_in_file': {'symbol': '(*)', 'size': 0.3, 'color': 'lavender gray'}}, 'y-velocity': {'line': {'pattern': '----', 'weight': 2, 'color': 'scarlet red'}, 'line_in_file': {'pattern': ''}, 'marker': {'symbol': ''}, 'marker_in_file': {'symbol': '(*)', 'size': 0.3, 'color': 'scarlet red'}}}}
+
+Initialize using the hybrid initialization method.
+
+Checking case topology... 
+-This case has both inlets & outlets 
+-Pressure information is not available at the boundaries.
+ Case will be initialized with constant pressure
+
+Initialize using the hybrid initialization method.
+
+Checking case topology... 
+-This case has both inlets & outlets 
+-Pressure information is not available at the boundaries.
+ Case will be initialized with constant pressure
+
+	iter		scalar-0
+
+
+	iter		scalar-0
+
+	1		1.000000e+00
+	1		1.000000e+00
+	2		1.065320e-07
+	2		1.065320e-07
+	3		4.313453e-08
+	3		4.313453e-08
+	4		2.324252e-08
+	4		2.324252e-08
+	5		1.397442e-08
+	5		1.397442e-08
+	6		8.881269e-09
+	6		8.881269e-09
+	7		5.827029e-09
+	7		5.827029e-09
+	8		3.898787e-09
+	8		3.898787e-09
+	9		2.641630e-09
+	9		2.641630e-09
+	10		1.804727e-09
+	10		1.804727e-09
+
+Hybrid initialization is done.
+
+Hybrid initialization is done.
+
+  iter  continuity  x-velocity  y-velocity     time/iter
+     1  1.0000e+00  7.7713e-02  8.7034e-07  0:00:07  599
+
+  iter  continuity  x-velocity  y-velocity     time/iter
+     1  1.0000e+00  7.7713e-02  8.7034e-07  0:00:07  599
+     2  1.0000e+00  4.1565e-02  1.6676e-05  0:00:09  598
+     2  1.0000e+00  4.1565e-02  1.6676e-05  0:00:09  598
+     3  8.6893e-01  2.1587e-02  1.4013e-05  0:00:09  597
+     3  8.6893e-01  2.1587e-02  1.4013e-05  0:00:09  597
+     4  6.5515e-01  1.1251e-02  1.0392e-05  0:00:09  596
+     4  6.5515e-01  1.1251e-02  1.0392e-05  0:00:09  596
+     5  4.3066e-01  5.9287e-03  7.2064e-06  0:00:09  595
+     5  4.3066e-01  5.9287e-03  7.2064e-06  0:00:09  595
+     6  2.4925e-01  3.1620e-03  3.8575e-06  0:00:09  594
+     6  2.4925e-01  3.1620e-03  3.8575e-06  0:00:09  594
+     7  1.8353e-01  1.7048e-03  2.0149e-06  0:00:09  593
+     7  1.8353e-01  1.7048e-03  2.0149e-06  0:00:09  593
+     8  1.3574e-01  9.2934e-04  1.0300e-06  0:00:09  592
+     8  1.3574e-01  9.2934e-04  1.0300e-06  0:00:09  592
+     9  9.9332e-02  5.1058e-04  5.4160e-07  0:00:09  591
+     9  9.9332e-02  5.1058e-04  5.4160e-07  0:00:09  591
+    10  7.1643e-02  2.8414e-04  3.9549e-07  0:00:09  590
+    10  7.1643e-02  2.8414e-04  3.9549e-07  0:00:09  590
+    11  5.1633e-02  1.5987e-04  3.0822e-07  0:00:09  589
+    11  5.1633e-02  1.5987e-04  3.0822e-07  0:00:09  589
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+    12  3.6846e-02  9.1307e-05  2.2955e-07  0:00:09  588
+    12  3.6846e-02  9.1307e-05  2.2955e-07  0:00:09  588
+    13  2.6036e-02  5.2946e-05  1.8663e-07  0:00:09  587
+    13  2.6036e-02  5.2946e-05  1.8663e-07  0:00:09  587
+    14  1.8273e-02  3.1141e-05  1.4004e-07  0:00:08  586
+    14  1.8273e-02  3.1141e-05  1.4004e-07  0:00:08  586
+    15  1.2941e-02  1.8663e-05  1.0352e-07  0:00:08  585
+    15  1.2941e-02  1.8663e-05  1.0352e-07  0:00:08  585
+    16  9.1130e-03  1.1313e-05  7.2509e-08  0:00:08  584
+    16  9.1130e-03  1.1313e-05  7.2509e-08  0:00:08  584
+    17  6.4094e-03  6.9539e-06  4.9581e-08  0:00:08  583
+    17  6.4094e-03  6.9539e-06  4.9581e-08  0:00:08  583
+    18  4.4993e-03  4.3003e-06  3.3234e-08  0:00:07  582
+    18  4.4993e-03  4.3003e-06  3.3234e-08  0:00:07  582
+    19  3.1449e-03  2.6939e-06  2.2047e-08  0:00:07  581
+    19  3.1449e-03  2.6939e-06  2.2047e-08  0:00:07  581
+    20  2.1589e-03  1.6937e-06  1.4266e-08  0:00:07  580
+    20  2.1589e-03  1.6937e-06  1.4266e-08  0:00:07  580
+    21  1.4976e-03  1.0805e-06  9.7304e-09  0:00:07  579
+    21  1.4976e-03  1.0805e-06  9.7304e-09  0:00:07  579
+    22  1.0107e-03  6.8075e-07  6.0069e-09  0:00:07  578
+    22  1.0107e-03  6.8075e-07  6.0069e-09  0:00:07  578
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+    23  6.9388e-04  4.1968e-07  3.6692e-09  0:00:07  577
+    23  6.9388e-04  4.1968e-07  3.6692e-09  0:00:07  577
+    24  4.7952e-04  2.5280e-07  2.4827e-09  0:00:07  576
+    24  4.7952e-04  2.5280e-07  2.4827e-09  0:00:07  576
+    25  3.3568e-04  1.4906e-07  1.7902e-09  0:00:07  575
+    25  3.3568e-04  1.4906e-07  1.7902e-09  0:00:07  575
+    26  2.3558e-04  8.8205e-08  1.3399e-09  0:00:07  574
+    26  2.3558e-04  8.8205e-08  1.3399e-09  0:00:07  574
+    27  1.6508e-04  5.1948e-08  9.9413e-10  0:00:07  573
+    27  1.6508e-04  5.1948e-08  9.9413e-10  0:00:07  573
+    28  1.1613e-04  3.1559e-08  7.2366e-10  0:00:07  572
+    28  1.1613e-04  3.1559e-08  7.2366e-10  0:00:07  572
+    29  8.2115e-05  1.9602e-08  5.1576e-10  0:00:07  571
+    29  8.2115e-05  1.9602e-08  5.1576e-10  0:00:07  571
+    30  5.8639e-05  1.2631e-08  3.6808e-10  0:00:07  570
+    30  5.8639e-05  1.2631e-08  3.6808e-10  0:00:07  570
+    31  4.1492e-05  8.3210e-09  2.4516e-10  0:00:07  569
+    31  4.1492e-05  8.3210e-09  2.4516e-10  0:00:07  569
+    32  2.9241e-05  5.4883e-09  1.6055e-10  0:00:07  568
+    32  2.9241e-05  5.4883e-09  1.6055e-10  0:00:07  568
+    33  2.0662e-05  3.6116e-09  1.0922e-10  0:00:07  567
+    33  2.0662e-05  3.6116e-09  1.0922e-10  0:00:07  567
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+    34  1.4619e-05  2.3663e-09  7.6103e-11  0:00:07  566
+    34  1.4619e-05  2.3663e-09  7.6103e-11  0:00:07  566
+    35  1.0346e-05  1.5629e-09  5.3480e-11  0:00:07  565
+    35  1.0346e-05  1.5629e-09  5.3480e-11  0:00:07  565
+    36  7.3235e-06  1.0277e-09  3.7627e-11  0:00:07  564
+    36  7.3235e-06  1.0277e-09  3.7627e-11  0:00:07  564
+    37  5.1881e-06  6.8115e-10  2.6522e-11  0:00:07  563
+    37  5.1881e-06  6.8115e-10  2.6522e-11  0:00:07  563
+    38  3.6817e-06  4.4967e-10  1.8757e-11  0:00:07  562
+    38  3.6817e-06  4.4967e-10  1.8757e-11  0:00:07  562
+    39  2.6142e-06  2.9988e-10  1.3300e-11  0:00:07  561
+    39  2.6142e-06  2.9988e-10  1.3300e-11  0:00:07  561
+    40  1.8568e-06  2.0101e-10  9.4009e-12  0:00:06  560
+    40  1.8568e-06  2.0101e-10  9.4009e-12  0:00:06  560
+    41  1.3231e-06  1.3681e-10  6.7149e-12  0:00:06  559
+    41  1.3231e-06  1.3681e-10  6.7149e-12  0:00:06  559
+    42  9.4131e-07  9.3871e-11  4.7583e-12  0:00:06  558
+    42  9.4131e-07  9.3871e-11  4.7583e-12  0:00:06  558
+    43  6.6874e-07  6.4545e-11  3.3406e-12  0:00:06  557
+    43  6.6874e-07  6.4545e-11  3.3406e-12  0:00:06  557
+    44  4.7512e-07  4.4106e-11  2.3221e-12  0:00:06  556
+    44  4.7512e-07  4.4106e-11  2.3221e-12  0:00:06  556
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+    45  3.3755e-07  2.9431e-11  1.5997e-12  0:00:07  555
+    45  3.3755e-07  2.9431e-11  1.5997e-12  0:00:07  555
+    46  2.3973e-07  1.8710e-11  1.0981e-12  0:00:07  554
+    46  2.3973e-07  1.8710e-11  1.0981e-12  0:00:07  554
+    47  1.7065e-07  1.2110e-11  7.8653e-13  0:00:07  553
+    47  1.7065e-07  1.2110e-11  7.8653e-13  0:00:07  553
+    48  1.2158e-07  5.1429e-12  5.5270e-13  0:00:07  552
+    48  1.2158e-07  5.1429e-12  5.5270e-13  0:00:07  552
+    49  8.6540e-08  2.1181e-12  3.9943e-13  0:00:08  551
+    49  8.6540e-08  2.1181e-12  3.9943e-13  0:00:08  551
+    50  6.1484e-08  1.7684e-12  2.8578e-13  0:00:08  550
+    50  6.1484e-08  1.7684e-12  2.8578e-13  0:00:08  550
+    51  4.3685e-08  2.0623e-12  2.0378e-13  0:00:08  549
+    51  4.3685e-08  2.0623e-12  2.0378e-13  0:00:08  549
+    52  3.1051e-08  1.8769e-12  1.4745e-13  0:00:08  548
+    52  3.1051e-08  1.8769e-12  1.4745e-13  0:00:08  548
+    53  2.2128e-08  1.5374e-12  1.0471e-13  0:00:08  547
+    53  2.2128e-08  1.5374e-12  1.0471e-13  0:00:08  547
+    54  1.5808e-08  1.1466e-12  7.3632e-14  0:00:08  546
+    54  1.5808e-08  1.1466e-12  7.3632e-14  0:00:08  546
+    55  1.1341e-08  7.7209e-13  5.1989e-14  0:00:08  545
+    55  1.1341e-08  7.7209e-13  5.1989e-14  0:00:08  545
+
+  iter  continuity  x-velocity  y-velocity
+  iter  continuity  x-velocity  y-velocity     time/iter
+     time/iter
+    56  8.1211e-09  3.4166e-13  3.7382e-14  0:00:08  544
+!   56 solution is converged
+    56  8.1211e-09  3.4166e-13  3.7382e-14  0:00:08  544
+!   56 solution is converged
+
+                 p02
+ -------------------
+           Area-Weighted Average                [Pa]
+-------------------------------- -------------------
+                             p02          0.45549856
+
+                 p02
+ -------------------
+           Area-Weighted Average                [Pa]
+-------------------------------- -------------------
+                             p02          0.45549856
+
+                 p08
+ -------------------
+           Area-Weighted Average                [Pa]
+-------------------------------- -------------------
+                             p08          0.11252893
+
+                 p08
+ -------------------
+           Area-Weighted Average                [Pa]
+-------------------------------- -------------------
+                             p08          0.11252893
+
+          mass-inlet
+ -------------------
+                  Mass Flow Rate              [kg/s]
+-------------------------------- -------------------
+                           inlet       9.6211275e-06
+
+          mass-inlet
+ -------------------
+                  Mass Flow Rate              [kg/s]
+-------------------------------- -------------------
+                           inlet       9.6211275e-06
+
+         mass-outlet
+ -------------------
+                  Mass Flow Rate              [kg/s]
+-------------------------------- -------------------
+
+                          outlet      -9.6211275e-06
+         mass-outlet
+ -------------------
+                  Mass Flow Rate              [kg/s]
+-------------------------------- -------------------
+                          outlet      -9.6211275e-06
+PHYSICAL_REPORTS [{'p02': [0.45549855540839, 'Pa']}, {'p08': [0.1125289342778171, 'Pa']}, {'mass-inlet': [9.621127501618743e-06, 'kg/s']}, {'mass-outlet': [-9.621127501775198e-06, 'kg/s']}]
+Fast-loading "[installation-path]"Fast-loading "[installation-path]"
+Done.
+
+Done.
+
+Writing to [host]:"[run-directory]" in NODE0 mode and compression level 1 ...
+
+Writing to [host]:"[run-directory]" in NODE0 mode and compression level 1 ...
+Grouping cells for Laplace smoothing ...
+Grouping cells for Laplace smoothing ...
+        3840 cells,     1 zone  ...
+        7864 faces,     5 zones ...
+        4025 nodes,     1 zone  ...
+  Done.
+        3840 cells,     1 zone  ...
+        7864 faces,     5 zones ...
+        4025 nodes,     1 zone  ...
+  Done.
+Done.
+Done.
+
+Writing to [host]:"[run-directory]" in NODE0 mode and compression level 1 ...
+
+Writing to [host]:"[run-directory]" in NODE0 mode and compression level 1 ...
+  Writing results.
+  Writing results.
+Done.
+Done.
+REPORT_STATE {'mesh': {}, 'surface': {'p02': {'name': 'p02', 'report_type': 'surface-areaavg', 'field': 'pressure', 'surface_names': ['p02'], 'per_selection': False, 'average_over': 1, 'retain_instantaneous_values': False, 'output_parameter': False, 'create_report_file': False, 'create_report_plot': False}, 'p08': {'name': 'p08', 'report_type': 'surface-areaavg', 'field': 'pressure', 'surface_names': ['p08'], 'per_selection': False, 'average_over': 1, 'retain_instantaneous_values': False, 'output_parameter': False, 'create_report_file': False, 'create_report_plot': False}}, 'volume': {}, 'force': {}, 'lift': {}, 'drag': {}, 'moment': {}, 'time': {}, 'flux': {'mass-inlet': {'name': 'mass-inlet', 'report_type': 'flux-massflow', 'boundaries': ['inlet'], 'per_selection': False, 'average_over': 1, 'retain_instantaneous_values': False, 'output_parameter': False, 'create_report_file': False, 'create_report_plot': False}, 'mass-outlet': {'name': 'mass-outlet', 'report_type': 'flux-massflow', 'boundaries': ['outlet'], 'per_selection': False, 'average_over': 1, 'retain_instantaneous_values': False, 'output_parameter': False, 'create_report_file': False, 'create_report_plot': False}}, 'vbm': {}, 'user_defined': {}, 'expression': {}, 'single_valued_expression': {}}
+SURFACE_COMMANDS ['_MutableMapping__marker', '__abstractmethods__', '__call__', '__class__', '__class_getitem__', '__contains__', '__delattr__', '__delitem__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__getitem__', '__getstate__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__iter__', '__le__', '__len__', '__lt__', '__module__', '__ne__', '__new__', '__orig_bases__', '__parameters__', '__reduce__', '__reduce_ex__', '__repr__', '__reversed__', '__setattr__', '__setitem__', '__sizeof__', '__slots__', '__str__', '__subclasshook__', '__weakref__', '_abc_impl', '_add_units_to_state', '_child_alias_objs', '_child_aliases', '_child_classes', '_file_transfer_handler', '_file_transfer_service', '_flproxy', '_name', '_parent', '_print_state_helper', '_python_name', '_root', '_set_file_transfer_service', '_set_on_interrupt', '_setattr', '_state_type', '_version', '_while_creating', '_while_deleting', '_while_executing_command', '_while_renaming', '_while_resizing', '_while_setting_state', 'after_execute', 'before_execute', 'child_names', 'clear', 'command_names', 'create_multiple_iso_surfaces', 'create_multiple_plane_surfaces', 'create_multiple_zone_surfaces', 'delete', 'expression_volume', 'external_surface', 'find_object', 'flproxy', 'fluent_name', 'get', 'get_active_child_names', 'get_active_command_names', 'get_active_query_names', 'get_attr', 'get_attrs', 'get_completer_info', 'get_state', 'group_surface', 'imprint_surface', 'is_active', 'is_read_only', 'iso_clip', 'iso_surface', 'items', 'keys', 'line_surface', 'obj_name', 'parent', 'partition_surface', 'path', 'plane_slice', 'plane_surface', 'point_surface', 'pop', 'popitem', 'print_state', 'python_name', 'python_path', 'quadric_surface', 'query_names', 'rake_surface', 'reset_zone_surfaces', 'set_flproxy', 'set_rendering_priority', 'set_state', 'setdefault', 'sphere_slice', 'split_surface', 'state_with_units', 'surface_cells', 'to_python_keys', 'to_scheme_keys', 'transform_surface', 'update', 'values', 'zone_surface']
+ELAPSED 35.01669239997864
+Shutting down Server...
+Services Shutdown...Done.
+Server Shutdown...Done.
+Queue Cleared...Done.
+Shutdown Complete.
+Auto-Transcript Stop Time:  17:41:43, 12 Nov 2026 
+Total Transcript Time: 0 Minute 34 Second.
+
+Automatic transcript closed.

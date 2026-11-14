@@ -26,9 +26,12 @@ export async function launch(options:{repo:string;directory:string;home:string;t
   catch(error){if((error as NodeJS.ErrnoException).code!=="ENOENT")throw error;await rm(join(profile,"mcp.json"),{force:true});}
   const env:NodeJS.ProcessEnv={...source,PATH:dirname(process.execPath)+":"+source.PATH,PI_CODING_AGENT_DIR:profile,LOGOS_TASK_ID:run.id};
   for(const name of Object.keys(env))if(/^(LARK_|FEISHU_|LOGOS_WEB_)/.test(name))delete env[name];
+  const input = await modelInput(repo, connection, run.model);
+  if (JSON.parse(run.images ?? "[]").length && !input.includes("image")) throw new Error("此模型未确认支持视觉输入，请选择视觉模型或联系管理员配置");
+  const thinkingLevelMap = await accountThinkingLevels(repo, connection, run.model);
   await writeFile(join(profile,"models.json"),JSON.stringify({providers:{[provider]:{
     baseUrl:"http://127.0.0.1:0",api:connection.protocol,apiKey:"web-metered-broker",
-    models:[{id:run.model,name:run.model,reasoning:connection.reasoning,input:["text"],contextWindow:connection.contextWindow,maxTokens:connection.maxTokens,cost:{input:0,output:0,cacheRead:0,cacheWrite:0}}],
+    models:[{id:run.model,name:run.model,reasoning:connection.reasoning,thinkingLevelMap,input,contextWindow:connection.contextWindow,maxTokens:connection.maxTokens,cost:{input:0,output:0,cacheRead:0,cacheWrite:0}}],
   }}}),{mode:0o600});
   const domain=join(repo,"logos-agent/pi-domain");
   const args=[join(repo,"logos-agent/web/worker/host-entry.mjs"),socket,repo,profile,
@@ -39,4 +42,20 @@ export async function launch(options:{repo:string;directory:string;home:string;t
     "--system-prompt",join(domain,"prompts/system.md"),"--append-system-prompt",join(domain,"prompts/append.md"),
     "--no-skills","--skill",join(domain,"skills")];
   return spawn(process.execPath,args,{cwd:directory,env,stdio:"pipe",detached:true});
+}
+
+async function accountThinkingLevels(repo: string, connection: Connection, modelId: string): Promise<Record<string, string | null> | undefined> {
+  if (connection.authType !== "openai-chatgpt") return undefined;
+  const path = join(repo, "vendor/pi/packages/ai/src/providers/data/openai.json");
+  const catalog = JSON.parse(await readFile(path, "utf8")) as Record<string, Record<string, { id: string; thinkingLevelMap?: Record<string, string | null> }>>;
+  return Object.values(catalog["openai-responses"] ?? {}).find(model => model.id === modelId)?.thinkingLevelMap;
+}
+
+export async function modelInput(repo: string, connection: Connection, modelId: string): Promise<string[]> {
+  if (connection.visionModels?.includes(modelId)) return ["text", "image"];
+  const hostname = new URL(connection.baseUrl).hostname;
+  const provider = hostname === "api.openai.com" ? "openai" : hostname === "api.anthropic.com" ? "anthropic" : undefined;
+  if (!provider) return ["text"];
+  const catalog = JSON.parse(await readFile(join(repo, "vendor/pi/packages/ai/src/providers/data", provider + ".json"), "utf8")) as Record<string, Record<string, {id:string;input?:string[]}>>;
+  return Object.values(catalog[connection.protocol] ?? {}).find(model => model.id === modelId)?.input ?? ["text"];
 }

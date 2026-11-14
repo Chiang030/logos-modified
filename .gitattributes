@@ -1,3 +1,9 @@
 *.sh text eol=lf
 *.mjs text eol=lf
 package-lock.json text eol=lf
+
+# Solver transcripts and STEP exports preserve tool-generated column padding.
+# Source, scripts, README files and numeric validation outputs keep normal checks.
+logos-agent/examples/validated-demos/**/run.txt text eol=lf whitespace=-blank-at-eol
+logos-agent/examples/validated-demos/**/solve.txt text eol=lf whitespace=-blank-at-eol
+logos-agent/examples/validated-demos/**/*.step text eol=lf whitespace=-blank-at-eol

@@ -9,9 +9,10 @@ export type Protocol = "openai-completions" | "openai-responses" | "anthropic-me
 export interface Connection {
   id: string; name: string; baseUrl: string; protocol: Protocol; models: string[];
   enabled: boolean; contextWindow: number; maxTokens: number; reasoning: boolean; version: number; hasKey: boolean;
+  visionModels?: string[];
   authType?: "api-key" | "openai-chatgpt";
 }
-interface Row { id: string; name: string; base_url: string; protocol: Protocol; models: string; enabled: number; context_window: number; max_tokens: number; reasoning: number; version: number; secret: string; auth_type: string; }
+interface Row { id: string; name: string; base_url: string; protocol: Protocol; models: string; enabled: number; context_window: number; max_tokens: number; reasoning: number; version: number; secret: string; auth_type: string; vision_models: string; }
 export class Models {
   readonly store: Store;
   readonly openAi: OpenAiAccount;
@@ -34,6 +35,7 @@ export class Models {
     try {
       const columns = store.db.prepare("PRAGMA table_info(model_connections)").all();
       if (!columns.some(column => column.name === "auth_type")) store.db.exec("ALTER TABLE model_connections ADD COLUMN auth_type TEXT NOT NULL DEFAULT 'api-key'");
+      if (!columns.some(column => column.name === "vision_models")) store.db.exec("ALTER TABLE model_connections ADD COLUMN vision_models TEXT NOT NULL DEFAULT '[]'");
       store.db.exec("COMMIT");
     } catch (error) { store.db.exec("ROLLBACK"); throw error; }
     this.openAi = new OpenAiAccount(this);
@@ -65,6 +67,8 @@ export class Models {
     if (!["openai-completions", "openai-responses", "anthropic-messages"].includes(protocol)) throw new HttpError(400, "不支持的模型协议");
     if (!Array.isArray(input.models) || !input.models.length || input.models.length > 100) throw new HttpError(400, "请填写 1–100 个模型 ID");
     const models = [...new Set(input.models.map((v) => text(v, "模型 ID", 200)))];
+    const visionModels = input.visionModels ?? (old ? JSON.parse(old.vision_models) : []);
+    if (!Array.isArray(visionModels) || visionModels.some(id => typeof id !== "string" || !models.includes(id))) throw new HttpError(400, "视觉模型必须属于此连接的模型列表");
     const key = typeof input.apiKey === "string" ? input.apiKey.trim() : "";
     if (authType === "openai-chatgpt" && (baseUrl !== "https://api.openai.com/v1" || protocol !== "openai-responses" || key)) throw new HttpError(400, "ChatGPT 账号仅支持 OpenAI 官方 Responses 接口，无需填写 API Key");
     if (authType === "openai-chatgpt" && !this.openAi.status().connected) throw new HttpError(409, "请先登录管理员 ChatGPT 账号");
@@ -79,6 +83,7 @@ export class Models {
       models=excluded.models,enabled=excluded.enabled,context_window=excluded.context_window,max_tokens=excluded.max_tokens,
       reasoning=excluded.reasoning,version=excluded.version,secret=excluded.secret,auth_type=excluded.auth_type`)
       .run(id,name,baseUrl,protocol,JSON.stringify(models),Number(input.enabled !== false),context,maximum,Number(input.reasoning === true),(old?.version ?? 0)+1,secret,authType);
+    this.store.db.prepare("UPDATE model_connections SET vision_models=? WHERE id=?").run(JSON.stringify(visionModels),id);
     return this.get(id);
   }
   private row(id: string): Row | undefined { return this.store.db.prepare("SELECT * FROM model_connections WHERE id=?").get(id) as unknown as Row | undefined; }
@@ -92,7 +97,7 @@ export class Models {
   }
 }
 function view(row: Row): Connection {
-  return { id: row.id, name: row.name, baseUrl: row.base_url, protocol: row.protocol, models: JSON.parse(row.models),
+  return { visionModels: JSON.parse(row.vision_models ?? "[]"), id: row.id, name: row.name, baseUrl: row.base_url, protocol: row.protocol, models: JSON.parse(row.models),
     enabled: Boolean(row.enabled), contextWindow: row.context_window, maxTokens: row.max_tokens, reasoning: Boolean(row.reasoning), version: row.version, hasKey: Boolean(row.secret), authType: row.auth_type as Connection["authType"] };
 }
 export function endpoint(value: string): string {

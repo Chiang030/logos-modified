@@ -1,0 +1,43 @@
+/BATCH
+/TITLE,LOGOS cantilever BEAM188 benchmark SI
+/PREP7
+ET,1,188
+KEYOPT,1,3,3
+MP,EX,1,210E9
+MP,PRXY,1,0.3
+SECTYPE,1,BEAM,RECT
+SECDATA,0.04,0.02
+! Orientation node defines local y along global Y.
+! RECT first dimension is local z (global Z): 0.04 m bending depth.
+*DO,J,0,20
+N,J+1,J/20,0,0
+*ENDDO
+N,1000,0,1,0
+*DO,J,1,20
+E,J,J+1,1000
+*ENDDO
+D,1,ALL,0
+F,21,FZ,-100
+FINISH
+/SOLU
+ANTYPE,STATIC
+NLGEOM,OFF
+OUTRES,ALL,ALL
+SOLVE
+FINISH
+/POST1
+SET,LAST
+PRNSOL,U,COMP
+PRRSOL
+*GET,UZTIP,NODE,21,U,Z
+*GET,RZROOT,NODE,1,RF,FZ
+*GET,MYROOT,NODE,1,RF,MY
+*CFOPEN,results,csv
+*VWRITE,'tip_uz_m','root_fz_N','root_my_Nm'
+(A,',',A,',',A)
+*VWRITE,UZTIP,RZROOT,MYROOT
+(E24.16,',',E24.16,',',E24.16)
+*CFCLOS
+SAVE
+FINISH
+/EXIT,NOSAVE

@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
 import type { Store } from "./store.ts";
 import type { Connection } from "./models.ts";
+import { validateImages } from "./attachments.ts";
 import { HttpError } from "./errors.ts";
 
 export type RunStatus = "queued" | "starting" | "running" | "cancelling" | "completed" | "failed" | "cancelled" | "interrupted";
-export interface Run { id: string; owner: string; project: string; session: string; connection: string; model: string; thinking: string; prompt: string; status: RunStatus; created: number; started: number | null; finished: number | null; error: string | null; request_key: string; }
+export interface Run { id: string; owner: string; project: string; session: string; connection: string; model: string; thinking: string; prompt: string; status: RunStatus; created: number; started: number | null; finished: number | null; error: string | null; request_key: string; images?: string; }
 export interface Event { seq: number; payload: Record<string, unknown>; }
+const runColumns = "id,owner,project,session,connection,model,thinking,prompt,status,created,started,finished,error,request_key";
 export class Jobs {
   readonly store: Store;
   constructor(store: Store) {
@@ -19,6 +21,11 @@ export class Jobs {
       CREATE TABLE IF NOT EXISTS run_events(seq INTEGER PRIMARY KEY AUTOINCREMENT,owner TEXT NOT NULL,session TEXT NOT NULL,run TEXT NOT NULL,payload TEXT NOT NULL);
       CREATE INDEX IF NOT EXISTS events_session ON run_events(owner,session,seq);
       CREATE TABLE IF NOT EXISTS worker_state(id INTEGER PRIMARY KEY CHECK(id=1),heartbeat INTEGER NOT NULL,ready INTEGER NOT NULL,reason TEXT NOT NULL);`);
+    store.db.exec("BEGIN IMMEDIATE");
+    try {
+      if (!store.db.prepare("PRAGMA table_info(runs)").all().some(column => column.name === "images")) store.db.exec("ALTER TABLE runs ADD COLUMN images TEXT NOT NULL DEFAULT '[]'");
+      store.db.exec("COMMIT");
+    } catch (error) { store.db.exec("ROLLBACK"); throw error; }
   }
   health(): { ready: boolean; reason: string } {
     const row = this.store.db.prepare("SELECT * FROM worker_state WHERE id=1").get() as { heartbeat: number; ready: number; reason: string } | undefined;
@@ -26,12 +33,13 @@ export class Jobs {
     return { ready: Boolean(row.ready), reason: row.reason };
   }
   heartbeat(ready: boolean, reason: string): void { this.store.db.prepare("INSERT INTO worker_state VALUES(1,?,?,?) ON CONFLICT(id) DO UPDATE SET heartbeat=excluded.heartbeat,ready=excluded.ready,reason=excluded.reason").run(Date.now(),Number(ready),reason); }
-  submit(owner: string, project: string, session: string, model: Connection, modelId: string, prompt: string, key: string, thinking = "off"): Run {
+  submit(owner: string, project: string, session: string, model: Connection, modelId: string, prompt: string, key: string, thinking = "off", attachments?: unknown): Run {
+    const images = JSON.stringify(validateImages(attachments));
     const conversation = this.store.session(owner,session);
     if (conversation.project !== project) throw new HttpError(404,"会话不存在");
     const prior = this.store.db.prepare("SELECT * FROM runs WHERE owner=? AND request_key=?").get(owner,key) as unknown as Run | undefined;
     if (prior) {
-      if (prior.project!==project || prior.session!==session || prior.prompt!==prompt || prior.connection!==model.id || prior.model!==modelId) throw new HttpError(409,"提交标识已用于不同任务");
+      if (prior.project!==project || prior.session!==session || prior.prompt!==prompt || prior.connection!==model.id || prior.model!==modelId || (prior.images ?? "[]")!==images) throw new HttpError(409,"提交标识已用于不同任务");
       return prior;
     }
     if (!this.health().ready) throw new HttpError(503,this.health().reason);
@@ -41,8 +49,8 @@ export class Jobs {
     const id=randomUUID();
     this.store.db.exec("BEGIN IMMEDIATE");
     try {
-      this.store.db.prepare("INSERT INTO runs VALUES(?,?,?,?,?,?,?,?,?,?,NULL,NULL,NULL,?)").run(id,owner,project,session,model.id,modelId,thinking,prompt,"queued",Date.now(),key);
-      this.event(id,{type:"message/user",id:"user-"+id,text:prompt,userName:(this.store.db.prepare("SELECT name FROM users WHERE id=?").get(owner) as {name:string}).name});
+      this.store.db.prepare("INSERT INTO runs(id,owner,project,session,connection,model,thinking,prompt,status,created,started,finished,error,request_key,images) VALUES(?,?,?,?,?,?,?,?,?,?,NULL,NULL,NULL,?,?)").run(id,owner,project,session,model.id,modelId,thinking,prompt,"queued",Date.now(),key,images);
+      this.event(id,{type:"message/user",id:"user-"+id,text:prompt+(JSON.parse(images).length ? `\n[视觉附件：${JSON.parse(images).length} 张图片]` : ""),userName:(this.store.db.prepare("SELECT name FROM users WHERE id=?").get(owner) as {name:string}).name});
       if (conversation.title==="新会话") this.store.renameSession(owner,session,prompt.replace(/\s+/g," ").slice(0,40));
       this.store.db.exec("COMMIT");
     } catch(error) {this.store.db.exec("ROLLBACK");throw error;}
@@ -52,15 +60,20 @@ export class Jobs {
     const row=this.store.db.prepare("SELECT * FROM runs WHERE owner=? AND id=?").get(owner,id) as unknown as Run | undefined;
     if (!row) throw new HttpError(404,"任务不存在");return row;
   }
+  status(owner: string, id: string): RunStatus {
+    const row = this.store.db.prepare("SELECT status FROM runs WHERE owner=? AND id=?").get(owner,id) as { status: RunStatus } | undefined;
+    if (!row) throw new HttpError(404,"任务不存在");
+    return row.status;
+  }
   list(owner: string, session?: string): Run[] {
-    return (session ? this.store.db.prepare("SELECT * FROM runs WHERE owner=? AND session=? ORDER BY created DESC LIMIT 100").all(owner,session)
-      : this.store.db.prepare("SELECT * FROM runs WHERE owner=? ORDER BY created DESC LIMIT 100").all(owner)) as unknown as Run[];
+    return (session ? this.store.db.prepare(`SELECT ${runColumns} FROM runs WHERE owner=? AND session=? ORDER BY created DESC LIMIT 100`).all(owner,session)
+      : this.store.db.prepare(`SELECT ${runColumns} FROM runs WHERE owner=? ORDER BY created DESC LIMIT 100`).all(owner)) as unknown as Run[];
   }
   claim(limit=5): Run | undefined {
     this.store.db.exec("BEGIN IMMEDIATE");
     try {
-      const active=this.store.db.prepare("SELECT * FROM runs WHERE status IN ('starting','running','cancelling')").all() as unknown as Run[];
-      const queued=this.store.db.prepare("SELECT r.* FROM runs r LEFT JOIN (SELECT owner,MAX(started) last_start FROM runs GROUP BY owner) u ON u.owner=r.owner WHERE r.status='queued' ORDER BY COALESCE(u.last_start,0),r.created").all() as unknown as Run[];
+      const active=this.store.db.prepare("SELECT id,owner,project FROM runs WHERE status IN ('starting','running','cancelling')").all() as unknown as Run[];
+      const queued=this.store.db.prepare("SELECT r.id,r.owner,r.project FROM runs r LEFT JOIN (SELECT owner,MAX(started) last_start FROM runs GROUP BY owner) u ON u.owner=r.owner WHERE r.status='queued' ORDER BY COALESCE(u.last_start,0),r.created").all() as unknown as Run[];
       const row=active.length<limit ? queued.find(r=>!active.some(a=>a.owner===r.owner || a.project===r.project)) : undefined;
       if(row) this.store.db.prepare("UPDATE runs SET status='starting',started=? WHERE id=? AND status='queued'").run(Date.now(),row.id);
       this.store.db.exec("COMMIT");

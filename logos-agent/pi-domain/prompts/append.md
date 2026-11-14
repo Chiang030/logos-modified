@@ -25,6 +25,15 @@ The final response must follow this structure:
 - Clearly describe the next operation to be performed.
 - Explain the reason before calling tools.
 
+## Execution and completion evidence
+
+- A final assistant reply ends the current web run. Do not end a task with only a promise such as “I will remove the dependency and retry” while safe, authorized tool work remains; perform the bounded recovery and verify its result before the final reply.
+- If blocked by missing input, permissions, a license, unavailable software, or a failed prerequisite, state the blocker and the exact stage reached. Do not claim a solver was started, a result was generated, or a case passed without corresponding tool evidence.
+- Distinguish reply completion, tool/transport success, solver execution, and engineering acceptance. Report geometry, mesh, solver, result artifacts, and acceptance separately; a successfully launched solver is not a passed simulation.
+- Inspect the actual Python interpreter and required imports before choosing an automation script. Prefer a verified installed environment or dependency-free equivalent; do not install packages, change geometry, change mesh resolution, or switch solver backends to hide an environment error without explaining and obtaining any required authorization.
+- Save deliverables inside the current project. Before linking a STEP or solver result, verify the file exists, is nonempty, and is structurally readable when a parser is available. Use project-relative links; never invent `sandbox:/mnt/data` download links or claim a server path outside the project is downloadable in the web file panel.
+- If an operation times out or the SIM connection drops, inspect its existing session/process state before retrying. Do not blindly repeat a potentially running solver operation or terminate a shared session.
+
 ## Other Rules
 
 **Markdown Document Writing Format**

@@ -1,15 +1,21 @@
 import { StudyPanel, fileLabel, type WorkspaceOverview } from "./workspace";
-import { StrictMode, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import { lazy, StrictMode, Suspense, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "../../vscode-extension/webview-ui/src/App";
 import logo from "../../vscode-extension/resources/logos_full_restored_transparent.png";
 import { BrowserBridge } from "./bridge";
 import { installClipboardFallback } from "./browser";
+import { previewKind } from "./preview-kind";
+import { CadPreview } from "./cad-preview";
+import { FileDownload } from "./file-download";
+import { FeedbackPanel, HomeLeaderboards } from "./feedback";
+import { DemoGallery } from "./demos";
 import { AdminPanel } from "./admin";
 import { SoftwareDialog } from "./software";
 import { api, query, setCsrf, upload, type Bootstrap, type Entry, type Project, type Conversation } from "./api";
 
 installClipboardFallback();
+const ModelPreview = lazy(() => import("./model-preview").catch(() => ({ default: () => <div className="empty-note" role="alert">无法加载 3D 查看器，请刷新页面重试或下载文件。</div> })));
 const demoProject: Project = { id: "preview-project", name: "机翼设计 · 示例项目", directory: "wing-study" };
 const demoFiles: Entry[] = [
   { name: "geometry", directory: true, size: 0, modified: 0 },
@@ -60,7 +66,7 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
 
   const [notice, setNotice] = useState(""), [selected, setSelected] = useState<string>();
   const [refresh, setRefresh] = useState(0), [picker, setPicker] = useState(false), [uploading, setUploading] = useState("");
-  const [search, setSearch] = useState(""), [adminOpen, setAdminOpen] = useState(false);
+  const [search, setSearch] = useState(""), [adminOpen, setAdminOpen] = useState(false), [feedbackOpen, setFeedbackOpen] = useState(false);
   const [softwareOpen,setSoftwareOpen]=useState<false|"load"|"scan">(false);
   useEffect(() => {
     let current = true;
@@ -124,7 +130,7 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
     <header className="web-topbar"><button className="brand" aria-label="返回项目首页" onClick={() => select(undefined)}><img src={logo} alt="LOGOS" /></button>
       <span className="top-divider" /><span className="workspace-name">工作台</span><span className="crumb">/</span><strong>{project?.name ?? "我的项目"}</strong>
       <div className="top-right">{preview ? <span className="preview-badge">只读界面预览</span> : <span className="private-badge">个人空间</span>}
-        {!preview ? <button className="text-button" onClick={()=>setSoftwareOpen("load")}>服务器工具</button> : null}
+        {!preview ? <><button className="text-button" onClick={()=>setFeedbackOpen(true)}>问题 / 需求反馈</button><button className="text-button" onClick={()=>setSoftwareOpen("load")}>服务器工具</button></> : null}
         {user.admin && !preview ? <button className="text-button" onClick={()=>setAdminOpen(true)}>管理后台</button> : null}
         <span className="avatar">{user.name.slice(0, 1)}</span><span>{user.name}</span>
         <button className="text-button" onClick={() => { if (preview) { location.href = "/"; return; } void api("/api/logout", {}).then(() => { location.href = "/"; }).catch((e) => setNotice(message(e))); }}>退出</button>
@@ -158,11 +164,12 @@ function Workbench({ boot, preview }: { boot: Bootstrap; preview: boolean }): Re
       <section className="main-workspace">
         {preview ? <div className="stage-banner">界面预览：示例资料不属于真实账号，上传与模型调用未启用。</div> : <div className="stage-banner">{boot.executionReady ? "模型由管理员统一配置，用量按你的账号记录。全站最多同时运行 5 个任务。" : boot.executionReason}</div>}
         {notice || uploading ? <div className="notice" role="status"><span>{uploading || notice}</span><button aria-label="关闭提示" onClick={() => setNotice("")}>×</button></div> : null}
-        {project && bridge ? <div className="workbench-panels"><div className="chat-panel"><App key={project.id} host={bridge} web /></div>{selected ? <FilePreview key={project.id + ":" + selected + ":" + refresh} path={selected} project={project} preview={preview} close={() => setSelected(undefined)} reference={() => {
+        {project && bridge ? <div className="workbench-panels"><div className="chat-panel"><App key={project.id} host={bridge} web /></div>{selected ? <FilePreview key={project.id + ":" + selected + ":" + refresh} path={selected} project={project} preview={preview} bridge={bridge} close={() => setSelected(undefined)} reference={() => {
           void navigator.clipboard.writeText(selected).then(() => setNotice("已复制项目相对路径，可粘贴到对话中引用")).catch(() => setNotice("请复制文件标签中的相对路径"));
-        }} /> : null}</div> : <div className="project-home"><div className="eyebrow">YOUR WORKSPACE</div><h1>让设计与仿真，<br /><span>从这里开始。</span></h1><p>选择自己的文件夹，整理资料，建立项目。<br />项目文件和对话会保存在服务器个人空间中。</p><button className="primary" onClick={() => setPicker(true)}>打开文件夹 →</button><div className="home-projects">{projects.map((item) => <button key={item.id} onClick={() => select(item)}><span>◇</span><strong>{item.name}</strong><small>{item.directory}</small></button>)}</div></div>}
+        }} /> : null}</div> : <div className="project-home"><div className="eyebrow">YOUR WORKSPACE</div><h1>让设计与仿真，<br /><span>从这里开始。</span></h1><p>选择自己的文件夹，整理资料，建立项目。<br />项目文件和对话会保存在服务器个人空间中。</p><button className="primary" onClick={() => setPicker(true)}>打开文件夹 →</button><div className="home-projects">{projects.map((item) => <button key={item.id} onClick={() => select(item)}><span>◇</span><strong>{item.name}</strong><small>{item.directory}</small></button>)}</div>{!preview ? <><DemoGallery open={value=>{select(value);setRefresh(n=>n+1);}} /><HomeLeaderboards /></> : null}</div>}
       </section>
     </div>
+    {feedbackOpen && !preview ? <div className="admin-shade"><section className="admin-panel" role="dialog" aria-modal="true" aria-label="问题与需求反馈"><header><h1>LOGOS 反馈</h1><button aria-label="关闭反馈" onClick={()=>setFeedbackOpen(false)}>×</button></header><FeedbackPanel user={user} projectId={project?.id} sessionId={bridge?.active} /></section></div> : null}
     {softwareOpen ? <SoftwareDialog scan={softwareOpen==="scan"} close={()=>setSoftwareOpen(false)} /> : null}
     {adminOpen && user.admin ? <AdminPanel close={()=>{setAdminOpen(false);void bridge?.catalog();}} /> : null}
     {picker ? <FolderPicker preview={preview} onClose={() => setPicker(false)} onSelect={(value) => { select(value); setPicker(false); setRefresh((n) => n + 1); }} /> : null}
@@ -220,26 +227,58 @@ function FolderPicker({ preview, onClose, onSelect }: { preview: boolean; onClos
   </section></div>;
 }
 
-function FilePreview({ path, project, preview, close, reference }: { path: string; project: Project; preview: boolean; close: () => void; reference: () => void }): ReactElement {
+function FilePreview({ path, project, preview, bridge, close, reference }: { path: string; project: Project; preview: boolean; bridge: BrowserBridge; close: () => void; reference: () => void }): ReactElement {
+  const attachment = useRef<AbortController | undefined>(undefined);
+  const [attaching, setAttaching] = useState(false);
+  useEffect(() => {
+    const cancel = (): void => { attachment.current?.abort(); attachment.current = undefined; setAttaching(false); };
+    const changing = (event: Event): void => { if ((event as CustomEvent<{host?:unknown}>).detail?.host === bridge) cancel(); };
+    window.addEventListener("logos-session-changing", changing);
+    return () => { attachment.current?.abort(); attachment.current = undefined; window.removeEventListener("logos-session-changing", changing); };
+  }, [bridge, path]);
   const [text, setText] = useState(""), [error, setError] = useState(""), [truncated, setTruncated] = useState(false), [loading, setLoading] = useState(true);
-  const image = /\.(png|jpe?g|gif|webp)$/i.test(path), pdf = /\.pdf$/i.test(path);
+  const kind = previewKind(path);
   const url = "/api/file?" + query(path, project.id);
+  const attachImage = async (): Promise<void> => {
+    attachment.current?.abort();
+    const controller = new AbortController(), session = bridge.active;
+    attachment.current = controller; setAttaching(true);
+    try {
+      const response = await fetch(url, { credentials: "same-origin", signal: controller.signal });
+      if (!response.ok) throw new Error("图片读取失败，请刷新后重试");
+      if (Number(response.headers.get("content-length")) > 4 * 1024 * 1024) { await response.body?.cancel(); throw new Error("视觉附件单张不能超过 4 MiB"); }
+      const blob = await response.blob();
+      if (controller.signal.aborted || attachment.current !== controller || bridge.active !== session) return;
+      if (blob.size > 4 * 1024 * 1024) throw new Error("视觉附件单张不能超过 4 MiB");
+      window.dispatchEvent(new CustomEvent("logos-attach-image", { detail: { host: bridge, file: new File([blob], path.split("/").at(-1) ?? "image.png", { type: blob.type }) } }));
+    } catch (cause) { if (!controller.signal.aborted) setError(message(cause)); }
+    finally { if (attachment.current === controller) { attachment.current = undefined; setAttaching(false); } }
+  };
   useEffect(() => {
     let current = true;
     if (preview) { setText(demoText[path] ?? "这是示例文件，尚无内容。"); setLoading(false); return; }
-    if (image || pdf) { setLoading(false); return; }
+    if (kind !== "text") { setLoading(false); return; }
     void api<{ text: string; truncated: boolean }>("/api/preview?" + query(path, project.id)).then((r) => {
       if (current) { setText(r.text); setTruncated(r.truncated); }
     }).catch((e) => { if (current) setError(message(e)); }).finally(() => { if (current) setLoading(false); });
     return () => { current = false; };
-  }, [path, project.id, preview, image, pdf]);
+  }, [path, project.id, preview, kind]);
   return <aside className="preview-panel" aria-label="文件预览">
     <header><div><span className="document-icon">≡</span><strong title={path}>{path.split("/").at(-1)}</strong></div><button aria-label="关闭文件预览" onClick={close}>×</button></header>
-    <div className="preview-toolbar"><span title={path}>{path}</span><button onClick={reference}>引用路径</button>{!preview ? <a href={url + "&download=1"}>下载</a> : null}</div>
+    <div className="preview-toolbar"><span title={path}>{path}</span><button onClick={reference}>引用路径</button>{!preview ? <FileDownload project={project.id} path={path} /> : null}{!preview && kind === "image" ? <button disabled={attaching} onClick={() => void attachImage()}>{attaching ? "正在添加图片…" : "添加到对话"}</button> : null}</div>
     {truncated ? <div className="preview-hint">只显示前 512 KB，完整内容请下载查看。</div> : null}
-    {error ? <div className="empty-note" role="alert">{error}</div> : loading ? <div className="empty-note">正在读取文件…</div> : image && !preview ? <div className="image-preview"><img src={url} alt={path} /></div> : pdf && !preview ? <iframe className="pdf-preview" title={path} src={url} /> : <div className="code-preview">{text.split("\n").map((line, index) => <div className="code-line" key={index}><span>{index + 1}</span><code>{line || " "}</code></div>)}</div>}
+    {error ? <div className="empty-note" role="alert">{error}</div> : loading ? <div className="empty-note">正在读取文件…</div> : !preview && kind === "image" ? <div className="image-preview"><img src={url} alt={path} /></div> : !preview && kind === "pdf" ? <iframe className="pdf-preview" title={path} src={url} /> : !preview && (kind === "video" || kind === "audio") ? <MediaPreview kind={kind} url={url} path={path} /> : !preview && kind === "model" ? <Suspense fallback={<div className="empty-note" role="status">正在加载 3D 查看器…</div>}><ModelPreview path={path} project={project.id} /></Suspense> : !preview && /\.(step|stp)$/i.test(path) ? <CadPreview project={project.id} path={path} /> : !preview && kind === "cad" ? <div className="empty-note">此格式暂不支持直接预览。请将 CAD/网格导出为 STL、OBJ、PLY 或 GLB 后查看，也可以下载原文件。</div> : <div className="code-preview">{text.split("\n").map((line, index) => <div className="code-line" key={index}><span>{index + 1}</span><code>{line || " "}</code></div>)}</div>}
     <footer>只读预览 <span>{path.split(".").at(-1)?.toUpperCase() ?? "FILE"}</span></footer>
   </aside>;
+}
+
+function MediaPreview({ kind, url, path }: { kind: "video" | "audio"; url: string; path: string }): ReactElement {
+  const [failed, setFailed] = useState(false);
+  const props = { src: url, controls: true, preload: "metadata", onError: () => setFailed(true), "aria-label": path };
+  return <div className="media-preview">
+    {kind === "video" ? <video {...props} playsInline /> : <audio {...props} />}
+    <div className="preview-hint" role={failed ? "alert" : undefined}>{failed ? "无法播放：文件不可访问或浏览器不支持此编码，请下载查看或转为 MP4（H.264/AAC）/ WebM。" : "使用播放器控制播放、音量和进度。能否播放取决于浏览器支持的编码。"}</div>
+  </div>;
 }
 
 const root = document.getElementById("root");

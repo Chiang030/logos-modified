@@ -15,4 +15,9 @@ export async function upload(path: string, file: File): Promise<void> {
   const response = await fetch("/api/upload?path=" + encodeURIComponent(path), { method: "PUT", credentials: "same-origin", headers: { "X-CSRF-Token": csrf }, body: file });
   if (!response.ok) throw new Error((await response.json()).error ?? "上传失败");
 }
+export async function binary(path: string, value: unknown, signal?: AbortSignal): Promise<ArrayBuffer> {
+  const response = await fetch(path, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf }, body: JSON.stringify(value), signal });
+  if (!response.ok) { const result = await response.json(); throw new Error(result.error ?? "请求失败"); }
+  return response.arrayBuffer();
+}
 export function query(path: string, project?: string): string { return new URLSearchParams({ path, ...(project ? { project } : {}) }).toString(); }

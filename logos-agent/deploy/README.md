@@ -64,7 +64,10 @@ Windows virtual environments and node_modules are never copied to Linux.
 
 Included: web workspace and shared VS Code UI, current CLI, character logo, prompts, eight product Skills, simulation
 tools and patched sim sources, complete Pi source, package locks and upstream
-licenses. Excluded: real `.env`, API keys, installed dependencies, virtual
+licenses, and the [validated example subfolders](logos-agent/examples/validated-demos/README.md)
+with rerun scripts, public results, and redacted text logs. Native solver databases
+with host-specific metadata are not distributed; rerun an example to generate them.
+Excluded: real `.env`, API keys, installed dependencies, virtual
 environments, Git history, operation logs and host-specific caches. Configure
 credentials on the server. Dependency versions may vary by OS; installation is
 not a claim of licensed solver availability or 2026 R1 compatibility.

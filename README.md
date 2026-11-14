@@ -2,7 +2,7 @@
 
 **[中文(主版本)](README.md)** · [English](README.en.md)
 
-> 当前服务端版本:**[v0.2.0](https://github.com/Chiang030/logos-modified/releases/tag/v0.2.0)** · VS Code 插件:**v0.2.0**(已跟进 v0.2.0,支持插件内自检更新)
+> 当前源码版本：**v0.3.15**（CLI / 网页工作台 / VS Code 共享界面）；安装包以仓库 Releases 为准。本次网页修复与标准算例更新不代表新增发布标签。
 
 LOGOS 是把大语言模型变成**能动手的工程师**的智能体平台:你在项目目录里用自然语言下达任务,它自主完成 CAD 参数化建模与独立校核、有限元网格划分、气动 CFD 与结构 FEA 求解、高频电磁仿真、电路板(ECAD)分析、3D 渲染制作等工程任务,并以可验证的证据(测试结果、导出文件、截图)交付。
 
@@ -21,6 +21,7 @@ LOGOS 是把大语言模型变成**能动手的工程师**的智能体平台:你
 - [MCP 服务](#mcp-服务)
 - [内置 Skills](#内置-skills)
 - [已实现的功能](#已实现的功能)
+- [标准算例](#标准算例)
 - [基本工作流程](#基本工作流程)
 - [安装与部署](#安装与部署)
 - [验证状态](#验证状态)
@@ -31,7 +32,7 @@ LOGOS 是把大语言模型变成**能动手的工程师**的智能体平台:你
 
 ### 方式一(推荐):VS Code Remote-SSH + 终端 CLI
 
-1. 在 VS Code 安装 **Remote-SSH** 扩展,连接服务器(例 `ssh jiangjincheng@172.19.103.12`);
+1. 在 VS Code 安装 **Remote-SSH** 扩展,连接服务器(例 `ssh user@your-server`);
 2. 打开目标项目文件夹,开一个集成终端;
 3. 输入 **`logos-here`** 唤醒:它按当前目录建一个专属 tmux 会话并启动 LOGOS,纸飞机 + LOGOS 字标动画出现即成功;同一项目再次调用会自动接回原会话;
 4. 之后的对话与任务执行都在该终端里进行,支持全部 v0.2.0 能力。
@@ -180,6 +181,20 @@ Ansys 系 Skill 完整复制自用户指定的 `reusable-assets/harnesses/ansys-
 - **Blender/3D 集成**:MCP + 常驻 GUI 实例,覆盖 3D logo 全流程(含 `references/demo_logo.py` 演示脚本)。
 - **SolidCraft CAD 集成**:外部 CLI 的 MCP 包装,`--allow-path` 限定可访问项目目录。工作流规定几何默认走 SolidCraft,不以 CadQuery/FreeCAD 为默认几何源;FreeCAD(`freecadcmd`)以 `freecad` 技能接入(无 MCP,脚本直调),用作独立 CAD 内核的交叉验证 oracle、外来文件修复与格式转换。
 - **API 配置**:启动器自动读取 `logos-agent/.env`(不依赖 cwd),`DEEPSEEK_API_KEY` + `LOGOS_PROVIDER` / `LOGOS_MODEL`,命令行参数优先。
+
+## 标准算例
+
+三类算例分别位于独立子文件夹，含 README、可重跑脚本、公开验证结果和脱敏日志。完整索引与离线校验命令见 **[标准算例目录](logos-agent/examples/validated-demos/README.md)**。
+
+| 算例 | 实际验证（2026-11-12） | 范围与入口 |
+|---|---|---|
+| [结构：钢悬臂梁](logos-agent/examples/validated-demos/structure/README.md) | APDL BEAM188 位移误差约 0.124%，力/矩平衡通过 | 一维梁基准，不是三维实体或 Mechanical GUI 工作流 |
+| [气动：低速空气管流](logos-agent/examples/validated-demos/air-pipe/README.md) | Fluent 细网格压降误差约 0.043%，双网格差约 0.130% | 二维轴对称层流，不是翼型升阻或 GCI 认证 |
+| [KiCad：5V LED 小板](logos-agent/examples/validated-demos/kicad-led/README.md) | 原理图 ERC、网表、PCB 一致性/DRC、Gerber、钻孔和 STEP 导出通过 | 自定义演示封装、板体 STEP，不是量产认证 |
+
+在网页首页点击“创建个人示例项目”可导入相应副本；导入不会调用模型或启动求解器。运行脚本前须确认软件、Python 环境及合法许可证，并使用新的输出目录。包含机器相关元数据的原生求解数据库不公开分发，可按 README 重跑生成；不把脱敏记录冒充原始二进制产物。
+
+网页工作台还支持图片粘贴与发送前编辑、真实视觉附件传递、STEP/STP 三维预览、问题/需求反馈和贡献榜。部署与验证边界见 [网页开发说明](logos-agent/web/docs/development.md) 与 [安装说明](logos-agent/web/docs/install.md)。
 
 ## 基本工作流程
 

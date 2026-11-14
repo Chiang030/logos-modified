@@ -7,11 +7,11 @@ export function json(response: ServerResponse, data: unknown, status = 200): voi
   response.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
   response.end(JSON.stringify(data));
 }
-export async function body(request: IncomingMessage): Promise<Record<string, unknown>> {
+export async function body(request: IncomingMessage, limit = 64 * 1024): Promise<Record<string, unknown>> {
   const chunks: Buffer[] = []; let size = 0;
   for await (const value of request) {
     const chunk = Buffer.from(value); size += chunk.length;
-    if (size > 64 * 1024) throw new HttpError(413, "请求过大");
+    if (size > limit) throw new HttpError(413, "请求过大");
     chunks.push(chunk);
   }
   try {
@@ -30,15 +30,24 @@ export function failure(response: ServerResponse, error: unknown): void {
 }
 export async function sendFile(request: IncomingMessage, response: ServerResponse, file: FileHandle, name: string, download: boolean): Promise<void> {
   const stat = await file.stat();
-  const types: Record<string, string> = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif", ".pdf": "application/pdf" };
+  const types: Record<string, string> = {
+    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif", ".pdf": "application/pdf",
+    ".mp4": "video/mp4", ".m4v": "video/mp4", ".webm": "video/webm", ".ogv": "video/ogg", ".mov": "video/quicktime",
+    ".mp3": "audio/mpeg", ".wav": "audio/wav", ".ogg": "audio/ogg", ".oga": "audio/ogg", ".m4a": "audio/mp4", ".aac": "audio/aac", ".flac": "audio/flac",
+    ".glb": "model/gltf-binary", ".gltf": "model/gltf+json", ".stl": "model/stl", ".obj": "text/plain", ".ply": "application/octet-stream",
+  };
   const type = types[extname(name).toLowerCase()];
   let start = 0, end = stat.size - 1, status = 200;
   const range = request.headers.range;
   if (range) {
-    const match = /^bytes=(\d+)-(\d*)$/.exec(range);
-    if (!match || Number(match[1]) >= stat.size) { await file.close(); response.writeHead(416, { "Content-Range": "bytes */" + stat.size }); response.end(); return; }
-    start = Number(match[1]); end = match[2] ? Math.min(Number(match[2]), end) : end;
-    if (end < start) { await file.close(); throw new HttpError(416, "文件范围无效"); }
+    const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+    if (match) {
+      start = match[1] ? Number(match[1]) : Math.max(0, stat.size - Number(match[2]));
+      end = match[1] && match[2] ? Math.min(Number(match[2]), end) : end;
+    }
+    if (!match || (!match[1] && !match[2]) || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start > end || start >= stat.size) {
+      await file.close(); response.writeHead(416, { "Content-Range": "bytes */" + stat.size, "Accept-Ranges": "bytes" }); response.end(); return;
+    }
     status = 206;
   }
   response.writeHead(status, {

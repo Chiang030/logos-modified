@@ -46,3 +46,15 @@ test("missing executable, timeout and pre-cancellation return explicit failures"
   const cancelled = await runSimulation({ action: "exec" }, { cwd, signal: controller.signal });
   assert.equal(cancelled.error.type, "Cancelled");
 });
+test("SIM diagnostics do not launch a session and operation deadlines align with CLI timeouts", async t => {
+  const cwd = await fixture(t), command = [process.execPath, "-e", "console.log(JSON.stringify({ok:true,args:process.argv.slice(1)}))", "--"];
+  const sessions = await runSimulation({ action: "ps" }, { cwd, command });
+  assert.deepEqual(sessions.payload.args, ["ps"]);
+  const launch = await runSimulation({ action: "connect" }, { cwd, command });
+  assert.equal(launch.timeout_ms, 240000);
+  const execution = await runSimulation({ action: "exec" }, { cwd, command });
+  assert.equal(execution.timeout_ms, 660000);
+  const explicit = await runSimulation({ action: "connect", timeout_ms: 750 }, { cwd, command });
+  assert.equal(explicit.timeout_ms, 750);
+  await assert.rejects(runSimulation({ action: "connect", timeout_ms: -1 }, { cwd, command }), /timeout/);
+});

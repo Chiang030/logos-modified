@@ -56,9 +56,24 @@ export class UsageObserver {
   }
   finish():void {if(this.pending)this.push("\n");}
 }
+/** Check the latest user turn, not historical images that could hide a failed decode. */
+export function latestUserImageCount(input: Record<string, unknown>, protocol: Protocol): number {
+  const messages = protocol === "openai-responses" ? input.input : input.messages;
+  if (!Array.isArray(messages)) return 0;
+  const user = messages.map(object).reverse().find(message => message.role === "user");
+  if (!Array.isArray(user?.content)) return 0;
+  return user.content.map(object).filter(part => {
+    if (protocol === "openai-completions") return part.type === "image_url" && typeof object(part.image_url).url === "string";
+    if (protocol === "openai-responses") return part.type === "input_image" && typeof part.image_url === "string";
+    const source = object(part.source);
+    return part.type === "image" && source.type === "base64" && typeof source.data === "string";
+  }).length;
+}
 export interface Broker { close():Promise<void>; }
 export async function modelBroker(socket:string,connection:Connection,key:string,run:Run,meter:Meter,resolveKey:()=>Promise<string>=async()=>key):Promise<Broker> {
   const controllers=new Set<AbortController>();
+  const expectedImages = (JSON.parse(run.images ?? "[]") as unknown[]).length;
+  let imagesVerified = expectedImages === 0;
   const server=createServer((request,response)=>{
     void handle(request,response).catch(()=>gatewayFailure(response,"模型代理请求失败，请检查管理员配置"));
   });
@@ -69,6 +84,13 @@ export async function modelBroker(socket:string,connection:Connection,key:string
     for await(const piece of req){const chunk=Buffer.from(piece);size+=chunk.length;if(size>16*1024*1024){res.writeHead(413);res.end();return;}chunks.push(chunk);}
     let input:Record<string,unknown>;try{input=object(JSON.parse(Buffer.concat(chunks).toString()));}catch{res.writeHead(400);res.end();return;}
     if(input.model!==run.model){res.writeHead(403);res.end('{"error":{"message":"模型不属于当前任务"}}');return;}
+    if (!imagesVerified) {
+      if (latestUserImageCount(input, connection.protocol) < expectedImages) {
+        res.writeHead(422, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: { message: "图片未完整传入模型，可能损坏或无法解码；请重新导出 PNG/JPEG 后发送。未进行纯文字降级调用。" } })); return;
+      }
+      imagesVerified = true;
+    }
     if(connection.protocol==="openai-completions" && input.stream===true)input.stream_options={...object(input.stream_options),include_usage:true};
     const id=meter.start(run,connection.name,connection.protocol,connection.version),observer=new UsageObserver(connection.protocol,meter,id);
     const controller=new AbortController();controllers.add(controller);
@@ -81,7 +103,7 @@ export async function modelBroker(socket:string,connection:Connection,key:string
       else headers.Authorization="Bearer "+credential;
       const base=connection.protocol==="anthropic-messages"?connection.baseUrl.replace(/\/v1$/,""):connection.baseUrl;
       const upstream=await (connection.authType === "openai-chatgpt" ? openAiFetch : fetch)(base+expected,{method:"POST",headers,body:JSON.stringify(input),signal:controller.signal,redirect:"error"});
-      const contentType=upstream.headers.get("content-type")??"application/json";
+      const contentType=upstream.headers.get("content-type")??(input.stream===true?"text/event-stream":"application/json");
       if(!upstream.ok){
         // Error bodies can echo upstream credentials. Never return them to sandbox code.
         meter.finish(id,"failed");await upstream.body?.cancel();

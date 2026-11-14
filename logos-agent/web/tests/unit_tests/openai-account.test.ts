@@ -70,3 +70,31 @@ test("token rotation is serialized across service instances and logout cannot be
   await ready;two.logout();release(renewed);await rejected;
   assert.equal(one.status().connected,false);assert.equal(two.status().connected,false);
 });
+
+
+test("model discovery accepts API IDs and ChatGPT subscription slugs while retaining the supported chat allowlist", async t => {
+  const root = await mkdtemp(join(tmpdir(), "logos-openai-models-"));
+  const store = new Store(join(root, "db.sqlite")), models = new Models(store, root);
+  t.after(async () => { store.close(); await rm(root, { recursive: true, force: true }); });
+  t.mock.method(models.openAi, "accessToken", async () => "model-list-fixture-token");
+  let payload: unknown;
+  t.mock.method(globalThis, "fetch", async (url: string | URL | Request, init?: RequestInit) => {
+    assert.equal(String(url), "https://api.openai.com/v1/models");
+    assert.equal((init?.headers as Record<string, string>).Authorization, "Bearer model-list-fixture-token");
+    return Response.json(payload);
+  });
+  const cases = [
+    { name: "API model IDs", body: { data: [{ id: "gpt-6.1-sol" }, { id: "gpt-6-astra" }] }, expected: ["gpt-6.1-sol", "gpt-6-astra"] },
+    { name: "subscription model slugs", body: { models: [{ slug: "gpt-6.1-sol" }, { slug: "gpt-6-astra" }, { slug: "codex-auto-review" }] }, expected: ["gpt-6.1-sol", "gpt-6-astra"] },
+    { name: "mixed formats and duplicate models", body: { data: [{ id: "gpt-6.1-sol" }], models: [{ slug: "gpt-6.1-sol" }, { slug: "gpt-6-astra" }] }, expected: ["gpt-6.1-sol", "gpt-6-astra"] },
+    { name: "unknown and malformed model records", body: { models: [null, {}, { slug: 42 }, { slug: "unsupported-model-fixture" }, { slug: "gpt-6.1-sol" }] }, expected: ["gpt-6.1-sol"] },
+    { name: "empty model list", body: { models: [] }, expected: [] },
+    { name: "non-array fields", body: { data: {}, models: "invalid" }, expected: [] },
+  ];
+  for (const entry of cases) {
+    await t.test(entry.name, async () => {
+      payload = entry.body;
+      assert.deepEqual(await models.openAi.listModels(), entry.expected);
+    });
+  }
+});
